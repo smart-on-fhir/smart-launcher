@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<title>SMART App Launcher</title>
+
+		<link href="./vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="./blue-nav.css" rel="stylesheet">
+
+		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+	</head>
+	<body>
+
+		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
+			<div class="navbar-header">
+				<div class="pull-left" style="margin: 10px;">
+					<img src="./img/smart-bug.png" />
+				</div>
+				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
+					SMART App Launcher
+				</a>
+			</div>
+		</div></div>
+
+		<div class="container">
+			<div class="row">
+
+				<div class="col-xs-12"><div class="panel panel-default">
+					<div class="panel-heading">Sandbox</div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label for="sb">FHIR Version</label>
+							<select id="fhir-version" class="form-control">
+								<option value="r2">R2 (DSTU2)</option>
+								<option value="r3">R3 (STU3)</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label for="sb">Sandbox Id</label>
+							<input id="sb" class="form-control" value="">
+							<p class="help-block">Randomly generated, reuse a previous id to maintain your patient list</p>
+							<div class="checkbox sb r2 r3">
+								<label><input type="checkbox" value="smart-7-2017">Include core SMART sample patients in sandbox</label>
+							</div>
+							<div class="checkbox sb r3">
+								<label><input type="checkbox" value="synthea-7-2017">Include SMART Synthea sample patients in sandbox</label>
+							</div>
+							<div class="checkbox sb r3">
+								<label><input type="checkbox" value="pro-7-2017">Include SMART PRO sample patients in sandbox</label>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="open-url">Open FHIR Endpoint URL</label>
+							<p class="form-control-static" id="open-url"></p>
+						</div>
+					</div>
+				</div></div>
+	
+				<div class="col-xs-12"><div class="panel panel-default">
+					<div class="panel-heading">App Launch Settings</div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label for="launch-url">App Launch URL</label>
+							<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/bp-centiles/launch.html">
+							<p class="help-block">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
+						</div>
+
+						<div class="form-group">
+							<label for="client-id">Client Id</label>
+							<p class="form-control-static" id="client-id">my_web_app</p>
+						</div>
+
+						<div class="form-group">
+							<label for="user">User FHIR Path </label>
+							<input id="user" class="form-control" value="Practitioner/COREPRACTITIONER1">
+							<p class="help-block">User resource who is launching the app (Practitioner, Patient or RelatedPerson). Only required for profile and openid scopes.</p>
+						</div>
+
+						<div class="form-group">
+							<label for="patient">Patient Id</label>
+							<input id="patient" class="form-control" value="smart-967332">
+							<p class="help-block">Patient id compatible with your app. Only required for patient/* scopes when there isn't a launch/patient scope. You may enter a comma delimited list of ids to restrict the launch/patient scope.</p>
+						</div>
+
+						<div class="form-group">
+							<label for="encounter">Encounter Id</label>
+							<input id="encounter" class="form-control" value="">
+							<p class="help-block">Encounter id compatible with your app. Only required for launch/encounter scopes.</p>
+						</div>
+					</div>
+				</div></div>
+
+				<!--
+				<div class="col-xs-12"><div class="panel panel-default">
+					<div class="panel-heading">Advanced Settings</div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label for="sb">Simulate Authentication Error</label>
+							<select id="fhir-version" class="form-control">
+								<option value="">None</option>
+								<option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
+								<option value="auth_invalid_redirect_url">Authorize - Invalid Redirect Url</option>
+								<option value="auth_missing_parameter">Authorize - Missing Parameter</option>
+								<option value="auth_invalid_scope">Authorize - Invalid Scope</option>
+								<option value="token_invalid_token">Token - Invalid Token</option>
+								<option value="request_invalid_token">Request - Invalid Token</option>	
+								<option value="request_expired_token">Request - Expired Token</option>	
+								<option value="refresh_invalid_token">Refresh - Invalid Token</option>	
+							</select>
+						</div>
+					</div>
+				</div></div>
+				-->
+
+				<div class="col-xs-12"><div class="panel panel-default">
+					<div class="panel-heading">EHR Launch Flow</div>
+					<div class="panel-body">
+						<a id="ehr-launch" href="#" target="_blank" class="btn btn-success btn-block">Launch!</a>
+					</div>
+				</div></div>
+				
+			</div>
+		</div>
+
+
+		</div> <!-- container -->
+
+
+		<script src="./vendor/jquery-1.12.3.min.js"></script>
+		<script src="./vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script>
+
+		//this is temporary - should use a better algorithm to prevent conflicts
+		function generateUID() {
+			var firstPart = (Math.random() * 46656) | 0;
+			var secondPart = (Math.random() * 46656) | 0;
+			firstPart = ("000" + firstPart.toString(36)).slice(-3);
+			secondPart = ("000" + secondPart.toString(36)).slice(-3);
+			return firstPart + secondPart;
+		}
+
+			$("#launch-button").click( function() {
+				window.open( $("#picker-url").text() );
+			});
+
+			$("input,select").on("input change", function() {
+				buildUrls();
+			});
+
+			$("#fhir-version").on("change", function() {
+				$(".sb").hide().filter(".sb." + $(this).val()).show();
+			})
+
+
+			function buildUrls() {
+				var baseUrl = window.location.href.replace(/index\.html/, "");
+				
+				var sandboxes = $(".sb :checked").filter(":visible").map( 
+					function () { return $(this).val() }
+				).get();
+				if ($("#sb").val()) sandboxes.unshift( $("#sb").val() );
+				
+				var openUrl = baseUrl + $("#fhir-version").val();
+
+				if (sandboxes.length) openUrl += "/sb/" + sandboxes.join(",");
+				openUrl += "/fhir"
+
+				var launchUrl = openUrl.replace("/fhir", "/auth") + "/ehrlaunch?" +
+					"launch_url=" + window.encodeURIComponent($("#launch-url").val())  +
+					"&iss=" + window.encodeURIComponent(openUrl);
+				if ($("#patient").val()) launchUrl += "&patient=" + window.encodeURIComponent($("#patient").val());
+				if ($("#encounter").val()) launchUrl += "&encounter=" + window.encodeURIComponent($("#encounter").val());
+				if ($("#user").val()) launchUrl += "&user=" + window.encodeURIComponent($("#user").val());
+
+				$("#open-url").text(openUrl);
+				$("#ehr-launch").attr("href", launchUrl);
+
+			}
+
+			$("#sb").val(generateUID());
+			
+			$("#fhir-version").trigger("change");
+
+		</script>/
+
+	</body>
+</html>

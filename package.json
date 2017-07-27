@@ -1,0 +1,29 @@
+{
+  "name": "smart-launcher",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "watch": "./node_modules/.bin/nodemon ./src/index.js",
+    "start": "node ./src/index.js",
+    "test": "(./node_modules/.bin/mocha || true)",
+    "test-watch": "(./node_modules/.bin/mocha -w || true)"
+  },
+  "author": "Dan Gottlieb",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.14.1",
+    "cors": "^2.7.1",
+    "express": "^4.13.3",
+    "jsonwebtoken": "^5.4.0",
+    "morgan": "^1.6.1",
+    "object-assign": "^4.0.1",
+    "replaceall": "^0.1.6",
+    "request": "^2.65.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.5.3",
+    "nodemon": "^1.7.1",
+    "supertest": "^1.2.0"
+  }
+}
