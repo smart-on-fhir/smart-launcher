@@ -143,13 +143,11 @@
 							<select id="auth-error" class="form-control">
 								<option value="">None</option>
 								<option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
-								<option value="auth_invalid_redirect_url">Authorize - Invalid Redirect Url</option>
-								<option value="auth_missing_parameter">Authorize - Missing Parameter</option>
+								<option value="auth_invalid_redirect_uri">Authorize - Invalid Redirect Url</option>
 								<option value="auth_invalid_scope">Authorize - Invalid Scope</option>
 								<option value="token_invalid_token">Token - Invalid Token</option>
 								<option value="request_invalid_token">Request - Invalid Token</option>	
 								<option value="request_expired_token">Request - Expired Token</option>	
-								<option value="refresh_invalid_token">Refresh - Invalid Token</option>	
 							</select>
 						</div>
 					</div>
@@ -253,8 +251,6 @@
 				var ehrLaunchUrl = appLaunchUrl + "?" + 
 					"iss=" +  window.encodeURIComponent(openUrl) +
 					"&launch=" + btoa(JSON.stringify(urlParams));
-
-				console.log(JSON.stringify(urlParams, null, 2))
 
 				$("#open-url").text(openUrl);
 				$("#ehr-launch-url").attr("href", ehrLaunchUrl);

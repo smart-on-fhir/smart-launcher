@@ -24,8 +24,10 @@ module.exports = function (req, res) {
 		try {
 			token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
 		} catch (e) {
-			return res.status(401).send("invalid token");
+			return res.send("Invalid token", 401);
 		}
+		if (token.sim_error) return res.send(token.sim_error, 401);
+
 	}
 
 	//set everything to JSON since we don't currently don't support XML and block XML requests at a middleware layer

@@ -11,7 +11,6 @@ Features:
 - Standalone launch simulations
 
 TODO:
-- Configurable auth errors
 - Pop picker when required
 - Support login dialog for standalone launch (username is FHIR id and password can be anything)
 - Support authorization screen for standalone launch
