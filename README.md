@@ -8,19 +8,19 @@ Features:
 - Support for multiple FHIR versions
 - Mock auth and OIDC
 - Configurable auth errors
-- Standalone launch simulations (TODO)
+- Standalone launch simulations
 
 TODO:
+- Configurable auth errors
+- Pop picker when required
+- Support login dialog for standalone launch (username is FHIR id and password can be anything)
+- Support authorization screen for standalone launch
+- Verify that OIDC signature works correctly
 - Unit test sandboxify module
 - Better error handling throughout (ie missing required parameters)
 - Pass on-demand errors to auth for testing
-- OIDC should follow requested scopes
-- Support validation of OIDC id_token (.well-known)
 - Enforce scopes
 - Better launch GUI with patient and provider selectors
 - Launcher GUI should use url params as source of truth so can bookmark a launch
-- Pop picker for launch/patient scope when no patient
-- Support standalone launch (stash params in resource and cache in memory, pass id in sim param of url string)
-- Support optional login dialog for standalone launch (username is FHIR path eg. Patient/123 and password can be anything)
 - XML support
 - Performance improvements

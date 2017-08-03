@@ -7,41 +7,38 @@ const sandboxify = require("./sandboxify");
 
 module.exports = router;
 
-//TODO: error handling for missing params here would be a lovely addition
-router.get("/ehrlaunch", function(req, res) {
-
-	var launchId = {context: {
-		need_patient_banner: true,
-		smart_style_url: config.baseUrl + "/smart-style.json"
-	}};
-	Object.keys(req.query).forEach( param => {
-		if (["launch_url", "iss", "user", "sim_err"].indexOf(param) == -1)
-			launchId.context[param] = req.query[param];
-	});
-	if (req.query.user) launchId.user = req.query.user;
-	if (req.query.sim_err) launchId.sim_err = req.query.sim_err;
-	var url = req.query.launch_url + 
-		"?launch=" + Buffer.from(JSON.stringify(launchId)).toString("base64") +
-		"&iss=" + encodeURIComponent(req.query.iss);
-	res.redirect(url);
-});
-
 router.get("/authorize", function (req, res) {
+	let sim = {};
+	if (req.query.launch || req.params.sim) {
+		sim = JSON.parse(Buffer.from(req.query.launch || req.params.sim, 'base64').toString());
+	}
+
 	const apiUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl));
 	if (sandboxify.normalizeUrl(req.query.aud) != sandboxify.normalizeUrl(apiUrl)) {
 		console.log("Bad AUD value: " + req.query.aud + " (expecting " + apiUrl);
 		return res.send("Bad audience value", 400);
 	}
-	var launch = req.query.launch ? JSON.parse(Buffer.from(req.query.launch, 'base64').toString()) : {};  
+
 	var code = {
-		context: launch.context || {},
+		context: {
+			need_patient_banner: true,
+			smart_style_url: config.baseUrl + "/smart-style.json",
+		},
 		client_id: req.query.client_id,
 		scope: req.query.scope,
-		user: launch.user
 	};
-	var state = req.query.state;
+
+	Object.keys(sim).forEach( param => {
+		if (["patient", "encounter"].indexOf(param) != -1) {
+			code.context[param] = sim[param];
+		} else {
+			code[param] = sim[param];
+		}
+	});
+	// console.log(JSON.stringify(code, null, 2));
+
 	var signedCode = jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
-	res.redirect(req.query.redirect_uri + ("?code=" + signedCode + "&state=" + state));
+	res.redirect(req.query.redirect_uri + ("?code=" + signedCode + "&state=" + req.query.state));
 });
 
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
@@ -71,15 +68,16 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 		client_id: req.body.client_id
 	});
 	
-	//TODO: verification of id token doesn't work
-	//TODO: only include profile if scope is requested
 	if (code.user && code.scope.indexOf("profile") && code.scope.indexOf("openid")) {
 		token.id_token = jwt.sign({
-			profile: code.user,
+			profile: "Practitioner/" + code.user,
 			aud: req.body.client_id,
 			iss: config.baseUrl
-		}, config.oidcKey, "RS512");
+		}, config.oidcKeypair.d, config.oidcKeypair.alg);
 	}
+
+	// console.log(JSON.stringify(token, null, 2));
+
 	token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn: "1h" });
 	res.json(token);
 });

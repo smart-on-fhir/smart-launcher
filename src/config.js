@@ -5,33 +5,17 @@ module.exports = {
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
   authBaseUrl: process.env.AUTH_BASE_URL || "/auth",
   fhirBaseUrl: process.env.FHIR_BASE_URL || "/fhir",
-  protectedSandboxWords: (process.env.PROTECTED_SANDBOX_WORDS || "smart,synthea,all").split(","),
+  protectedSandboxWords: (process.env.PROTECTED_SANDBOX_WORDS || "smart,synthea,pro").split(","),
   jwtSecret: process.env.SECRET || "thisisasecret",
   port: process.env.PORT || "3055",
-  oidcKey: 
-`MIIEowIBAAKCAQEAnvUyZCs7piYhhMjshljQ+csrA2eYwoK4hmxXy+QfXFhB+ly3
-gk0LWVtDQAtOlTuex+G1mUt2e42E73pThNR2mZo87tMFQKeElBWchjUifrOO4YbL
-myorVlrP3+Oil0clMyZEZsbSmcc9R/0PFGoxFeU4B6eyavA8Eg23Cyj2kV9Ds5m9
-v35z3VsntcFoyt+ObRXDlIdo9K3YKAdP18zvEx+NhIt3c5NBLoX2cfZakihWDs3X
-DaekBG5YhhqWMlf4A8BAp2BTu6YHK/8ymjMotixDVSp8KgXKw3RnBgyacpl95oPd
-yiaQEzrNz17DPy1j12Y3vFMEFSc/VYHzm577oQIDAQABAoIBAEa6oa5ykjsO0nFM
-Gfp5gJr1bPE54n4CPmsJwFMn8VBcsRbetITVFUywUA8qONAsVC1qYCySqGi3gsQw
-MQN0qkUUnTJDUR4Aq/xcVWZeNDgeW2A8Y1JqhBgLll1v44Pek03cJCl7JHBqd/kV
-P+V8jtTIRpMZakktFf2OfrkHhBcQkZxEAVbthu8/fLl9LDGIFBJTZE80H48dWMiE
-1QGdokJgX8k/lA6+Kr5/nMPiP/g1SkIEpsfmdGDB24pEAIRt9RfI0j72qMFY36mg
-Uj6H68fkBN1vHyUGP8dIV1nZZ3aSHRehSYnEUJuM59O0diMrGcbpTkE9EouNZrwy
-eM5qb7UCgYEAvMt18Cs1zkOvc2gWMesJKEzXz3gwRvIJNXdrGzjirQeN5luCw+Vo
-P3QhIRhiatWYfe0fcVcE3odakpHXNJvwdnaAZxpY+k0YpWptuT+hPMME2+hNrAWq
-UeRWIGh7eG0w0aLB8JlQnt1cPOkWMzehJwhpfcsnLwMuPRsMgA4QWVMCgYEA14q+
-vFITKta90LiCH5PxJI2dFZjG2IU/MmIc85eGxLWgk1mIr38neS9Q9K1hcRs/jr8Y
-dxK5UCYM6hP59zFfh8B7yGGgfXOPOa9g7ZrG7PYGv7OMyezhXC+3QCBSPQ0qEKut
-npxefnIa+E8b8OzFLXjHN8F5DY5+CnUpQD3X1LsCgYBwkJMCHpFXKS4cDixlmPB9
-0cs+zTdjpX3uHgSDV5h3eDCX72n5KPfOFYyHMgXEExR3yIDdz/d8QpGzIDeDC5ME
-3sTSNHhmzL7sKZfAQvr8wn5MK6bb8QjLCOx9KC6t79SSuYsOzCqwfeU3//WXlgyE
-vFRBh3YWZrwT/OOoGjqPNwKBgQC6dWYnF4FJT9eI1fSLSLoU+wTnB/EMochX15Rg
-DbciOFUe4xdhakhFh28rG0nuRLoozJtndqUk9qW5YWqeMvIHR7ZNVFc37135cwQQ
-yBJKL1MLR1IF5IvX6ddG/C7obZj0Lu/VBESiciduo1DyjIDOo2sDirUjyx6yAUSc
-NGOfvQKBgCpWQkze+7MucceDyHBEy09+byPRmmzYcJDeFKokFpWJXW8lzMeJD3JH
-odjMPdAaiF2fIUrj6/Ea3a8TiTROewChVPBNfiqVDJ8hp5CzPEV3XYkMM0lj/7Gn
-bk1C6+SxZUGhhJxp1Pi6rl9vshxNv4g9qm046r2iZOBzjDhVTxkZ`
-};
+  oidcKeypair: {
+    "kty": "RSA",
+    "d": "lkC4dQAf_Qt1UQnSf_k-JVBn7ixvG7RhdPbV8SBx_VbX-v3zR9vh5JD2NHTurtyhIeVZhEMkLOH2rMVsOZdcMT3gGldHbbrUncXOnoFZzFTL6PH8A6nGr64Vf-OdBoFwUhwFw7s0ywKgtaoZYyP4ii8JbK03ex9amD3bhms9HwzNfeznz9dorHy8_EN_enJLzgPL0G4qXE99Q3JIA6509pycUGOTXfg6WQMbKk-9MG6pUXHiKNuTCM6vdhgFyWesz8UkjqRawJlvDIxQBT7oCntOebAgE9EG2UhcNOZmA1hVGeu3oOV_S_jw5x1JIi4OQTozkFLtK02NqCfGMWTCaQ",
+    "e": "AQAB",
+    "use": "sig",
+    "alg": "RS256",
+    "n": "5RJvk54BcrmwJH0nUlGERrdlAtfEixCas90GJs6VbcdfgQVa_V5lU3HT-Zxc5rpE_TvRP6j1yW0zEiuQGy1uffd31u27135hFjKodAJDywmGISJ1AeYDYR4TRWpfc7tdQE0h1J2UfxUZEUsDXDa9Nl0B4tjC9FCSyJa3DikHecNIT_goBheV_GllORsWzss0yQ7NQOB9M4zzUhMdN5X0-1z6HooEQiRgg80gwW5b8zVumULUsAHcexBXZMVSbTNSMbPOq7UhlxFbHmgrowtvi68uEcIp46-qGxlU2ZtBNRtXPyWmL-1Mt29euPgdO7_nW00_6UTLsrYMMkpuHtxvNw",
+    "kid": "b449e771431b358a24d91d153a3e78e1743e96db",
+    "x5t": "b449e771431b358a24d91d153a3e78e1743e96db"
+  } 
+}

@@ -37,6 +37,18 @@ app.use(logger('combined'));
 //reject xml
 app.use(handleXmlRequest);
 
+//provide oidc keys when requested
+app.get("/.well-known/openid-configuration/", (req, res) => {
+	res.json({"jwks_uri": `${config.baseUrl}/keys`})
+});
+app.get("/keys", (req, res) => {
+	let key = {}
+	Object.keys(config.oidcKeypair).forEach(p => {
+		if (p != "d") key[p] = config.oidcKeypair[p];
+	});
+	res.json({"keys":[key]})
+});
+
 //auth request
 app.use([
 	"/:fhir_release/sb/:sandbox/sim/:sim" + config.authBaseUrl, 
