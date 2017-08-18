@@ -49,29 +49,33 @@ app.get("/keys", (req, res) => {
 	res.json({"keys":[key]})
 });
 
+buildRoutePermutations = (lastSegment) => {
+	return [
+		"/v/:fhir_release/sb/:sandbox/sim/:sim" + lastSegment, 
+		"/v/:fhir_release/sb/:sandbox" + lastSegment, 
+		"/v/:fhir_release/sim/:sim" + lastSegment, 
+		"/v/:fhir_release" + lastSegment,
+	]
+}
+
+//picker
+app.get(buildRoutePermutations("/picker"), (req, res) => {
+    res.sendfile("picker.html", {root: './static'});
+});
+
 //auth request
-app.use([
-	"/:fhir_release/sb/:sandbox/sim/:sim" + config.authBaseUrl, 
-	"/:fhir_release/sb/:sandbox" + config.authBaseUrl, 
-	"/:fhir_release/sim/:sim" + config.authBaseUrl, 
-	"/:fhir_release" + config.authBaseUrl
-], smartAuth)
+app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
 //fhir request
-app.use(
-	[
-		"/:fhir_release/sb/:sandbox/sim/:sim" + config.fhirBaseUrl, 
-		"/:fhir_release/sb/:sandbox" + config.fhirBaseUrl, 
-		"/:fhir_release/sim/:sim" + config.fhirBaseUrl, 
-		"/:fhir_release" + config.fhirBaseUrl
-	],
+app.use(buildRoutePermutations(config.fhirBaseUrl),
 	bodyParser.json({type: "*/*"}),
 	handleParseError,
 	reverseProxy
 );
 
+
 //static request
-app.use(express.static('static'));
+app.use(buildRoutePermutations(""), express.static("static"));
 
 module.exports = app;
 

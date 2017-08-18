@@ -8,6 +8,7 @@ const sandboxify = require("./sandboxify");
 module.exports = router;
 
 router.get("/authorize", function (req, res) {
+	
 	const requiredParams = ["response_type", "client_id", "redirect_uri", "scope", "state", "aud"];
 	const missingParam = requiredParams.find( param => {
 		if (!req.query[param]) return param;
@@ -19,18 +20,47 @@ router.get("/authorize", function (req, res) {
 		sim = JSON.parse(Buffer.from(req.query.launch || req.params.sim, 'base64').toString());
 	}
 
+	//simulate errors if requested
 	if (sim.auth_error == "auth_invalid_client_id") {
 		return res.send("Invalid client_id parameter", 400);
 	} else if (sim.auth_error == "auth_invalid_client_id") {
 		return res.send("Invalid redirect_uri parameter", 400);
-	} else if  (sim.auth_error == "auth_invalid_scope") {
+	} else if (sim.auth_error == "auth_invalid_scope") {
 		return res.send("Invalid invalid_scope parameter", 400);
 	}
 
+	//look for a real error
 	const apiUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl));
 	if (sandboxify.normalizeUrl(req.query.aud) != sandboxify.normalizeUrl(apiUrl)) {
-		console.log("Bad AUD value: " + req.query.aud + " (expecting " + apiUrl);
+		// console.log("Bad AUD value: " + req.query.aud + " (expecting " + apiUrl);
 		return res.send("Bad audience value", 400);
+	}
+
+	//handle response from picker, login or auth screen
+	if (req.query.patient) sim.patient = req.query.patient;
+	if (req.query.provider) sim.provider = req.query.provider;
+	if (req.query.auth_success) sim.skip_auth = "1";
+	if (req.query.auth_fail) {
+		return res.send("Unauthorized", 401);
+	}
+	
+	//show patient picker if provider launch, patient scope and no patient or multiple patients provided
+	if (!sim.launch_pt && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
+		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/picker")  + 
+			(sim.patient ? "&patient=" + encodeURIComponent(sim.patient)  : "")
+		return res.redirect(redirectUrl)
+
+	//show login screen if patient launch and skip login is not selected, there's no patient or multiple patients provided
+	} else if (sim.launch_pt && (!sim.skip_login || !sim.patient || sim.patient.indexOf("," > -1))) {
+		console.log("PATIENT LOGIN SCREEN", sim.patient)
+
+	//show login screen if provider launch and skip login is not selected, there's no provider or multiple provider provided
+	} else if (sim.launch_prov && (!sim.skip_login || !sim.provider || sim.provider.indexOf("," > -1)) ) {
+		console.log("PROVIDER LOGIN SCREEN", sim.patient)
+
+	} else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
+		console.log("App AUTH SCREEN")
+
 	}
 
 	var code = {
@@ -49,13 +79,14 @@ router.get("/authorize", function (req, res) {
 			code[param] = sim[param];
 		}
 	});
-	// console.log(JSON.stringify(code, null, 2));
 
 	var signedCode = jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
-	res.redirect(req.query.redirect_uri + ("?code=" + signedCode + "&state=" + req.query.state));
+
+	res.redirect( req.query.redirect_uri + ("?code=" + signedCode + "&state=" + encodeURIComponent(req.query.state)) );
 });
 
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
+	
 	var grantType = req.body.grant_type;
 	var codeRaw;
 
@@ -70,6 +101,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 	} catch (e) {
 		return res.send("Invalid token", 401);
 	}
+
 
 	if (code.scope.indexOf('offline_access') >= 0) {
 		code.context['refresh_token'] = jwt.sign(code, config.jwtSecret);

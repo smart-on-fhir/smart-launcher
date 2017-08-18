@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const config = require("./config");
 const fhirError = require("./fhir-error");
 const sandboxify = require("./sandboxify");
+const patientMap = require("./patient-compartment.json")
 
 module.exports = function (req, res) {
 
@@ -47,6 +48,17 @@ module.exports = function (req, res) {
 	fhirRequest.url = sandboxify.buildUrlPath(
 		fhirServer, sandboxify.adjustUrl(req.url, req.method == "GET", sandboxes)
 	);
+
+	//if applicable, apply patient scope to GET requests, largely for performance reasons.
+	//Full scope support can't be implemented in a proxy because it would require "or"
+	//conditions in FHIR API calls (ie ), but should do better than this!
+	let scope = (token && token.scope) || req.headers["x-scope"];
+	let patient = (token && token.patient) || req.headers["x-patient"];
+	if (req.method == "GET" && scope && patient && scope.indexOf("user/") == -1) {
+		let resourceType = req.url.slice(1);
+		let map = patientMap[req.params.fhir_release] && patientMap[req.params.fhir_release][resourceType];
+		if (map) fhirRequest.url += "&" + map + "=" + patient;
+	}
 
 	//proxy the request to the real FHIR server
 	console.log("PROXY: " + fhirRequest.url);

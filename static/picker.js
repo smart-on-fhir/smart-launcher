@@ -1,18 +1,5 @@
 var SmartPicker = (function() {
 
-	/* config params (can be passed to init function or via qs):
-		- apiGatewayUrl: FHIR server url for launching app (no default)
-		- launchUrl: App's OAuth launch url (no default)
-		- limitIds: Comma delimited list of pt ids to limit list - if just one won't show picker (defaults to none)
-		- skipPicker: Launch app without a patient - for use in pop health apps (defaults to false)
-		- pageSize: Patients shown per page (defaults to 10)
-		 "10",
-		- newWindow: Launch app in new window (defaults to false)
-		- showIds: Show resource id next to pt name. In this mode launching requires clicking the select button. (defaults to false)
-		- sortParam: Sort param - name, gender or age (defaults to name)
-		- sortDir: Asc or Desc (defaults to asc)  
-	*/
-
 	var state = {
 		skip: "0",
 		searchText: "",
@@ -20,6 +7,8 @@ var SmartPicker = (function() {
 		pageSize: "10",
 		sortParam: "name", 
 		sortDir: "asc",
+		apiUrlSegment: "fhir",
+		authUrlSegment: "auth/authorize"
 	};
 
 	var getQsParams = function() {
@@ -98,7 +87,8 @@ var SmartPicker = (function() {
 			sortParam = "family"
 		}
 
-		return state.apiGatewayUrl + 
+		// return state.apiUrlSegment + 
+		return state.aud + 
 			"/Patient/?_format=application/json+fhir&_summary=true" +
 			"&_count=" + state.pageSize +
 			(state.limitIds ? "&_id=" + state.limitIds.replace(/\s*/g, "") : "") + 
@@ -137,14 +127,10 @@ var SmartPicker = (function() {
 
 	// Launcher
 	var launchApp = function(patientId) {
-		var launchId = btoa(JSON.stringify({typ:"JWT", alg: "none"})) + "." + btoa(JSON.stringify({
-			"patient": patientId,
-			"need_patient_banner": true,
-			"smart_style_url": "https://gallery-styles.smarthealthit.org/styles/v1.2.12"
-		}))  + ".";
-		var url = state.launchUrl+"?launch=" +
-			encodeURIComponent(launchId)+"&iss=" +
-			encodeURIComponent(state.apiGatewayUrl);
+		var url = window.location.href
+			.replace("picker", state.authUrlSegment)
+			.replace(/(&?)patient=[^&]*(&|$)/, "$2") + 
+			"&patient=" + window.encodeURIComponent(patientId);
 
 		if (state.newWindow == "1") {
 			window.open(url);
@@ -252,18 +238,9 @@ var SmartPicker = (function() {
 	return {
 		init: function(config) {
 			state = _.extend(state, config, getQsParams());
-			//pop health - skip picker
-			if  (state.skipPicker == "1") {
-				launchApp("")
-			//single id - launch with it
-			} else if (state.limitIds && state.limitIds.indexOf(",") == -1) {
-				launchApp(state.limitIds)
-			//show picker
-			} else {
-				bindUiEvents();
-				$(".container").show()
-				loadFhir();
-			}
+			bindUiEvents();
+			$(".container").show()
+			loadFhir();
 		}
 	}
 

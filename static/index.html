@@ -7,8 +7,8 @@
 		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 		<title>SMART App Launcher</title>
 
-		<link href="./vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
-		<link href="./blue-nav.css" rel="stylesheet">
+		<link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="blue-nav.css" rel="stylesheet">
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
 		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -23,7 +23,7 @@
 		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
 			<div class="navbar-header">
 				<div class="pull-left" style="margin: 10px;">
-					<img src="./img/smart-bug.png" />
+					<img src="img/smart-bug.png" />
 				</div>
 				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
 					SMART App Launcher
@@ -31,13 +31,18 @@
 			</div>
 		</div></div>
 
-		<div class="container"><div class="row">
+		<div class="container" id="loading"><div class="row">
+				<div class="col-xs-12" style="text-align: center;margin-top:50px;">
+					<img src="img/ajax-loader.gif"/>
+				</div>
+		</div></div>
+		<div class="container" id="content" style="display:none;"><div class="row">
 
 				<div class="col-xs-12"><div class="panel panel-default">
 					<div class="panel-heading">Sample Data</div>
 					<div class="panel-body">
 						<div class="form-group">
-							<label for="sb">FHIR Version</label>
+							<label for="fhir-version">FHIR Version</label>
 							<select id="fhir-version" class="form-control">
 								<option value="r2">R2 (DSTU2)</option>
 								<option value="r3" selected>R3 (STU3)</option>
@@ -49,16 +54,16 @@
 							<input id="sb" class="form-control" value="wyg7nz">
 							<p class="help-block">Randomly generated name, reuse a previous name to share data between launch simulations</p>
 							<div class="checkbox sb r2">
-								<label><input type="checkbox" value="smart-8-2017" checked>Also include read access to core SMART sample patient dataset</label>
+								<label><input type="checkbox" id="r2-smart" value="smart-8-2017" checked>Also include read access to core SMART sample patient dataset</label>
 							</div>
 							<div class="checkbox sb r3">
-								<label><input type="checkbox" value="smart-7-2017" checked>Also include read access to core SMART sample patient dataset</label>
+								<label><input type="checkbox" id="r3-smart" value="smart-7-2017" checked>Also include read access to core SMART sample patient dataset</label>
 							</div>
 							<div class="checkbox sb r3">
-								<label><input type="checkbox" value="synthea-7-2017">Also include read access to SMART Synthea sample patient dataset</label>
+								<label><input type="checkbox" id="r3-synthea" value="synthea-7-2017">Also include read access to SMART Synthea sample patient dataset</label>
 							</div>
 							<div class="checkbox sb r3">
-								<label><input type="checkbox" value="pro-7-2017">Also include read access to SMART PRO sample patient dataset</label>
+								<label><input type="checkbox" id="r3-pro" value="pro-7-2017">Also include read access to SMART PRO sample patient dataset</label>
 							</div>
 						</div>
 
@@ -80,11 +85,11 @@
 								Provider EHR Launch Flow (user opens the app from within an EHR)
 							</label></div>
 							<div class="radio"><label>
-								<input type="radio" name="launch-type" id="launch-standalone-provider">
+								<input type="radio" name="launch-type" id="launch-prov">
 								Provider Standalone Launch Flow (practitioner opens the app directly and connects to FHIR server)
 							</label></div>
 							<div class="radio"><label>
-								<input type="radio" name="launch-type" id="launch-standalone-patient">
+								<input type="radio" name="launch-type" id="launch-pt">
 								Patient Standalone Launch Flow (patient opens the app directly and connects to FHIR server)
 							</label></div>
 
@@ -92,31 +97,33 @@
 
 						<div class="form-group launch launch-ehr">
 							<label for="launch-url">App Launch URL (required)</label>
-							<input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html">
+							<!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> -->
+							<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/bp-centiles/launch.html">
 							<p class="help-block">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
 						</div>
 
 						<div class="form-group">
 							<label for="client-id">App Client Id</label>
 							<p class="form-control-static" id="client-id">my_web_app</p>
+							<p class="help-block">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p>
 						</div>
 
-						<div class="form-group launch launch-ehr launch-standalone-provider">
+						<div class="form-group launch launch-ehr launch-prov">
 							<label for="user">Provider Id (simulates user who is launching the app)</label>
-							<input id="user-provider" class="form-control" value="smart-Practitioner-71032702">
+							<input id="user-prov" class="form-control" value="smart-Practitioner-71032702">
 							<p class="help-block">Only required when profile and openid scopes are specified</p>
-							<div class="checkbox launch launch-standalone-provider">
-								<label><input type="checkbox" id="provider-skip-login" checked>Skip provider login screen (will launch as if the Provider Id above had logged in)</label>
+							<div class="checkbox launch launch-prov">
+								<label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen (will launch as if the Provider Id above had logged in)</label>
 							</div>
-							<div class="checkbox launch launch-standalone-provider">
-								<label><input type="checkbox" id="provider-skip-auth" checked>Skip app authorization screen</label>
+							<div class="checkbox launch launch-prov">
+								<label><input type="checkbox" id="prov-skip-auth" checked>Skip app authorization screen</label>
 							</div>
 						</div>
 
-						<div class="form-group launch launch-ehr launch-standalone-provider">
+						<div class="form-group launch launch-ehr launch-prov">
 							<label for="patient">Patient Id (simulates the active patient in EHR when app is launched)</label>
-							<input id="patient" class="form-control" value="smart-967332">
-							<p class="help-block">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and patient/* scopes are specified, if the launch/patient scope is specified, or if multiple comma delimited Patient Ids are specified</p>
+							<input id="patient" class="form-control" value="">
+							<p class="help-block">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and a patient or launch/patient scope is specified, or if multiple comma delimited Patient Ids are specified</p>
 						</div>
 
 
@@ -125,15 +132,15 @@
 							<input id="encounter" class="form-control" value="">
 						</div>
 
-						<div class="form-group launch launch-standalone-patient">
+						<div class="form-group launch launch-pt">
 							<label for="user">Patient Id (simlulates user who is launching the app)</label>
-							<input id="user-patient" class="form-control" value="smart-967332">
+							<input id="user-pt" class="form-control" value="smart-967332">
 							<p class="help-block">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
-							<div class="checkbox launch launch-standalone-patient">
-								<label><input type="checkbox" id="patient-skip-login">Skip patient login screen (will launch as if the Patient Id above had logged in)</label>
+							<div class="checkbox launch launch-pt">
+								<label><input type="checkbox" id="pt-skip-login">Skip patient login screen (will launch as if the Patient Id above had logged in)</label>
 							</div>
-							<div class="checkbox launch launch-standalone-patient">
-								<label><input type="checkbox" id="patient-skip-auth"  checked>Skip app authorization screen</label>
+							<div class="checkbox launch launch-pt">
+								<label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
 							</div>
 						</div>
 
@@ -156,19 +163,21 @@
 				<div class="col-xs-12"><div class="panel panel-default">
 					<div class="panel-heading">Launch</div>
 					<div class="panel-body">
-						<label for="user" class="launch launch-standalone-patient launch-standalone-provider">
+						<label for="user" class="launch launch-pt launch-prov">
 							FHIR Server Url
 						</label>
 						<a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a>
-						<textarea id="standalone-launch-url" class="form-control launch launch-standalone-patient launch-standalone-provider" readonly></textarea>
+						<textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
 					</div>
 				</div></div>
 
 		</div></div> <!-- row > container -->
 
 
-		<script src="./vendor/jquery-1.12.3.min.js"></script>
-		<script src="./vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script src="vendor/jquery-1.12.3.min.js"></script>
+		<script src="vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script src="vendor/underscore-1.8.3.min.js"></script>
+
 		<script>
 
 			//this is temporary - should use a better algorithm to prevent conflicts
@@ -180,39 +189,73 @@
 				return firstPart + secondPart;
 			}
 
-			$("#launch-button").click( function() {
-				window.open( $("#picker-url").text() );
-			});
-
-			$("input,select").on("input change", function() {
-				buildUrls();
-			});
-
-			$("input[name=launch-type]").on("change", function() {
-				$(".launch").hide().filter("." + $(this).attr("id")).show();
-			});
-
-			$("#fhir-version").on("change", function() {
-				$(".sb").hide().filter(".sb." + $(this).val()).show();
-			})
-
-			$("#standalone-launch-url").on("focus", function() {
-				$(this).select();
-				$(this).mouseup(function() {
-					$(this).unbind("mouseup");
-					return false;
+			function qsToForm() {
+				var query = ((window.location.search).substring(1) || "").split("&");
+				$.each(query, function(i, param) {
+					var p = param.split('=');
+					var key = p[0].replace(/_/g, "-");
+					var value = decodeURIComponent(p[1]);
+					var target = $("#"+key);
+					if (target.is(":checkbox,:radio")) {
+						target.prop("checked", value === "1");
+					} else {
+						target.val(value);
+					}
 				});
-			})
+				if (!$("#sb").val()) $("#sb").val(generateUID());
+			}
+
+			function formToQs() {
+				var qs = {};
+				$("input,select").each( function() {
+					var target = $(this);
+					var key = target.attr("id").replace(/-/g, "_");
+					if (target.is(":checkbox")) {
+						qs[key] = target.prop("checked") ? "1" : "0";
+					} else if (target.is(":radio")) {
+						if(target.prop("checked")) qs[key] = "1";
+					} else {
+						qs[key] = (target.val() || "");						
+					}
+				});
+				var sortedQs = _.map( _.keys(qs).sort(), function(key) {
+					return key + "=" + encodeURIComponent(qs[key]);
+				}).join("&")
+				var newUrl = window.location.href.split("?")[0] + "?" + sortedQs;
+				if (window.history && newUrl != window.location.href) {
+					window.history.replaceState({}, document.title, newUrl);
+				}
+			}
+
+			function bindEventHandlers() {
+
+				$("input,select").on("input change", function() {
+					handleFormChange();
+				});
+
+				$("#launch-button").click( function() {
+					window.open( $("#picker-url").text() );
+				});
+
+				$("#standalone-launch-url").on("focus", function() {
+					$(this).select();
+					$(this).mouseup(function() {
+						$(this).unbind("mouseup");
+						return false;
+					});
+				})
+			}
+
 
 			function buildUrls() {
-				var baseUrl = window.location.href.replace(/index\.html/, "");
+				var baseUrl = window.location.href.split("?")[0].replace(/index\.html/, "");
 				
 				var sandboxes = $(".sb :checked").filter(":visible").map( 
 					function () { return $(this).val() }
 				).get();
 				if ($("#sb").val()) sandboxes.unshift( $("#sb").val() );
 				
-				baseUrl += $("#fhir-version").val();
+				baseUrl += "v/" + $("#fhir-version").val();
 
 				if (sandboxes.length) baseUrl += "/sb/" + sandboxes.join(",");
 			
@@ -221,30 +264,32 @@
 						["#patient", "patient"],
 						["#encounter", "encounter"],
 						["#auth-error", "auth_error"],
-						["#user-provider", "user"]
+						["#user-prov", "user"]
 					],
-					"launch-standalone-provider": [
+					"launch-prov": [
+						["#launch-prov", "launch_prov"],
 						["#patient", "patient"],
 						["#encounter", "encounter"],
 						["#auth-error", "auth_error"],
-						["#provider-skip-login", "skip_login"], 
-						["#provider-skip-auth", "skip_auth"], 
-						["#user-provider", "user"]
+						["#prov-skip-login", "skip_login"], 
+						["#prov-skip-auth", "skip_auth"], 
+						["#user-prov", "user"]
 					],
-					"launch-standalone-patient": [
+					"launch-pt": [
+						["#launch-pt", "launch_pt"],
 						["#auth-error", "auth_error"],
-						["#patient-skip-login", "skip_login"],
-						["#patient-skip-auth", "skip_auth"],
-						["#user-patient", "patient"]
+						["#pt-skip-login", "skip_login"],
+						["#pt-skip-auth", "skip_auth"],
+						["#user-pt", "patient"]
 					]
 				}
 
 				var urlParams = {};
 				$.each( paramMap[$("input[name=launch-type]:checked").attr("id")], function(i, param) {
-					var val = $(param[0]).is(":checkbox") ? $(param[0]).is(":checked") : $(param[0]).val();
+					var val = $(param[0]).is(":checkbox,:radio") ? $(param[0]).is(":checked") : $(param[0]).val();
 					if (val) urlParams[param[1]] = (val === true ? "1" : val);
 				})
-				
+
 				var openUrl = baseUrl + "/fhir";
 				var standaloneUrl = baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/fhir";
 				var appLaunchUrl = $("#launch-url").val();
@@ -257,10 +302,24 @@
 				$("#standalone-launch-url").text(standaloneUrl);
 
 			}
-			// $("#sb").val(generateUID());
 
-			$("#fhir-version").trigger("change");
-			$("#launch-ehr").trigger("change");
+
+			function handleFormChange() {
+				$(".launch").hide().filter("." + $("input[name=launch-type]:checked").attr("id")).show();
+				$(".sb").hide().filter(".sb." + $("#fhir-version").val()).show();
+				buildUrls();
+				formToQs();
+			}
+
+			function init() {
+				qsToForm();
+				bindEventHandlers();
+				handleFormChange();
+				$("#loading").hide();
+				$("#content").show();
+			}
+
+			init();
 
 		</script>
 
