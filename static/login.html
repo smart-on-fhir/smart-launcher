@@ -5,7 +5,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<title>SMART EHR Login</title>
+		<title>SMART EHR</title>
 
 		<link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
 		<link href="blue-nav.css" rel="stylesheet">
@@ -33,7 +33,7 @@
 					<img src="img/smart-bug.png" />
 				</div>
 				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
-					SMART EHR Login
+					SMART EHR
 				</a>
 			</div>
 		</div></div>
@@ -58,13 +58,12 @@
 
 					<div class="form-group" id="user-name">
 						<label>User Id</label>
-						<input class="form-control user" value="smart-967332">						
+						<input class="form-control user">						
 					</div>
 
 					<div class="form-group">
 						<label for="password">Password</label>
-						<input type="password" id="password" class="form-control">
-						<p class="help-block">Any password will work for this demo</p>					
+						<input type="password" id="password" value="demo" class="form-control">
 					</div>
 
 					<div class="form-group">
@@ -103,22 +102,27 @@
 					.replace(/(&?)(patient|provider)=[^&]*(&|$)/, "$3") + 
 					(state.login_type == "provider" ? "&provider=" : "&patient=") + 
 					window.encodeURIComponent(userId);
-				console.log(url)
-			})
+				window.location.href = url;
+			});
+
+			function entryToLoginId(entry) {
+				var name = entry.resource.name;
+				var loginId = [];
+				if (name && name[0] && name[0].given) 
+					loginId = name[0].given;
+				if (name && name[0] && name[0].family)
+					loginId.push($.isArray(name[0].family) ? name[0].family[0] : name[0].family);
+				if (loginId.length == 0) 
+					loginId.push(entry.resource.id); 
+				return loginId.join("_").toLowerCase();
+			}
 
 			function renderPatients(entries) {
 				$.each( entries, function(i, entry) {
-					var name = entry.resource.name;
-					var loginId = [];
-					if (name && name[0] && name[0].given) 
-						loginId = name[0].given;
-					if (name && name[0] && name[0].family)
-						loginId.push($.isArray(name[0].family) ? name[0].family[0] : name[0].family);
-					if (loginId.length == 0) 
-						loginId.push(entry.resource.id); 
+					var loginId = entryToLoginId(entry);
 					$("select").append([
 						"<option value='", entry.resource.id, "'>",
-						loginId.join("_").toLowerCase(),
+						loginId,
 						"</option>"
 					].join(""));
 				});
@@ -143,7 +147,7 @@
 
 				$.get(fhirUrl)
 					.done( function(data) {
-						if (data.entry && data.entry.length) {
+						if (data.entry) {
 							renderPatients(data.entry)
 						} else {
 							renderInput();
@@ -151,6 +155,8 @@
 					}).fail(renderInput);
 			}
 
+			if (state.login_type != "provider") 
+				$("title, .navbar-brand").text("SMART Patient Portal");
 
 		</script>
 

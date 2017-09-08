@@ -50,11 +50,14 @@
 						</div>
 
 						<div class="form-group">
-							<label for="sb">Read and Write to Dataset Named</label>
+							<label for="sb">Read and Write to FHIR Dataset Named</label>
 							<input id="sb" class="form-control" value="wyg7nz">
 							<p class="help-block">Randomly generated name, reuse a previous name to share data between launch simulations</p>
 							<div class="checkbox sb r2">
 								<label><input type="checkbox" id="r2-smart" value="smart-8-2017" checked>Also include read access to core SMART sample patient dataset</label>
+							</div>
+							<div class="checkbox sb r2">
+								<label><input type="checkbox" id="r2-synthea" value="synthea-8-2017">Also include read access to SMART Synthea sample patient dataset</label>
 							</div>
 							<div class="checkbox sb r3">
 								<label><input type="checkbox" id="r3-smart" value="smart-7-2017" checked>Also include read access to core SMART sample patient dataset</label>
@@ -106,6 +109,13 @@
 							<label for="client-id">App Client Id</label>
 							<p class="form-control-static" id="client-id">my_web_app</p>
 							<p class="help-block">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p>
+						</div>
+
+						<div class="form-group launch launch-ehr">
+							<label for="client-id">App User Interface</label>
+							<div class="checkbox launch launch-ehr">
+								<label><input type="checkbox" id="sim-ehr" checked>Simulate launch within the EHR user interface</label>
+							</div>
 						</div>
 
 						<div class="form-group launch launch-ehr launch-prov">
@@ -264,7 +274,8 @@
 						["#patient", "patient"],
 						["#encounter", "encounter"],
 						["#auth-error", "auth_error"],
-						["#user-prov", "user"]
+						["#user-prov", "user"],
+						["#sim-ehr", "sim_ehr"]
 					],
 					"launch-prov": [
 						["#launch-prov", "launch_prov"],

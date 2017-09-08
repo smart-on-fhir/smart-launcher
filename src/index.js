@@ -63,6 +63,17 @@ app.get(buildRoutePermutations("/picker"), (req, res) => {
     res.sendfile("picker.html", {root: './static'});
 });
 
+//login
+app.get(buildRoutePermutations("/login"), (req, res) => {
+    res.sendfile("login.html", {root: './static'});
+});
+
+//authorize
+app.get(buildRoutePermutations("/authorize"), (req, res) => {
+    res.sendfile("authorize.html", {root: './static'});
+});
+
+
 //auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
