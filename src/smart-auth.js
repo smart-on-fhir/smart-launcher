@@ -58,14 +58,14 @@ router.get("/authorize", function (req, res) {
 	} else if (sim.launch_prov && (!sim.skip_login || !sim.provider || sim.provider.indexOf("," > -1)) ) {
 		console.log("PROVIDER LOGIN SCREEN", sim.patient)
 
+	//show authorize screen if standalone launch and skip auth is not specified
 	} else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
 		console.log("App AUTH SCREEN")
-
 	}
 
 	var code = {
 		context: {
-			need_patient_banner: true,
+			need_patient_banner: sim.sim_ehr ? false : true,
 			smart_style_url: config.baseUrl + "/smart-style.json",
 		},
 		client_id: req.query.client_id,
@@ -81,6 +81,9 @@ router.get("/authorize", function (req, res) {
 	});
 
 	var signedCode = jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
+
+	//TODO: wrap redirect in a qs with patient_id and provider_id if sim_ehr is specified
+	//this should open in ehr.html and which should then send an iframe to the real redirect url
 
 	res.redirect( req.query.redirect_uri + ("?code=" + signedCode + "&state=" + encodeURIComponent(req.query.state)) );
 });
