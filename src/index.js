@@ -86,7 +86,7 @@ app.use(buildRoutePermutations(config.fhirBaseUrl),
 
 
 //static request
-app.use(buildRoutePermutations(""), express.static("static"));
+app.use(express.static("static"));
 
 module.exports = app;
 

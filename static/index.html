@@ -7,8 +7,8 @@
 		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 		<title>SMART App Launcher</title>
 
-		<link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
-		<link href="blue-nav.css" rel="stylesheet">
+		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/blue-nav.css" rel="stylesheet">
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
 		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -16,14 +16,18 @@
 			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
 			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 		<![endif]-->
-
+		<style>
+		.normal-weight {
+			font-weight: normal;
+		}
+		</style>
 	</head>
 	<body>
 
 		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
 			<div class="navbar-header">
 				<div class="pull-left" style="margin: 10px;">
-					<img src="img/smart-bug.png" />
+					<img src="/img/smart-bug.png" />
 				</div>
 				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
 					SMART App Launcher
@@ -31,15 +35,17 @@
 			</div>
 		</div></div>
 
-		<div class="container" id="loading"><div class="row">
+		<div class="container" id="loading">
+			<div class="row">
 				<div class="col-xs-12" style="text-align: center;margin-top:50px;">
-					<img src="img/ajax-loader.gif"/>
+					<img src="/img/ajax-loader.gif"/>
 				</div>
-		</div></div>
-		<div class="container" id="content" style="display:none;"><div class="row">
-
+			</div>
+		</div>
+		<div class="container" id="content" style="display:none;">
+			<div class="row">
 				<div class="col-xs-12"><div class="panel panel-default">
-					<div class="panel-heading">Sample Data</div>
+					<div class="panel-heading"><b class="text-primary">Sample Data</b></div>
 					<div class="panel-body">
 						<div class="form-group">
 							<label for="fhir-version">FHIR Version</label>
@@ -53,6 +59,7 @@
 							<label for="sb">Read and Write to FHIR Dataset Named</label>
 							<input id="sb" class="form-control" value="wyg7nz">
 							<p class="help-block">Randomly generated name, reuse a previous name to share data between launch simulations</p>
+							<br />
 							<div class="checkbox sb r2">
 								<label><input type="checkbox" id="r2-smart" value="smart-8-2017" checked>Also include read access to core SMART sample patient dataset</label>
 							</div>
@@ -72,82 +79,84 @@
 
 						<div class="form-group">
 							<label for="open-url">Open FHIR Endpoint URL</label>
-							<p class="form-control-static" id="open-url"></p>
+							<div>
+								<a class="form-control-static" id="open-url"></a>
+							</div>
 						</div>
 					</div>
 				</div></div>
 	
 				<div class="col-xs-12"><div class="panel panel-default">
-					<div class="panel-heading">App Launch Simulation</div>
-					<div class="panel-body">
+					<div class="panel-heading"><b class="text-primary">App Launch Simulation</b></div>
+					<div class="list-group">
 					
-						<div class="form-group">
+						<div class="list-group-item form-group">
 							<label for="launch-type">Launch Type</label>
 							<div class="radio"><label>
 								<input type="radio" name="launch-type" id="launch-ehr" checked>
-								Provider EHR Launch Flow (user opens the app from within an EHR)
+								Provider EHR Launch Flow <span class="text-muted">(user opens the app from within an EHR)</span>
 							</label></div>
 							<div class="radio"><label>
 								<input type="radio" name="launch-type" id="launch-prov">
-								Provider Standalone Launch Flow (practitioner opens the app directly and connects to FHIR server)
+								Provider Standalone Launch Flow <span class="text-muted">(practitioner opens the app directly and connects to FHIR server)</span>
 							</label></div>
 							<div class="radio"><label>
 								<input type="radio" name="launch-type" id="launch-pt">
-								Patient Standalone Launch Flow (patient opens the app directly and connects to FHIR server)
+								Patient Standalone Launch Flow <span class="text-muted">(patient opens the app directly and connects to FHIR server)</span>
 							</label></div>
 
 						</div>
 
-						<div class="form-group launch launch-ehr">
-							<label for="launch-url">App Launch URL (required)</label>
+						<div class="list-group-item form-group launch launch-ehr">
+							<label for="launch-url">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
 							<!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> -->
 							<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/bp-centiles/launch.html">
 							<p class="help-block">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
 						</div>
 
-						<div class="form-group">
+						<div class="list-group-item form-group">
 							<label for="client-id">App Client Id</label>
-							<p class="form-control-static" id="client-id">my_web_app</p>
+							<p class="form-control-static"><code id="client-id">my_web_app</code></p>
 							<p class="help-block">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p>
 						</div>
 
-						<div class="form-group launch launch-ehr">
+						<div class="list-group-item form-group launch launch-ehr">
 							<label for="client-id">App User Interface</label>
 							<div class="checkbox launch launch-ehr">
 								<label><input type="checkbox" id="sim-ehr" checked>Simulate launch within the EHR user interface</label>
 							</div>
 						</div>
 
-						<div class="form-group launch launch-ehr launch-prov">
-							<label for="user">Provider Id (simulates user who is launching the app)</label>
+						<div class="list-group-item form-group launch launch-ehr launch-prov">
+							<label for="user">Provider Id <span class="text-muted normal-weight">(simulates user who is launching the app)</span></label>
 							<input id="user-prov" class="form-control" value="smart-Practitioner-71032702">
 							<p class="help-block">Only required when profile and openid scopes are specified</p>
 							<div class="checkbox launch launch-prov">
-								<label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen (will launch as if the Provider Id above had logged in)</label>
+								<label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight">(will launch as if the Provider Id above had logged in)</span></label>
 							</div>
 							<div class="checkbox launch launch-prov">
 								<label><input type="checkbox" id="prov-skip-auth" checked>Skip app authorization screen</label>
 							</div>
 						</div>
 
-						<div class="form-group launch launch-ehr launch-prov">
-							<label for="patient">Patient Id (simulates the active patient in EHR when app is launched)</label>
+						<div class="list-group-item form-group launch launch-ehr launch-prov">
+							<label for="patient">Patient Id <span class="text-muted normal-weight">(simulates the active patient in EHR when app is launched)</span></label>
 							<input id="patient" class="form-control" value="">
 							<p class="help-block">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and a patient or launch/patient scope is specified, or if multiple comma delimited Patient Ids are specified</p>
 						</div>
 
 
-						<div class="form-group launch launch-ehr">
-							<label for="encounter">Encounter Id (simulates the active encounter in EHR when app is launched)</label>
+						<div class="list-group-item form-group launch launch-ehr">
+							<label for="encounter">Encounter Id <span class="text-muted normal-weight">(simulates the active encounter in EHR when app is launched)</span></label>
 							<input id="encounter" class="form-control" value="">
 						</div>
 
-						<div class="form-group launch launch-pt">
-							<label for="user">Patient Id (simlulates user who is launching the app)</label>
+						<div class="list-group-item form-group launch launch-pt">
+							<label for="user">Patient Id <span class="text-muted normal-weight">(simlulates user who is launching the app)</span></label>
 							<input id="user-pt" class="form-control" value="smart-967332">
 							<p class="help-block">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
 							<div class="checkbox launch launch-pt">
-								<label><input type="checkbox" id="pt-skip-login">Skip patient login screen (will launch as if the Patient Id above had logged in)</label>
+								<label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight">(will launch as if the Patient Id above had logged in)</span></label>
 							</div>
 							<div class="checkbox launch launch-pt">
 								<label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
@@ -155,8 +164,8 @@
 						</div>
 
 
-						<div class="form-group">
-							<label for="sb">Simulate Authentication Error for Testing (Advanced)</label>
+						<div class="list-group-item list-group-item-warning form-group">
+							<label for="sb">Simulate Authentication Error for Testing <span class="text-muted normal-weight">(Advanced)</span></label>
 							<select id="auth-error" class="form-control">
 								<option value="">None</option>
 								<option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
@@ -184,9 +193,9 @@
 		</div></div> <!-- row > container -->
 
 
-		<script src="vendor/jquery-1.12.3.min.js"></script>
-		<script src="vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
-		<script src="vendor/underscore-1.8.3.min.js"></script>
+		<script src="/vendor/jquery-1.12.3.min.js"></script>
+		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script src="/vendor/underscore-1.8.3.min.js"></script>
 
 		<script>
 
@@ -264,7 +273,7 @@
 					function () { return $(this).val() }
 				).get();
 				if ($("#sb").val()) sandboxes.unshift( $("#sb").val() );
-				
+
 				baseUrl += "v/" + $("#fhir-version").val();
 
 				if (sandboxes.length) baseUrl += "/sb/" + sandboxes.join(",");
