@@ -1,14 +1,5 @@
 // @ts-check
-var Lib = (function($, undefined) {
-
-    /**
-     * Returns the queryString of the current page's URL. That should be the
-     * same as `location.search` but without the typical "?" in-front.
-     * @returns {String}
-     */
-    function getUrlQueryString() {
-        return window.location.search.replace(/^\?/, "");
-    }
+(function($, undefined) {
 
     /**
      * Parses the current query string and returns a key/value map of all the
@@ -17,7 +8,9 @@ var Lib = (function($, undefined) {
      * @returns {Object}
      */
     function getUrlQuery(options) {
-        var q   = getUrlQueryString()/*.replace("&amp;", "&")*/.split("&");
+        options = options || {};
+        var q = String(options.queryString || window.location.search)
+            .replace(/^\?/, "")/*.replace("&amp;", "&")*/.split("&");
         var out = {};
         $.each(q, function(i, param) {
             if (!param) {
@@ -25,10 +18,18 @@ var Lib = (function($, undefined) {
             }
             var tokens = param.split('=');
             var key    = tokens[0];
-            if (options && options.camelCaseKeys) {
+            if (options.camelCaseKeys) {
                 key = toCamelCase(key);
             }
-            out[key] = decodeURIComponent(tokens[1]);
+            if (key in out) {
+                if (!Array.isArray(out[key])) {
+                    out[key] = [out[key]];
+                }
+                out[key].push(decodeURIComponent(tokens[1]));
+            }
+            else {
+                out[key] = decodeURIComponent(tokens[1]);
+            }
         });
         return out;
     }
@@ -56,12 +57,27 @@ var Lib = (function($, undefined) {
                 ("000" + secondPart.toString(36)).slice(-3);
     }
 
-    // Export these at window.Lib:
-    return {
-        getUrlQueryString: getUrlQueryString,
+    // Export
+    // =========================================================================
+    
+    const Lib = {
         getUrlQuery      : getUrlQuery,
         toCamelCase      : toCamelCase,
         generateUID      : generateUID
     };
+
+    // Export at window.Lib:
+    if (typeof window == "object") {
+        Object.defineProperty(window, "Lib", {
+            enumerable: true,
+            value     : Lib
+        });
+    }
+
+    if (typeof module == "object" && module.exports) {
+        module.exports = Lib;
+    }
+
+    return Lib;
 
 })(jQuery);
