@@ -1,13 +1,13 @@
 module.exports = {
   fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open",
   fhirServerR3: process.env.FHIR_SERVER_R3 || "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open",
-  baseUrl: process.env.BASE_URL || "http://localhost:3055",
+  baseUrl: process.env.BASE_URL || "http://localhost:8443",
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
   authBaseUrl: process.env.AUTH_BASE_URL || "/auth",
   fhirBaseUrl: process.env.FHIR_BASE_URL || "/fhir",
   protectedSandboxWords: (process.env.PROTECTED_SANDBOX_WORDS || "smart,synthea,pro").split(","),
   jwtSecret: process.env.SECRET || "thisisasecret",
-  port: process.env.PORT || "3055",
+  port: process.env.PORT || "8443",
   oidcKeypair: {
     "kty": "RSA",
     "d": "lkC4dQAf_Qt1UQnSf_k-JVBn7ixvG7RhdPbV8SBx_VbX-v3zR9vh5JD2NHTurtyhIeVZhEMkLOH2rMVsOZdcMT3gGldHbbrUncXOnoFZzFTL6PH8A6nGr64Vf-OdBoFwUhwFw7s0ywKgtaoZYyP4ii8JbK03ex9amD3bhms9HwzNfeznz9dorHy8_EN_enJLzgPL0G4qXE99Q3JIA6509pycUGOTXfg6WQMbKk-9MG6pUXHiKNuTCM6vdhgFyWesz8UkjqRawJlvDIxQBT7oCntOebAgE9EG2UhcNOZmA1hVGeu3oOV_S_jw5x1JIi4OQTozkFLtK02NqCfGMWTCaQ",

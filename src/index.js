@@ -7,6 +7,12 @@ const smartAuth = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
 const config = require("./config");
 const fhirError = require("./fhir-error");
+const fs = require('fs');
+const https = require('https');
+const privateKey  = fs.readFileSync('./privatekey.pem', 'utf8');
+const certificate = fs.readFileSync('./cert.pem', 'utf8');
+const credentials = {key: privateKey, cert: certificate};
+
 
 const handleParseError = function(err, req, res, next) {
 	if (err instanceof SyntaxError && err.status === 400) {
@@ -73,7 +79,6 @@ app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendfile("authorize.html", {root: './static'});
 });
 
-
 //auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
@@ -84,13 +89,12 @@ app.use(buildRoutePermutations(config.fhirBaseUrl),
 	reverseProxy
 );
 
-
 //static request
 app.use(express.static("static"));
 
 module.exports = app;
 
 if (!module.parent) {
-	app.listen(config.port);
-	console.log("Proxy server running on localhost on port " + config.port);
+	https.createServer(credentials, app).listen(config.port);
+	console.log(`Proxy server running on https://localhost:${config.port}`);
 }
