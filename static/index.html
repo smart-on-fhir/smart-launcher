@@ -8,7 +8,7 @@
 		<title>SMART App Launcher</title>
 
 		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
-		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
+		<link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
 		<link href="/blue-nav.css" rel="stylesheet">
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -65,51 +65,14 @@
 					
 						<div class="form-group col-sm-6">
 							<label for="fhir-version">Version</label>
-							<select id="fhir-version" class="form-control">
-								<option value="r2">R2 (DSTU2)</option>
-								<option value="r3" selected>R3 (STU3)</option>
-							</select>
+							<select id="fhir-version" class="form-control"></select>
 							<p class="help-block small">FHIR Version</p>
 						</div>
 					</div>
 					<div class="row">
 						<div class="form-group col-sm-6">
 							<p><label>Also include read access to these pre-defined datasets</label></p>
-							<div class="checkbox sb r2">
-								<label>
-									<input type="checkbox" id="r2-smart" value="smart-8-2017" checked>
-									<b>SMART</b>
-									<small class="text-muted">(Core SMART Sample Patients)</small>
-								</label>
-							</div>
-							<div class="checkbox sb r2">
-								<label>
-									<input type="checkbox" id="r2-synthea" value="synthea-8-2017">
-									<b>Synthea</b>
-									<small class="text-muted">(SMART Synthea Sample Patients)</small>
-								</label>
-							</div>
-							<div class="checkbox sb r3">
-								<label>
-									<input type="checkbox" id="r3-smart" value="smart-7-2017" checked>
-									<b>SMART</b>
-									<small class="text-muted">(Core SMART Sample Patients)</small>
-								</label>
-							</div>
-							<div class="checkbox sb r3">
-								<label>
-									<input type="checkbox" id="r3-synthea" value="synthea-7-2017">
-									<b>Synthea</b>
-									<small class="text-muted">(SMART Synthea Sample Patients)</small>
-								</label>
-							</div>
-							<div class="checkbox sb r3">
-								<label>
-									<input type="checkbox" id="r3-pro" value="pro-7-2017">
-									<b>PRO</b>
-									<small class="text-muted">(SMART PRO Sample Patients)</small>
-								</label>
-							</div>
+							<div class="fhir-tags"></div>
 						</div>
 
 						<div class="form-group col-sm-6">
@@ -261,9 +224,35 @@
 
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
 		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
-		<script src="/vendor/underscore-1.8.3.min.js"></script>
+		<script src="/config.js"></script>
 		<script src="/lib.js"></script>
 		<script>
+			function buildForm() {
+
+				// Build the FHIR version selector
+				$("#fhir-version").html(
+					$.map(CONFIG.fhirVersions, function(v) {
+						return '<option value="' + v.name + '">' + v.displayName + '</option>';
+					}).join()
+				);
+
+				// Build the FHIR tag checkboxes
+				$(".fhir-tags").html(
+					$.map(CONFIG.fhirVersions, function(v) {
+						return $.map(v.tags, function(t) {
+							return '<div class="checkbox sb ' + v.name + '">' +
+								'<label>' +
+									'<input type="checkbox" id="' + t.id + '" value="' + t.value +
+									'"' + (t.selected ? ' checked' : '') + '>' +
+										'<b>' + t.displayName + '</b> <small class="text-muted">(' +
+											t.description + ')</small>' +
+									'</label>' +
+								'</div>';
+						}).join("");
+					}).join("")
+				);
+			}
+
 			function qsToForm() {
 				var query = ((window.location.search).substring(1) || "").split("&");
 				$.each(query, function(i, param) {
@@ -293,7 +282,7 @@
 						qs[key] = (target.val() || "");						
 					}
 				});
-				var sortedQs = _.map( _.keys(qs).sort(), function(key) {
+				var sortedQs = Object.keys(qs).sort().map(function(key) {
 					return key + "=" + encodeURIComponent(qs[key]);
 				}).join("&")
 				var newUrl = window.location.href.split("?")[0] + "?" + sortedQs;
@@ -373,7 +362,6 @@
 				$("#open-url-preview").attr("href", openUrl + "/metadata");
 				$("#ehr-launch-url").attr("href", ehrLaunchUrl);
 				$("#standalone-launch-url").text(standaloneUrl);
-
 			}
 
 
@@ -385,6 +373,7 @@
 			}
 
 			function init() {
+				buildForm();
 				qsToForm();
 				bindEventHandlers();
 				$("#loading").hide();
