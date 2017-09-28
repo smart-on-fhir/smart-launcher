@@ -79,19 +79,14 @@
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
 		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
 		<script src="/vendor/moment.min.js"></script>
-		<script src="/vendor/underscore-1.8.3.min.js"></script>
+		<!-- <script src="/vendor/underscore-1.8.3.min.js"></script> -->
+		<script src="/lib.js"></script>
 		<script>
 
-			var state = {
+			var state = $.extend({
 				apiUrlSegment: "fhir",
 				authUrlSegment: "auth/authorize",
-			};
-			var query = ((window.location.search).substring(1) || "").split("&");
-			$.each(query, function(i, param) {
-				if (!param) return;
-				var p = param.split('=');
-				state[p[0]] = decodeURIComponent(p[1]);
-			});
+			}, Lib.getUrlQuery());
 
 			$("#login").submit( function(e) {
 				//TODO validate id here!
