@@ -95,10 +95,14 @@ module.exports = function (req, res) {
 		//pretty print if called from a browser
 		//TODO: use a template and syntax highlight json response
 		if (req.headers.accept.toLowerCase().indexOf("html") > -1 && req.originalUrl.toLowerCase().indexOf("_pretty=false") == -1) {
-			body = `<html><body><pre>${typeof body == "string" ? body : JSON.stringify(body, null, 2)}</pre></body></html>`;
+			body = (typeof body == "string" ? body : JSON.stringify(body, null, 2));
+			body = body .replace(/</g, "&lt;")
+						.replace(/>/g, "&gt;")
+						.replace(/"/g, "&quot;");
+			body = `<html><body><pre>${body}</pre></body></html>`;
 			res.type("html");
 		}
-
+		
 		res.send(body);
 	});
 	
