@@ -130,6 +130,23 @@
         return dfd.promise();
     }
 
+    function humanName(human, separator) {
+		var name = human.name && human.name[0];
+        if (!name) name = { family: [ "No Name Listed" ] };
+        
+        var out = $.map(["prefix", "given", "family", "suffix"], function(type) {
+            if (!name[type]) {
+                name[type] = [ "" ];
+            }
+            if (!Array.isArray(name[type])) {
+                name[type] = [ name[type] ];
+            }
+            return name[type].join(" ");
+        });
+
+        return $.grep(out, Boolean).join(separator || " ");
+	}
+
     // Export
     // =========================================================================
     
@@ -137,7 +154,8 @@
         getUrlQuery      : getUrlQuery,
         toCamelCase      : toCamelCase,
         generateUID      : generateUID,
-        selectPatients   : selectPatients
+        selectPatients   : selectPatients,
+        humanName        : humanName
     };
 
     // Export at window.Lib:
