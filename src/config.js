@@ -1,7 +1,7 @@
 module.exports = {
   fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open",
   fhirServerR3: process.env.FHIR_SERVER_R3 || "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open",
-  baseUrl: process.env.BASE_URL || "http://localhost:8443",
+  baseUrl: process.env.BASE_URL || "https://localhost:8443",
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
   authBaseUrl: process.env.AUTH_BASE_URL || "/auth",
   fhirBaseUrl: process.env.FHIR_BASE_URL || "/fhir",

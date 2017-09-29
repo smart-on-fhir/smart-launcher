@@ -13,9 +13,9 @@ Non-Goals:
 Features:
 - Works with any JSON FHIR server
 - Virtual private sandboxes via URL parameter
-	- http://localhost:3055/v/r3/fhir/Patient (not sandboxed) 
-	- http://localhost:3055/v/r3/sb/empty-sandbox/fhir/Patient (empty sandbox) 
-	- http://localhost:3055/v/r3/sb/empty-sandbox,smart-7-2017/fhir/Patient (intersect of sandboxes, with the first as read/write and the second as read only)
+	- https://localhost:3055/v/r3/fhir/Patient (not sandboxed) 
+	- https://localhost:3055/v/r3/sb/empty-sandbox/fhir/Patient (empty sandbox) 
+	- https://localhost:3055/v/r3/sb/empty-sandbox,smart-7-2017/fhir/Patient (intersect of sandboxes, with the first as read/write and the second as read only)
 - Support for multiple FHIR versions
 - Mock auth and OIDC
 - Configurable auth errors
