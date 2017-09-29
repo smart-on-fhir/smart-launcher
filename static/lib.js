@@ -131,7 +131,11 @@
     }
 
     function humanName(human, separator) {
-		var name = human.name && human.name[0];
+        var name = human.name || [];
+        if (!Array.isArray(name)) {
+            name = [ name ];
+        }
+        name = name[0];
         if (!name) name = { family: [ "No Name Listed" ] };
         
         var out = $.map(["prefix", "given", "family", "suffix"], function(type) {

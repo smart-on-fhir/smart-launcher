@@ -28,6 +28,9 @@
 		.panel-body.navbar-default, .panel-heading {
 			text-shadow: 0 1px 0 #FFF;
 		}
+		.dropdown-menu {
+			min-width: 100%;
+		}
 		</style>
 	</head>
 	<body>
@@ -143,11 +146,14 @@
 					<div class="form-group launch launch-ehr launch-prov">
 						<hr/>
 						<label for="user">Provider <span class="text-muted normal-weight">(simulates user who is launching the app)</span></label>
-						<div class="input-group">
-							<input id="user-prov" class="form-control" value="smart-Practitioner-71032702" placeholder="Provider ID">
-							<span class="input-group-btn">
-								<button class="btn btn-default" type="button">Select</button>
-							</span>
+						<div class="dropdown" id="providers-picker">
+							<div class="input-group" data-toggle="dropdown">
+								<input id="user-prov" class="form-control" value="smart-Practitioner-71032702" placeholder="Provider ID">
+								<span class="input-group-btn">
+									<button class="btn btn-default" type="button">Select <span class="caret"></span></button>
+								</span>
+							</div>
+							<ul class="dropdown-menu"></ul>
 						</div>
 						<p class="help-block small">Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
 						<div class="checkbox launch launch-prov">
@@ -328,6 +334,25 @@
 							input.val(sel);
 							buildUrls();
 						}
+					});
+				});
+
+				$("#providers-picker").on("show.bs.dropdown", function() {
+					var wrapper = $(this);
+					var menu = wrapper.find(".dropdown-menu").html('<li><a>Loading...</a></li>');
+					$.ajax({
+						url: getBaseUrl() + "/fhir/Practitioner"
+					}).then(function(data) {
+						menu.html(
+							$.map(data.entry, function(p) {
+								return '<li>' +
+									'<a href="javascript: void 0" onClick="$(\'#user-prov\').val(\'' + p.resource.id + '\')">' +
+									'<span class="text-muted pull-right">' +
+										'<b>ID: </b>' + p.resource.id +
+									'</span><b>' +
+									Lib.humanName(p.resource) + '</b></a></li>';
+							}).join("")
+						);
 					});
 				});
 			}
