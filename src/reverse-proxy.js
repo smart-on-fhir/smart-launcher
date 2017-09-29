@@ -10,34 +10,41 @@ module.exports = function (req, res) {
 	let token = null;
 	let sandboxes = req.params.sandbox && req.params.sandbox.split(".");
 	let fhirServer = config["fhirServer" + req.params.fhir_release.toUpperCase()];
-	if (!fhirServer) res.status(400).send({ error: `FHIR server ${req.params.fhir_release} not found` })
+	if (!fhirServer) {
+		return res.status(400).send({
+			error: `FHIR server ${req.params.fhir_release} not found`
+		});
+	}
 
-	//only allow gets to blacklisted sandboxes (like the SMART default patients)
-	if (req.method != "GET" && (
+	// only allow gets to blacklisted sandboxes (like the SMART default patients)
+	if (req.method != "GET" && !req.url.endsWith("/_search") && (
+	// if (req.method != "GET" && (
 		!sandboxes ||
 		config.protectedSandboxWords.find( w => sandboxes[0].toLowerCase().indexOf(w) != -1 )
 	)) {
 		return res.status(401).send( fhirError("You do not have permission to modify this sandbox") );
 	}
 
-	//require a valid auth token if there is an auth token
+	// require a valid auth token if there is an auth token
 	if (req.headers.authorization) {
 		try {
 			token = jwt.verify(req.headers.authorization.split(" ")[1], config.jwtSecret);
 		} catch (e) {
-			return res.send("Invalid token", 401);
+			return res.status(401).send("Invalid token");
 		}
-		if (token.sim_error) return res.send(token.sim_error, 401);
-
+		if (token.sim_error) {
+			return res.status(401).send(token.sim_error);
+		}
 	}
 
-	//set everything to JSON since we don't currently don't support XML and block XML requests at a middleware layer
+	// set everything to JSON since we don't currently support XML and block XML
+	// requests at a middleware layer
 	let fhirRequest = {
 		headers: {"content-type":"application/json",  "accept":"application/json+fhir"},
 		method: req.method
 	}
 	
-	//inject sandbox tag into POST and PUT requests and make urls conditional
+	// inject sandbox tag into POST and PUT requests and make urls conditional
 	if (Object.keys(req.body).length) {
 		fhirRequest.body = sandboxify.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
 		fhirRequest.body = Buffer.from(JSON.stringify(fhirRequest.body), 'utf8');
@@ -61,19 +68,27 @@ module.exports = function (req, res) {
 	}
 
 	//proxy the request to the real FHIR server
-	console.log("PROXY: " + fhirRequest.url);
+	if (process.env.NODE_ENV == "development") {
+		console.log("PROXY: " + fhirRequest.url);
+	}
+
 	request(fhirRequest, function(error, response, body) {
+		if (error) {
+			// res.status(500)
+			// res.type("application/json")
+			return res.send(JSON.stringify(error, null, 4));
+		}
 		res.status(response.statusCode);
 		res.type(response.headers['content-type']);
 	 
-		//adjust urls in the fhir response so future requests will hit the proxy
+		// adjust urls in the fhir response so future requests will hit the proxy
 		if (body) {
 			let requestUrl = sandboxify.buildUrlPath(config.baseUrl, req.originalUrl);
 			let requestBaseUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl)
 			body = sandboxify.adjustResponseUrls(body, fhirRequest.url, requestUrl, fhirServer, requestBaseUrl);
 		}
 
-		//special handler for metadata requests - inject the SMART information
+		// special handler for metadata requests - inject the SMART information
 		if (req.url == "/metadata" && response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
 			let authBaseUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
 			body = sandboxify.addAuthToConformance(body, authBaseUrl);
@@ -92,9 +107,12 @@ module.exports = function (req, res) {
 			}
 		}
 
-		//pretty print if called from a browser
-		//TODO: use a template and syntax highlight json response
-		if (req.headers.accept.toLowerCase().indexOf("html") > -1 && req.originalUrl.toLowerCase().indexOf("_pretty=false") == -1) {
+		// pretty print if called from a browser
+		// TODO: use a template and syntax highlight json response
+		if (req.headers.accept &&
+			req.headers.accept.toLowerCase().indexOf("html") > -1 &&
+			req.originalUrl.toLowerCase().indexOf("_pretty=false") == -1
+		) {
 			body = (typeof body == "string" ? body : JSON.stringify(body, null, 2));
 			body = body .replace(/</g, "&lt;")
 						.replace(/>/g, "&gt;")

@@ -121,7 +121,7 @@
 						<hr/>
 						<label for="launch-url">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
 						<!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> -->
-						<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/bp-centiles/launch.html">
+						<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html">
 						<p class="help-block small">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
 					</div>
 					
@@ -164,7 +164,7 @@
 						<div class="input-group">
 							<input id="patient" class="form-control" value="" placeholder="Patient ID">
 							<span class="input-group-btn">
-								<button class="btn btn-default" type="button">Select</button>
+								<button class="btn btn-default" type="button" id="patient-select-button">Select</button>
 							</span>
 						</div>
 						<p class="help-block small">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified, or if multiple comma delimited Patient Ids are specified</p>
@@ -212,11 +212,10 @@
 			<div class="panel panel-default">
 				<div class="panel-heading"><b class="text-primary">Launch</b></div>
 				<div class="panel-body navbar-default">
-					<label for="user" class="launch launch-pt launch-prov">
-						FHIR Server Url
-					</label>
+					<label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
 					<a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a>
 					<textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
+					<a class="btn btn-primary launch launch-pt launch-prov" id="standalone-launch-url-test" target="_blank">Test</a>
 				</div>
 			</div>
 		</div>
@@ -303,22 +302,50 @@
 
 				$("#standalone-launch-url").on("focus", function() {
 					$(this).select();
-				})
+				});
+
+				$("#patient-select-button").on("click", function() {
+					var input = $("#patient");
+					var fhirVersion = $("#fhir-version").val();
+					if (fhirVersion == "r2") {
+						fhirVersion = "DSTU-2"
+					}
+					else if (fhirVersion == "r3") {
+						fhirVersion = "STU-3"
+					}
+					// alert(getBaseUrl() + "/fhir")
+					Lib.selectPatients(input.val(), {
+						pickerSettings: {
+							server: {
+								url : getBaseUrl() + "/fhir",
+								type: fhirVersion,
+								tags: [],
+								conditions: []
+							}
+						}
+					}).then(sel => {
+						if (sel || sel === "") {// ignore cancel and close cases
+							input.val(sel);
+							buildUrls();
+						}
+					});
+				});
 			}
 
-
-			function buildUrls() {
+			function getBaseUrl() {
 				var baseUrl = window.location.href.split("?")[0].replace(/index\.html/, "");
-				
 				var sandboxes = $(".sb :checked").filter(":visible").map( 
 					function () { return $(this).val() }
 				).get();
 				if ($("#sb").val()) sandboxes.unshift( $("#sb").val() );
-
 				baseUrl += "v/" + $("#fhir-version").val();
-
 				if (sandboxes.length) baseUrl += "/sb/" + sandboxes.join(",");
-			
+				return baseUrl;
+			}
+
+
+			function buildUrls() {
+				var baseUrl = getBaseUrl();
 				var paramMap = {
 					"launch-ehr": [
 						["#patient", "patient"],
@@ -362,6 +389,7 @@
 				$("#open-url-preview").attr("href", openUrl + "/metadata");
 				$("#ehr-launch-url").attr("href", ehrLaunchUrl);
 				$("#standalone-launch-url").text(standaloneUrl);
+				$("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
 			}
 
 

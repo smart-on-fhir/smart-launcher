@@ -91,7 +91,7 @@ var SmartPicker = (function() {
 		return state.aud + 
 			"/Patient/?_format=application/json+fhir&_summary=true" +
 			"&_count=" + state.pageSize +
-			(state.limitIds ? "&_id=" + state.limitIds.replace(/\s*/g, "") : "") + 
+			(state.patient ? "&_id=" + state.patient.replace(/\s*/g, "") : "") + 
 			(sortParam ? "&_sort:" + sortDir + "=" + sortParam : "") +
 			(state.searchText != "" ? "&name:contains=" + encodeURIComponent(state.searchText) : "");
 	}

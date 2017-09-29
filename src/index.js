@@ -38,7 +38,10 @@ const handleXmlRequest = function(err, req, res, next) {
 const app = express();
 
 app.use(cors());
-app.use(logger('combined'));
+
+if (process.env.NODE_ENV == "development") {
+	app.use(logger('combined'));
+}
 
 //reject xml
 app.use(handleXmlRequest);
@@ -66,17 +69,17 @@ buildRoutePermutations = (lastSegment) => {
 
 //picker
 app.get(buildRoutePermutations("/picker"), (req, res) => {
-    res.sendfile("picker.html", {root: './static'});
+    res.sendFile("picker.html", {root: './static'});
 });
 
 //login
 app.get(buildRoutePermutations("/login"), (req, res) => {
-    res.sendfile("login.html", {root: './static'});
+    res.sendFile("login.html", {root: './static'});
 });
 
 //authorize
 app.get(buildRoutePermutations("/authorize"), (req, res) => {
-    res.sendfile("authorize.html", {root: './static'});
+    res.sendFile("authorize.html", {root: './static'});
 });
 
 //auth request
@@ -84,7 +87,8 @@ app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
 //fhir request
 app.use(buildRoutePermutations(config.fhirBaseUrl),
-	bodyParser.json({type: "*/*"}),
+	bodyParser.json({ type: "application/json+fhir", strict: false }),
+	// bodyParser.json({type: "*/*"}),
 	handleParseError,
 	reverseProxy
 );

@@ -13,27 +13,32 @@ router.get("/authorize", function (req, res) {
 	const missingParam = requiredParams.find( param => {
 		if (!req.query[param]) return param;
 	});
-	if (missingParam) return res.send(`Missing ${missingParam} parameter`, 400);
-	
+	if (missingParam) {
+		return res.status(400).send(`Missing ${missingParam} parameter`);
+	}
+
 	let sim = {};
 	if (req.query.launch || req.params.sim) {
 		sim = JSON.parse(Buffer.from(req.query.launch || req.params.sim, 'base64').toString());
 	}
 
-	//simulate errors if requested
+	// simulate errors if requested
 	if (sim.auth_error == "auth_invalid_client_id") {
-		return res.send("Invalid client_id parameter", 400);
-	} else if (sim.auth_error == "auth_invalid_client_id") {
-		return res.send("Invalid redirect_uri parameter", 400);
-	} else if (sim.auth_error == "auth_invalid_scope") {
-		return res.send("Invalid invalid_scope parameter", 400);
+		return res.status(400).send("Invalid client_id parameter");
+	}
+	else if (sim.auth_error == "auth_invalid_redirect_uri") {
+		return res.status(400).send("Invalid redirect_uri parameter");
+	}
+	else if (sim.auth_error == "auth_invalid_scope") {
+		return res.status(400).send("Invalid invalid_scope parameter");
 	}
 
-	//look for a real error
+	// look for a real error
 	const apiUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl));
+	// console.log("--->\n", sandboxify.normalizeUrl(req.query.aud), "\n", sandboxify.normalizeUrl(apiUrl))
 	if (sandboxify.normalizeUrl(req.query.aud) != sandboxify.normalizeUrl(apiUrl)) {
 		// console.log("Bad AUD value: " + req.query.aud + " (expecting " + apiUrl);
-		return res.send("Bad audience value", 400);
+		return res.status(400).send("Bad audience value");
 	}
 
 	//handle response from picker, login or auth screen
@@ -41,7 +46,7 @@ router.get("/authorize", function (req, res) {
 	if (req.query.provider) sim.provider = req.query.provider;
 	if (req.query.auth_success) sim.skip_auth = "1";
 	if (req.query.auth_fail) {
-		return res.send("Unauthorized", 401);
+		return res.status(401).send("Unauthorized");
 	}
 	
 	//show patient picker if provider launch, patient scope and no patient or multiple patients provided
@@ -102,7 +107,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 	try {
 		var code = jwt.verify(codeRaw, config.jwtSecret);
 	} catch (e) {
-		return res.send("Invalid token", 401);
+		return res.status(401).send("Invalid token");
 	}
 
 
@@ -111,7 +116,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 	}
 
 	if (code.auth_error == "token_invalid_token") {
-		return res.send("Invalid token", 401);
+		return res.status(401).send("Invalid token");
 	}
 
 	var token = Object.assign({}, code.context, {
