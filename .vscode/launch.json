@@ -5,7 +5,11 @@
                 "type": "node",
                 "request": "launch",
                 "name": "Launch Program",
-                "program": "${workspaceRoot}/src/index.js"
+                "program": "${workspaceRoot}/src/index.js",
+                "cwd": "${workspaceRoot}",
+                "env": {
+                    "NODE_ENV": "development"
+                }
             }
         ]
     }
