@@ -140,7 +140,7 @@ var SmartPicker = (function() {
 	}
 
 	// Renderer Helpers
-	var buildPatientRow =  function(patient, tpl, showIds, hideButton) {
+	var buildPatientRow = function(patient, tpl, showIds, hideButton) {
 		return tpl
 			.replace("{id}", patient.id)
 			.replace("{name}", formatName(patient, showIds))
@@ -169,14 +169,8 @@ var SmartPicker = (function() {
 		return gender[0].toUpperCase();
 	}
 
-	var formatName = function(patient, showIds) {
-		var name = patient.name && patient.name[0];
-		if (!name) name = {family: ["No Name Listed"]};
-
-		return (name.family || "") +
-			   (name.family && name.given ? ", " : "") +
-			   (name.given ? name.given.join(" ") : "") + 
-			   (showIds ? " [" + patient.id + "]" :  "")
+	function formatName(patient, showIds) {
+		return Lib.humanName(patient) + (showIds ? " [" + patient.id + "]" :  "");
 	}
 
 	// Renderer
