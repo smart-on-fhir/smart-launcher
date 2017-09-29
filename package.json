@@ -6,8 +6,8 @@
   "scripts": {
     "watch": "./node_modules/.bin/nodemon ./src/index.js",
     "start": "node ./src/index.js",
-    "test": "(./node_modules/.bin/mocha || true)",
-    "test-watch": "(./node_modules/.bin/mocha -w || true)"
+    "test": "./node_modules/.bin/mocha tests",
+    "test:watch": "./node_modules/.bin/mocha -w tests"
   },
   "author": "Dan Gottlieb",
   "license": "ISC",
