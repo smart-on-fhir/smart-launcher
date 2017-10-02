@@ -8,7 +8,9 @@ const patientMap = require("./patient-compartment.json")
 module.exports = function (req, res) {
 
 	let token = null;
-	let sandboxes = req.params.sandbox && req.params.sandbox.split(".");
+	let sandboxes = req.params.sandbox && req.params.sandbox.split(",");
+	let isSearchPost = req.method == "POST" && req.url.endsWith("/_search");
+
 	let fhirServer = config["fhirServer" + req.params.fhir_release.toUpperCase()];
 	if (!fhirServer) {
 		return res.status(400).send({
@@ -18,7 +20,6 @@ module.exports = function (req, res) {
 
 	// only allow gets to blacklisted sandboxes (like the SMART default patients)
 	if (req.method != "GET" && !req.url.endsWith("/_search") && (
-	// if (req.method != "GET" && (
 		!sandboxes ||
 		config.protectedSandboxWords.find( w => sandboxes[0].toLowerCase().indexOf(w) != -1 )
 	)) {
@@ -40,12 +41,20 @@ module.exports = function (req, res) {
 	// set everything to JSON since we don't currently support XML and block XML
 	// requests at a middleware layer
 	let fhirRequest = {
-		headers: {"content-type":"application/json",  "accept":"application/json+fhir"},
+		headers: {
+			"content-type": "application/json",
+			"accept"      :"application/json+fhir"
+		},
 		method: req.method
 	}
 	
 	// inject sandbox tag into POST and PUT requests and make urls conditional
-	if (Object.keys(req.body).length) {
+	// -------------------------------------------------------------------------
+	if (isSearchPost) {
+		fhirRequest.body = req.body;
+		fhirRequest.headers["content-type"] = req.headers["content-type"];
+	}
+	else if (Object.keys(req.body).length) {
 		fhirRequest.body = sandboxify.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
 		fhirRequest.body = Buffer.from(JSON.stringify(fhirRequest.body), 'utf8');
 		fhirRequest.headers['content-length'] = Buffer.byteLength(fhirRequest.body)
@@ -69,7 +78,7 @@ module.exports = function (req, res) {
 
 	//proxy the request to the real FHIR server
 	if (process.env.NODE_ENV == "development") {
-		console.log("PROXY: " + fhirRequest.url);
+		console.log("PROXY: " + fhirRequest.url, fhirRequest);
 	}
 
 	request(fhirRequest, function(error, response, body) {
