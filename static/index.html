@@ -146,15 +146,7 @@
 					<div class="form-group launch launch-ehr launch-prov">
 						<hr/>
 						<label for="user">Provider <span class="text-muted normal-weight">(simulates user who is launching the app)</span></label>
-						<div class="dropdown" id="providers-picker">
-							<div class="input-group" data-toggle="dropdown">
-								<input id="user-prov" class="form-control" value="smart-Practitioner-71032702" placeholder="Provider ID">
-								<span class="input-group-btn">
-									<button class="btn btn-default" type="button">Select <span class="caret"></span></button>
-								</span>
-							</div>
-							<ul class="dropdown-menu"></ul>
-						</div>
+						<input id="user-prov" class="form-control" placeholder="Provider ID">
 						<p class="help-block small">Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
 						<div class="checkbox launch launch-prov">
 							<label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span></label>
@@ -170,7 +162,7 @@
 						<div class="input-group">
 							<input id="patient" class="form-control" value="" placeholder="Patient ID">
 							<span class="input-group-btn">
-								<button class="btn btn-default" type="button" id="patient-select-button">Select</button>
+								<button class="btn btn-default" type="button" id="patient-select-button">Select <span class="caret"></span></button>
 							</span>
 						</div>
 						<p class="help-block small">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified, or if multiple comma delimited Patient Ids are specified</p>
@@ -188,7 +180,7 @@
 						<div class="input-group">
 							<input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
 							<span class="input-group-btn">
-								<button class="btn btn-default" type="button">Select</button>
+								<button class="btn btn-default" type="button">Select <span class="caret"></span></button>
 							</span>
 						</div>
 						<p class="help-block small">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
@@ -231,6 +223,7 @@
 		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
 		<script src="/config.js"></script>
 		<script src="/lib.js"></script>
+		<script src="/jquery.picker.js"></script>
 		<script>
 			function buildForm() {
 
@@ -276,7 +269,7 @@
 
 			function formToQs() {
 				var qs = {};
-				$("input,select").each( function() {
+				$("input[id],select[id]").each( function() {
 					var target = $(this);
 					var key = target.attr("id").replace(/-/g, "_");
 					if (target.is(":checkbox")) {
@@ -337,23 +330,21 @@
 					});
 				});
 
-				$("#providers-picker").on("show.bs.dropdown", function() {
-					var wrapper = $(this);
-					var menu = wrapper.find(".dropdown-menu").html('<li><a>Loading...</a></li>');
-					$.ajax({
-						url: getBaseUrl() + "/fhir/Practitioner"
-					}).then(function(data) {
-						menu.html(
-							$.map(data.entry, function(p) {
-								return '<li>' +
-									'<a href="javascript: void 0" onClick="$(\'#user-prov\').val(\'' + p.resource.id + '\')">' +
-									'<span class="text-muted pull-right">' +
-										'<b>ID: </b>' + p.resource.id +
-									'</span><b>' +
-									Lib.humanName(p.resource) + '</b></a></li>';
-							}).join("")
-						);
-					});
+				$("#encounter").picker({
+					url: getBaseUrl() + "/fhir/Encounter",
+					multiple: true,
+					onChange: function() {
+						buildUrls();
+						formToQs();
+					}
+				});
+
+				$("#user-prov").picker({
+					url: getBaseUrl() + "/fhir/Practitioner",
+					onChange: function() {
+						buildUrls();
+						formToQs();
+					}
 				});
 			}
 
@@ -367,7 +358,6 @@
 				if (sandboxes.length) baseUrl += "/sb/" + sandboxes.join(",");
 				return baseUrl;
 			}
-
 
 			function buildUrls() {
 				var baseUrl = getBaseUrl();
@@ -416,7 +406,6 @@
 				$("#standalone-launch-url").text(standaloneUrl);
 				$("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
 			}
-
 
 			function handleFormChange() {
 				$(".launch").hide().filter("." + $("input[name=launch-type]:checked").attr("id")).show();
