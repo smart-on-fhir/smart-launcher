@@ -11,7 +11,7 @@ var SmartPicker = (function() {
 		authUrlSegment: "auth/authorize"
 	};
 
-	var getQsParams = function() {
+	function getQsParams() {
 		//fix keys with underscores instead of camelcase
 		_parseKey = function(key) {
 			if (key.indexOf("_") == -1) {
@@ -32,7 +32,7 @@ var SmartPicker = (function() {
 	}
 
 	// UI Event Handlers
-	var bindUiEvents = function() {
+	function bindUiEvents() {
 		$("#paging-next, #paging-previous").click(handlePagingClick);
 		$("th").click(handleHeaderClick);
 		$("#search-form").submit(handleSearchSubmit);
@@ -40,7 +40,7 @@ var SmartPicker = (function() {
 		$("table").on("click", ".patient", handlePatientClick);
 	}
 
-	var handlePagingClick = function() {
+	function handlePagingClick() {
 		var dir = 1;
 		if ($(this).attr("id") == "paging-previous")
 			dir = -1;
@@ -48,7 +48,7 @@ var SmartPicker = (function() {
 		loadFhir(dir == 1 ? state.links.next : state.links.previous)
 	}
 
-	var handleHeaderClick = function() {
+	function handleHeaderClick() {
 		var sortParam = $(this).attr("id").split("-")[2];		
 		if (sortParam == state.sortParam) {
 			state.sortDir = (state.sortDir == "asc") ? "desc" : "asc";
@@ -60,7 +60,7 @@ var SmartPicker = (function() {
 		loadFhir();
 	}
 
-	var handlePatientClick = function(e) {
+	function handlePatientClick(e) {
 		if (state.launchUrl == "") return;
 
 		var patientId = $(this).attr("id").replace("patient-", "");
@@ -69,14 +69,14 @@ var SmartPicker = (function() {
 		}
 	}
 
-	var handleSearchSubmit = function(e) {
+	function handleSearchSubmit(e) {
 		e.preventDefault();
 		state.searchText = $("#search-text").val();
 		loadFhir();
 	}
 
 	// AJAX
-	var buildFhirUrl = function() {
+	function buildFhirUrl() {
 		var sortParam = state.sortParam;
 		var sortDir = state.sortDir;
 
@@ -96,7 +96,7 @@ var SmartPicker = (function() {
 			(state.searchText != "" ? "&name:contains=" + encodeURIComponent(state.searchText) : "");
 	}
 
-	var getLinks = function(data) {
+	function getLinks(data) {
 		if (!data.link) return {};
 		var links = {};
 		for (var i=0; i<data.link.length; i++) {
@@ -105,7 +105,7 @@ var SmartPicker = (function() {
 		return links;
 	}
 
-	var loadFhir = function(fhirUrl) {
+	function loadFhir(fhirUrl) {
 		if (!fhirUrl) {
 			fhirUrl = buildFhirUrl();
 			state.skip = 0;
@@ -126,7 +126,7 @@ var SmartPicker = (function() {
 	}
 
 	// Launcher
-	var launchApp = function(patientId) {
+	function launchApp(patientId) {
 		var url = window.location.href
 			.replace("picker", state.authUrlSegment)
 			.replace(/(&?)patient=[^&]*(&|$)/, "$2") + 
@@ -140,7 +140,7 @@ var SmartPicker = (function() {
 	}
 
 	// Renderer Helpers
-	var buildPatientRow = function(patient, tpl, showIds, hideButton) {
+	function buildPatientRow(patient, tpl, showIds, hideButton) {
 		return tpl
 			.replace("{id}", patient.id)
 			.replace("{name}", formatName(patient, showIds))
@@ -149,7 +149,7 @@ var SmartPicker = (function() {
 			.replace("{age}", formatAge(patient))
 	}
 
-	var formatAge = function(patient) {
+	function formatAge(patient) {
 		var dob = patient.birthDate;
 		if (!dob) return "";
 		
@@ -164,7 +164,7 @@ var SmartPicker = (function() {
 			.replace(/minutes?/, "min");
 	}
 
-	var formatGender = function(patient) {
+	function formatGender(patient) {
 		var gender = patient.gender || "unknown";
 		return gender[0].toUpperCase();
 	}
@@ -174,30 +174,30 @@ var SmartPicker = (function() {
 	}
 
 	// Renderer
-	var render = function() {
-		var _renderError = function() {
+	function render() {
+		function _renderError() {
 			if (state.errorMessage) $("#global-error-message").text(message);
 			$(".picker").hide()
 			$("#global-error").show()
 		}
 
-		var _renderTableSortIndicators = function() {
+		function _renderTableSortIndicators() {
 			$(".col-sort-ind").hide();
 			$("#col-header-" + state.sortParam + " .col-sort-ind-" + state.sortDir).show();	
 		}
 
-		var _renderLoading = function() {
+		function _renderLoading() {
 			$(".patient").remove();	
 			$("#paging, #message-no-patients").hide();
 			$("#message-loading").show();
 		}
 
-		var _renderNoPatients = function() {
+		function _renderNoPatients() {
 			$("#message-loading").hide();
 			$("#message-no-patients").show();
 		}
 
-		var _renderPatients = function() {
+		function _renderPatients() {
 			var tpl = $("#patient-row-template").html();
 			patientRows = _.map(state.data.entry, function(entry) {
 				return buildPatientRow(entry.resource, tpl, state.showIds == "1", state.launchUrl == "")
@@ -206,7 +206,7 @@ var SmartPicker = (function() {
 			$("#message-loading").hide();
 		}
 
-		var _renderPaging = function() {
+		function _renderPaging() {
 			$("#paging-from").text(parseInt(state.skip)+1);
 			$("#paging-to").text(parseInt(state.skip) + state.data.entry.length);
 			$("#paging-total").text(state.data.total);
