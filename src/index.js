@@ -87,8 +87,7 @@ app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
 //fhir request
 app.use(buildRoutePermutations(config.fhirBaseUrl),
-	bodyParser.json({ type: "application/json+fhir", strict: false }),
-	// bodyParser.json({type: "*/*"}),
+	bodyParser.text({ type: "*/*", limit: 1e6 }),
 	handleParseError,
 	reverseProxy
 );
