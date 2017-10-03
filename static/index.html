@@ -17,21 +17,6 @@
 			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
 			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 		<![endif]-->
-		<style>
-		.normal-weight {
-			font-weight: normal;
-		}
-		hr {
-			border-top: 1px dashed rgba(0, 0, 0, 0.1);
-			border-bottom: 1px dashed rgba(255, 255, 255, 1);
-		}
-		.panel-body.navbar-default, .panel-heading {
-			text-shadow: 0 1px 0 #FFF;
-		}
-		.dropdown-menu {
-			min-width: 100%;
-		}
-		</style>
 	</head>
 	<body>
 
@@ -180,7 +165,7 @@
 						<div class="input-group">
 							<input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
 							<span class="input-group-btn">
-								<button class="btn btn-default" type="button">Select <span class="caret"></span></button>
+								<button class="btn btn-default" id="user-pt-select" type="button">Select <span class="caret"></span></button>
 							</span>
 						</div>
 						<p class="help-block small">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
@@ -330,6 +315,33 @@
 					});
 				});
 
+				$("#user-pt-select").on("click", function() {
+					var input = $("#user-pt");
+					var fhirVersion = $("#fhir-version").val();
+					if (fhirVersion == "r2") {
+						fhirVersion = "DSTU-2"
+					}
+					else if (fhirVersion == "r3") {
+						fhirVersion = "STU-3"
+					}
+					// alert(getBaseUrl() + "/fhir")
+					Lib.selectPatients(input.val(), {
+						pickerSettings: {
+							server: {
+								url : getBaseUrl() + "/fhir",
+								type: fhirVersion,
+								tags: [],
+								conditions: []
+							}
+						}
+					}).then(sel => {
+						if (sel || sel === "") {// ignore cancel and close cases
+							input.val(sel);
+							buildUrls();
+						}
+					});
+				});
+
 				$("#encounter").picker({
 					url: getBaseUrl() + "/fhir/Encounter",
 					multiple: true,
@@ -404,7 +416,16 @@
 				$("#open-url-preview").attr("href", openUrl + "/metadata");
 				$("#ehr-launch-url").attr("href", ehrLaunchUrl);
 				$("#standalone-launch-url").text(standaloneUrl);
-				$("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
+				
+				// $("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
+				$("#standalone-launch-url-test").attr(
+					"href",
+					baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
+					"?response_type=code&client_id=test&scope=patient/*.*" +
+					"&aud=" + encodeURIComponent(standaloneUrl) +
+					"&redirect_uri=whatever&state=abc" +
+					"&patient=" + urlParams.patient
+				);
 			}
 
 			function handleFormChange() {
@@ -415,11 +436,11 @@
 			}
 
 			function init() {
+				$("#loading").hide();
+				$("#content").show();
 				buildForm();
 				qsToForm();
 				bindEventHandlers();
-				$("#loading").hide();
-				$("#content").show();
 				handleFormChange();
 			}
 

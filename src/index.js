@@ -67,32 +67,32 @@ buildRoutePermutations = (lastSegment) => {
 	]
 }
 
-//picker
+// picker
 app.get(buildRoutePermutations("/picker"), (req, res) => {
     res.sendFile("picker.html", {root: './static'});
 });
 
-//login
+// login
 app.get(buildRoutePermutations("/login"), (req, res) => {
     res.sendFile("login.html", {root: './static'});
 });
 
-//authorize
+// authorize
 app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendFile("authorize.html", {root: './static'});
 });
 
-//auth request
+// auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
-//fhir request
+// fhir request
 app.use(buildRoutePermutations(config.fhirBaseUrl),
 	bodyParser.text({ type: "*/*", limit: 1e6 }),
 	handleParseError,
 	reverseProxy
 );
 
-//static request
+// static request
 app.use(express.static("static"));
 
 module.exports = app;

@@ -53,6 +53,7 @@ module.exports = function (req, res) {
 	if (isSearchPost) {
 		fhirRequest.body = req.body;
 		fhirRequest.headers["content-type"] = req.headers["content-type"];
+		// fhirRequest.body = String(fhirRequest.body) + "&_tag=" + sandboxes.join("&");
 	}
 	else if (Object.keys(req.body).length) {
 		fhirRequest.body = sandboxify.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
@@ -60,10 +61,17 @@ module.exports = function (req, res) {
 		fhirRequest.headers['content-length'] = Buffer.byteLength(fhirRequest.body)
 	}
 
-	//make urls conditional and if exists, change /id to ?_id=
-	fhirRequest.url = sandboxify.buildUrlPath(
-		fhirServer, sandboxify.adjustUrl(req.url, req.method == "GET", sandboxes)
-	);
+	// make urls conditional and if exists, change /id to ?_id=
+	if (isSearchPost) {
+		fhirRequest.url = sandboxify.buildUrlPath(
+			fhirServer, req.url
+		);
+	}
+	else {
+		fhirRequest.url = sandboxify.buildUrlPath(
+			fhirServer, sandboxify.adjustUrl(req.url, req.method == "GET", sandboxes)
+		);
+	}
 
 	//if applicable, apply patient scope to GET requests, largely for performance reasons.
 	//Full scope support can't be implemented in a proxy because it would require "or"

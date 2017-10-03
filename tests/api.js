@@ -3,14 +3,29 @@ const app     = require("../src/index.js");
 const config  = require("../src/config");
 const jwt     = require("jsonwebtoken");
 
-function buildRoutePermutations(suffix = "") {
+function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
-    return [
-        `/v/r3/sb/abc/sim/whatever/${suffix}`, 
-        `/v/r3/sb/abc/${suffix}`,
-        `/v/r3/sim/whatever/${suffix}`,
-        `/v/r3/${suffix}`
-    ];
+    let out = [];
+    
+    if (!fhirVersion || fhirVersion == 3) {
+        out.push(
+            `/v/r3/sb/abc/sim/whatever/${suffix}`, 
+            `/v/r3/sb/abc/${suffix}`,
+            `/v/r3/sim/whatever/${suffix}`,
+            `/v/r3/${suffix}`
+        );
+    }
+
+    if (!fhirVersion || fhirVersion == 2) {
+        out.push(
+            `/v/r2/sb/abc/sim/whatever/${suffix}`, 
+            `/v/r2/sb/abc/${suffix}`,
+            `/v/r2/sim/whatever/${suffix}`,
+            `/v/r2/${suffix}`
+        );    
+    }
+
+    return out;
 }
 
 describe('index', function() {
@@ -138,4 +153,97 @@ describe('Proxy', function() {
         })
         .end(done);
     });
+});
+
+describe('Auth', function() {
+    buildRoutePermutations("authorize").forEach(path => {
+        let query = [];
+        [
+            "response_type",
+            "client_id",
+            "redirect_uri",
+            "scope",
+            "state",
+            "aud"
+        ].forEach(name => {
+            it(`${path} requires "${name}" param`, done => {
+                request(app)
+                .get(path + "?" + query.join("&"))
+                .expect(400)
+                .expect(`Missing ${name} parameter`)
+                .end(() => {
+                    query.push(name + "=x");
+                    done();
+                });
+            });
+        });
+    });
+
+    {
+        let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        paths.forEach(path => {
+            it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
+                request(app)
+                .get(path)
+                .expect(400)
+                .expect("Invalid redirect_uri parameter")
+                .end(done);
+            });
+        });
+    }
+    {
+        let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        paths.forEach(path => {
+            it (path.split("?")[0] + " can simulate invalid scope error", done => {
+                request(app)
+                .get(path)
+                .expect(400)
+                .expect("Invalid scope parameter")
+                .end(done);
+            });
+        });
+    }
+    {
+        let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        paths.forEach(path => {
+            it (path.split("?")[0] + " can simulate invalid client_id error", done => {
+                request(app)
+                .get(path)
+                .expect(400)
+                .expect("Invalid client_id parameter")
+                .end(done);
+            });
+        });
+    }
+
+    buildRoutePermutations(
+        "auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&launch=0&aud=whatever" +
+        encodeURIComponent(config.fhirServerR2),
+        2
+    ).forEach(path => {
+        it (path.split("?")[0] + " rejects invalid audience value", done => {
+            request(app)
+            .get(path)
+            .expect(400)
+            .expect("Bad audience value")
+            .end(done);
+        });
+    });
+
+    // buildRoutePermutations(
+    //     "auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&launch=0&aud=",
+    //     2
+    // ).forEach(path => {
+    //     let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
+    //     it (path.split("?")[0] + " accepts valid audience value", done => {
+    //         request(app).get(path + aud).expect(200).end(done);
+    //     });
+    // });
+
 });

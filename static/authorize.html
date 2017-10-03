@@ -8,6 +8,7 @@
 		<title>SMART EHR</title>
 
 		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
 		<link href="/blue-nav.css" rel="stylesheet">
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -23,7 +24,21 @@
 			ul {
 				margin-bottom: 30px;
 			}
-
+			li {
+				list-style: none;
+				margin: 1ex 0 1ex 20px;
+			}
+			.label {
+				text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+			}
+			.label {
+				text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.2);
+				box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.5) inset;
+				display: inline-block;
+				min-width: 4em;
+				text-align: center;
+				vertical-align: top;
+			}
 		</style>
 
 	</head>
@@ -40,23 +55,26 @@
 			</div>
 		</div></div>
 
-		<div class="container" id="content"><div class="row">
-
-			<div class="col-xs-12 col-md-offset-2 col-md-8"><div class="panel panel-primary">
-				<div class="panel-heading">Authorize Application</div>
-				<div class="panel-body">
-					<h4 class="read" style="display: none;">This application is requesting permission to <b>read</b>:</h4>
-					<ul class="read" style="display: none;"></ul>
-					<h4 class="write" style="display: none;">This application is requesting permission to <b>write</b>:</h4>
-					<ul class="write" style="display: none;"></ul>
-					<div class="text-center">
-						<button class="btn btn-danger" id="deny">Deny</button> &nbsp;
-						<button class="btn btn-success" id="approve">Approve</button>
-					</div>	
-				</div>	
-
-			</div></div>
-		</div></div> <!-- row / container -->
+		<div class="container" id="content">
+			<div class="row">
+				<div class="col-xs-12 col-md-offset-2 col-md-8">
+					<div class="panel panel-primary">
+						<div class="panel-heading"><b>Authorize Application</b></div>
+						<div class="panel-body navbar-default">
+							<h4 class="read" style="display: none;"><b class="label label-success">read</b> This application is requesting permission to read:</h4>
+							<ul class="read" style="display: none;"></ul>
+							<h4 class="write" style="display: none;"><b class="label label-warning">write</b> This application is requesting permission to write:</h4>
+							<ul class="write" style="display: none;"></ul>
+							<hr/>
+							<div class="text-center">
+								<button class="btn btn-danger" id="deny" style="min-width:8em">Deny</button> &nbsp;
+								<button class="btn btn-success" id="approve" style="min-width:8em">Approve</button>
+							</div>	
+						</div>	
+					</div>
+				</div>
+			</div>
+		</div> <!-- row / container -->
 
 
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
@@ -120,12 +138,14 @@
 				scopeToText(scope, state.login_type != "provider");
 			});
 
+			var check = '<i class="glyphicon glyphicon-ok-sign text-success"/> ';
+
 			if (readPermissions.length > 0) {
-				$(".read").show().filter("ul").append("<li>" + readPermissions.join("</li><li>") + "</li>");
+				$(".read").show().filter("ul").append("<li>" + check + readPermissions.join("</li><li>" + check) + "</li>");
 			}
 
 			if (writePermissions.length > 0) {
-				$(".write").show().filter("ul").append("<li>" + writePermissions.join("</li><li>") + "</li>");
+				$(".write").show().filter("ul").append("<li>" + check + writePermissions.join("</li><li>" + check) + "</li>");
 			}
 
 			if (state.login_type != "provider") $("title, .navbar-brand").text("SMART Patient Portal");

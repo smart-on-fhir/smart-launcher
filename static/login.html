@@ -8,6 +8,7 @@
 		<title>SMART EHR</title>
 
 		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
 		<link href="/blue-nav.css" rel="stylesheet">
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -20,8 +21,6 @@
 			.container {
 				margin-top: 40px;
 			}
-
-
 		</style>
 
 	</head>
@@ -49,7 +48,7 @@
 			<div class="col-xs-12 col-md-offset-2 col-md-8"><div class="panel panel-primary">
 				<div class="panel-heading">Login</div>
 
-				<div class="panel-body"><form id="login">
+				<div class="panel-body navbar-default"><form id="login">
 
 					<div class="form-group" id="user-id">
 						<label>User Name</label>
@@ -79,7 +78,6 @@
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
 		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
 		<script src="/vendor/moment.min.js"></script>
-		<!-- <script src="/vendor/underscore-1.8.3.min.js"></script> -->
 		<script src="/lib.js"></script>
 		<script>
 
@@ -88,16 +86,24 @@
 				authUrlSegment: "auth/authorize",
 			}, Lib.getUrlQuery());
 
+
 			$("#login").submit( function(e) {
 				//TODO validate id here!
 				e.preventDefault();
 				var userId = $(".user:visible").val();
-				var url = window.location.href
-					.replace("login", state.authUrlSegment)
-					.replace(/(&?)(patient|provider)=[^&]*(&|$)/, "$3") + 
-					(state.login_type == "provider" ? "&provider=" : "&patient=") + 
-					window.encodeURIComponent(userId);
-				window.location.href = url;
+				var qs = Lib.getUrlQuery();
+				var url = location.origin + location.pathname.replace("login", state.authUrlSegment);
+
+				if (qs.login_type == "provider") {
+					qs.provider = userId;
+					qs.patient = undefined;
+				}
+				else {
+					qs.provider = undefined
+					qs.patient = userId;
+				}
+				qs.login_success = 1;
+				window.location.href = url + "?" + Lib.compileUrlQuery(qs);
 			});
 
 			function entryToLoginId(entry) {

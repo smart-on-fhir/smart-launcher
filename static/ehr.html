@@ -17,55 +17,174 @@
 			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 		<![endif]-->
 		<style>
-
-			iframe {
-				border: 2px solid black;
+			html {
+				margin: 0;
+				padding: 0;
+				position: fixed;
+				display: block;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				left: 0;
 				width: 100%;
-				height: 600px;
+				height: 100%;
+				overflow: hidden;
 			}
-
+			body {
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				color: #000;
+				font: menu;
+				cursor: default;
+				background: #ECE9DA;
+				text-shadow: 0 1px 0 #FFF;
+				overflow: hidden;
+			}
+			iframe {
+				border: 1px solid black;
+				display: flex;
+				flex: 1 1 100px;
+				margin: 1px 1px 1px 1px;
+				box-sizing: border-box;
+				background: rgba(0, 0, 0, 0.3);
+			}
+			.status-bar {
+				display: flex;
+				/* flex: 0 0 20px; */
+				box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.2) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
+				color: #444;
+				padding: 2px 1ex;
+			}
+			.flex-row {
+				display       : flex;
+				flex-direction: row;
+				flex          : 1 1 0px;
+			}
+			.header {
+				display    : flex;
+				box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
+				color      : #444;
+				padding    : 1ex 1em;
+				font-size  : 120%;
+			}
+			.header > .flex-row {
+				flex-wrap: nowrap;
+				white-space: nowrap;
+				line-height: 40px;
+			}
+			.sidebar {
+				background : linear-gradient(#A1B3D7, #6D84D5);
+				display    : flex;
+				flex-grow  : 0;
+				padding    : 2em;
+				box-sizing : border-box;
+				align-items: center;
+				color      :rgba(255, 255, 255, 0.54);
+				text-shadow: none;
+			}
+			
+			.patient {
+				flex: 1;
+				opacity: 0;
+				transition: opacity 0.4s;
+				margin-right: 1em;
+			}
+			.practitioner {
+				opacity: 0;
+				transition: opacity 0.4s;
+			}
+			.logo {
+				color: #ece9d9;
+				background: #3B69BE;
+				display: inline-block;
+				border-radius: 50px;
+				padding: 5px 15px 5px 5px;
+				margin: 0 30px 0 0;
+				text-shadow: none;
+				font-weight: 900;
+				vertical-align: top;
+				line-height: 30px;
+				background-image: linear-gradient(90deg,  #6D84D5, #3B69BE);
+				white-space: nowrap;
+				min-width: 9em;
+			}
+			.logo img {
+				max-height: 30px;
+				display: block;
+				float: left;
+				margin: 0 10px 0px 0;
+			}
+			.blue {
+				color: #3B69BE;
+			}
+			.text-muted {
+				color: rgba(0, 0, 0, 0.5);
+			}
 		</style>
 
 	</head>
 	<body>
-
-		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
-			<div class="navbar-header">
-				<div class="pull-left" style="margin: 10px;">
-					<img src="img/smart-bug.png" />
+		<div class="header">
+			<div class="flex-row">
+				<div>
+					<div class="logo">
+						<img src="/img/smart-logo.png" /> Fake EHR
+					</div>
 				</div>
-				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
-					SMART EHR
-				</a>
+				<div class="patient">
+					<span class="blue"><i class="glyphicon glyphicon-user"></i><b> Patient: </b></span>
+					<b class="patient-name"></b>
+					<span class="text-muted">, age: </span>
+					<b class="patient-age"></b>
+					<span class="text-muted">, sex: </span>
+					<b class="patient-gender"></b>
+				</div>
+				<div class="practitioner">
+					<span class="blue"><i class="glyphicon glyphicon-user"></i><b> User: </b></span>
+					<b class="provider-name"></b>
+				</div>
 			</div>
-		</div></div>
-
-		<div class="container-fluid" id="content"><div class="row">
-
-			<div class="col-xs-10 col-xs-offset-2">
-				<iframe src="login.html"></iframe>
+		</div>
+		<div class="flex-row">
+			<div class="sidebar">
+				<h3>EHR Sidebar</h3>
 			</div>
-		</div></div> <!-- row / container -->
-
-
-		<script src="vendor/jquery-1.12.3.min.js"></script>
-		<script src="vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
-		<script src="vendor/underscore-1.8.3.min.js"></script>
+			<iframe id="frame" src="about:blank"></iframe>
+		</div>
+		<div class="status-bar">EHR Status bar</div>
+		<script src="/vendor/jquery-1.12.3.min.js"></script>
+		<script src="/vendor/moment.min.js"></script>
+		<script src="/lib.js"></script>
 		<script>
+		(function() {
+			var state = $.extend({
+				apiUrlSegment: "fhir"
+			}, Lib.getUrlQuery());
 
-			//todo: show patient and user info in header, adjust iframe to screen height (no scroll bars)
-			//show some form of "ehr" sidebar (perhaps hspc approach of grey bar)
-			var state = {
-				apiUrlSegment: "fhir",
-			};
-			var query = ((window.location.search).substring(1) || "").split("&");
-			$.each(query, function(i, param) {
-				if (!param) return;
-				var p = param.split('=');
-				state[p[0]] = decodeURIComponent(p[1]);
-			});
+			if (state.app) {
+				$("#frame").prop("src", state.app);
+			}
 
-
+			if (state.iss) {
+				if (state.patient) {
+					$.get(state.iss + "/Patient/" + state.patient).done(function(data) {
+						$(".patient-name").text(Lib.humanName(data));
+						$(".patient-age").text(Lib.formatAge(data.birthDate));
+						$(".patient-gender").text(Lib.toCamelCase(data.gender || "unknown", true));
+						$(".patient").css({ opacity: 1 });
+					});
+				}
+				if (state.provider) {
+					$.get(state.iss + "/Practitioner/" + state.provider).done(function(data) {
+						$(".provider-name").text(Lib.humanName(data));
+						$(".practitioner").css({ opacity: 1 });
+					});
+				}
+			}
+		})();
 		</script>
 
 	</body>

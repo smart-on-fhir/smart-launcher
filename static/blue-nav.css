@@ -101,3 +101,20 @@
 .navbar-custom .navbar-link:hover {
   color: #c0c0c0;
 }
+/* -------------------------------------------------------------------------- */
+.normal-weight {
+  font-weight: normal;
+}
+hr {
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  border-bottom: 1px dashed rgba(255, 255, 255, 1);
+}
+.panel-body.navbar-default, .panel-heading {
+  text-shadow: 0 1px 0 #FFF;
+}
+.panel-primary .panel-heading {
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+.dropdown-menu {
+  min-width: 100%;
+}

@@ -34,6 +34,26 @@
         return out;
     }
 
+    function compileUrlQuery(params) {
+        params = params || {};
+        var out = [], entry;
+        for (var key in params) {
+            entry = params[key];
+            if (entry === undefined) {
+                continue;
+            }
+            if (Array.isArray(entry)) {
+                entry.forEach(function(o) {
+                    out.push(key + "=" + encodeURIComponent(o));
+                });
+            }
+            else {
+                out.push(key + "=" + encodeURIComponent(entry));
+            }
+        }
+        return out.join("&");
+    }
+
     /**
      * Converts the input string to camelCase. Detects "-" and "_", removes them
      * and converts the following character to upper case. By default this
@@ -149,6 +169,20 @@
         });
 
         return $.grep(out, Boolean).join(separator || " ");
+    }
+    
+    function formatAge(dob) {
+		if (!dob) return "";
+		
+		//fix year or year-month style dates 
+		if (/\d{4}$/.test(dob))
+			dob = dob + "-01";
+		if (/\d{4}-d{2}$/.test(dob))
+			dob = dob + "-01"
+
+		return moment(dob).fromNow(true)
+			.replace("a ", "1 ")
+			.replace(/minutes?/, "min");
 	}
 
     // Export
@@ -156,10 +190,12 @@
     
     const Lib = {
         getUrlQuery      : getUrlQuery,
+        compileUrlQuery  : compileUrlQuery,
         toCamelCase      : toCamelCase,
         generateUID      : generateUID,
         selectPatients   : selectPatients,
-        humanName        : humanName
+        humanName        : humanName,
+        formatAge        : formatAge
     };
 
     // Export at window.Lib:

@@ -19,7 +19,18 @@ router.get("/authorize", function (req, res) {
 
 	let sim = {};
 	if (req.query.launch || req.params.sim) {
-		sim = JSON.parse(Buffer.from(req.query.launch || req.params.sim, 'base64').toString());
+		try {
+			sim = JSON.parse(Buffer.from(req.query.launch || req.params.sim, 'base64').toString());
+		}
+		catch(ex) {
+			// console.error(`Invalid sim value ${ex}`);
+			sim = null;
+		}
+		finally {
+			if (!sim || typeof sim !== "object") {
+				sim = {}
+			}
+		}
 	}
 
 	// simulate errors if requested
@@ -30,7 +41,7 @@ router.get("/authorize", function (req, res) {
 		return res.status(400).send("Invalid redirect_uri parameter");
 	}
 	else if (sim.auth_error == "auth_invalid_scope") {
-		return res.status(400).send("Invalid invalid_scope parameter");
+		return res.status(400).send("Invalid scope parameter");
 	}
 
 	// look for a real error
@@ -41,31 +52,43 @@ router.get("/authorize", function (req, res) {
 		return res.status(400).send("Bad audience value");
 	}
 
-	//handle response from picker, login or auth screen
+	// handle response from picker, login or auth screen
 	if (req.query.patient) sim.patient = req.query.patient;
 	if (req.query.provider) sim.provider = req.query.provider;
 	if (req.query.auth_success) sim.skip_auth = "1";
+	// if (req.query.login_success) sim.skip_login = "1";
 	if (req.query.auth_fail) {
 		return res.status(401).send("Unauthorized");
 	}
 	
-	//show patient picker if provider launch, patient scope and no patient or multiple patients provided
+	// show patient picker if provider launch, patient scope and no patient or multiple patients provided
 	if (!sim.launch_pt && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
 		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/picker")  + 
 			(sim.patient ? "&patient=" + encodeURIComponent(sim.patient)  : "")
-		return res.redirect(redirectUrl)
+		return res.redirect(redirectUrl);
+	}
 
-	//show login screen if patient launch and skip login is not selected, there's no patient or multiple patients provided
-	} else if (sim.launch_pt && (!sim.skip_login || !sim.patient || sim.patient.indexOf("," > -1))) {
-		console.log("PATIENT LOGIN SCREEN", sim.patient)
+	// show login screen if patient launch and skip login is not selected, there's no patient or multiple patients provided
+	if (sim.launch_pt && !sim.skip_login && (!sim.patient || sim.patient.indexOf(",") > -1)) {
+		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/login")  + 
+			(sim.patient && !req.query.patient ? "&patient=" + encodeURIComponent(sim.patient) : "")
+		return res.redirect(redirectUrl);
+	}
 
-	//show login screen if provider launch and skip login is not selected, there's no provider or multiple provider provided
-	} else if (sim.launch_prov && (!sim.skip_login || !sim.provider || sim.provider.indexOf("," > -1)) ) {
-		console.log("PROVIDER LOGIN SCREEN", sim.patient)
+	// show login screen if provider launch and skip login is not selected, there's no provider or multiple provider provided
+	else if (sim.launch_prov && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
+		// console.log(" -------> PROVIDER LOGIN SCREEN", sim.patient);
+		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/login")  + 
+			(sim.provider && !req.query.provider ? "&provider=" + encodeURIComponent(sim.provider) : "")
+		return res.redirect(redirectUrl);
+	}
 
-	//show authorize screen if standalone launch and skip auth is not specified
-	} else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
-		console.log("App AUTH SCREEN")
+	// show authorize screen if standalone launch and skip auth is not specified
+	else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
+		// console.log(" -------> App AUTH SCREEN")
+		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/authorize")  + 
+			(sim.patient && !req.query.patient ? "&patient=" + encodeURIComponent(sim.patient) : "")
+		return res.redirect(redirectUrl);
 	}
 
 	var code = {
@@ -86,11 +109,21 @@ router.get("/authorize", function (req, res) {
 	});
 
 	var signedCode = jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
+	
+	var redirect = req.query.redirect_uri + ("?code=" + signedCode + "&state=" + encodeURIComponent(req.query.state));
 
-	//TODO: wrap redirect in a qs with patient_id and provider_id if sim_ehr is specified
-	//this should open in ehr.html and which should then send an iframe to the real redirect url
+	// TODO: wrap redirect in a qs with patient_id and provider_id if sim_ehr is specified
+	// this should open in ehr.html and which should then send an iframe to the real redirect url
+	if (sim.sim_ehr) {
+		return res.redirect(
+			"/ehr.html?app=" + encodeURIComponent(redirect) +
+			(sim.patient ? "&patient=" + encodeURIComponent(sim.patient) : "") +
+			(sim.provider || sim.user ? "&provider=" + encodeURIComponent(sim.provider || sim.user) : "") +
+			"&iss=" + encodeURIComponent(apiUrl)
+		);
+	}
 
-	res.redirect( req.query.redirect_uri + ("?code=" + signedCode + "&state=" + encodeURIComponent(req.query.state)) );
+	res.redirect(redirect);
 });
 
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
