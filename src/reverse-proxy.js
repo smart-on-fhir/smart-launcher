@@ -130,7 +130,7 @@ module.exports = function (req, res) {
 			req.headers.accept.toLowerCase().indexOf("html") > -1 &&
 			req.originalUrl.toLowerCase().indexOf("_pretty=false") == -1
 		) {
-			body = (typeof body == "string" ? body : JSON.stringify(body, null, 2));
+			body = (typeof body == "string" ? body : JSON.stringify(body, null, 4));
 			body = body .replace(/</g, "&lt;")
 						.replace(/>/g, "&gt;")
 						.replace(/"/g, "&quot;");

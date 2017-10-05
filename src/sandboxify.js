@@ -33,13 +33,15 @@ function adjustRequestBody(json, system, sandboxes) {
 function adjustUrl(url, isGet, sandboxes) {
 	if (!sandboxes) return url;
 	var sandboxTags = isGet ? sandboxes.join(",") : sandboxes[0];
+
+	url = url.replace(/\/\?/, "?");
 	
 	// move id from url to parameter (no current query string)
 	url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?$/, "$1?_id=$3");
 	// url = url.replace(/([A-Z]\w+)(\/([^\/?]+))\/?$/, "$1?_id=$3");
 	
 	// move id from url to parameter (retain existing query string)
-	url = url.replace(/([A-Z]\w+)(\/([^\/?]+))\/?\?(.+)/, "$1?$4&_id=$3");
+	url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?\?(.+)/, "$1?$4&_id=$3");
 	url += (url.indexOf("?") == -1 ? "?" : "&") + "_tag=" + sandboxTags;
 	return url;
 }
