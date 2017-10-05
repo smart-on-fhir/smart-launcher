@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>SMART Sample App - Standalone, launched by patient</title>
+	</head>
+	<body>
+		<h1>SMART Sample App - Standalone, launched by patient</h1>
+		<hr/>
+		<div class="loading"><img src="/img/ajax-loader.gif"/></div>
+		<div class="patient"></div>
+		<div class="user"></div>
+		<div class="error"></div>
+		<script src="/vendor/jquery-1.12.3.min.js"></script>
+		<script src="/lib.js"></script>
+		<script>
+			function onTokenSuccess(data) {
+				console.info("SUCCESS: ", data);
+				$(".loading").hide();
+				if (data.patient) {
+					$(".patient").text("Patient ID: " + data.patient);
+				}
+			}
+			
+			function onTokenError(xhr, error, textStatus) {
+				console.warn("ERROR: ", arguments);
+				$(".loading").hide();
+				$(".error").html(xhr.status + " " + xhr.statusText + "<br/>" + xhr.responseText);
+			}
+
+			var state = $.extend({
+				// apiUrlSegment: "fhir"
+			}, Lib.getUrlQuery());
+
+			if (state.code) {
+				$.ajax({
+					method: "POST",
+					url: "/v/r3/auth/token",
+					data: {
+						grant_type   : "authorization_code",
+						code         : state.code,
+						redirect_uri : location.origin + location.path,
+						client_id    : "whatever"
+					}
+				}).then(
+					onTokenSuccess,
+					onTokenError
+				);
+			}
+		</script>
+
+	</body>
+</html>
