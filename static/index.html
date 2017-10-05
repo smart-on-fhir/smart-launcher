@@ -41,9 +41,9 @@
 			</div>
 		</div>
 		<div class="container" id="content" style="display:none;">
-			<div class="panel panel-default">
+			<div class="panel panel-info alert-info">
 				<div class="panel-heading"><b class="text-primary">My Sandbox</b></div>
-				<div class="panel-body navbar-default">
+				<div class="panel-body navbar-default" style="padding-bottom: 0">
 					<div class="row">
 						<div class="form-group col-sm-6">
 							<label for="sb">Name</label>
@@ -64,12 +64,14 @@
 						</div>
 
 						<div class="form-group col-sm-6">
-							<label for="open-url">Open FHIR Endpoint URL</label>
-							<div class="alert alert-info">
+							<a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-primary pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
+							<label for="open-url">
+								Open FHIR Endpoint URL
+							</label>
+							<div class="alert alert-info" style="margin: 0">
 								<div>
 									<a class="form-control-static" id="open-url"></a>
 								</div>
-								<a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-primary" style="padding: 2px 3em;margin: 1em 0 0">Test</a>
 							</div>
 						</div>
 					</div>
@@ -105,19 +107,22 @@
 						</div>
 					</div>
 					
-					<div class="form-group launch launch-ehr">
+					<!-- <div class="form-group launch launch-ehr">
 						<hr/>
 						<label for="launch-url">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
-						<!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> -->
+						<!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> --><!--
 						<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html">
 						<p class="help-block small">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
-					</div>
+					</div> -->
 					
 					<div class="form-group">
 						<hr/>
 						<label for="client-id">App Client Id</label>
-						<p class="form-control-static"><code id="client-id">my_web_app</code></p>
-						<p class="help-block small">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p>
+						<p class="form-control-static">
+							<code id="client-id">my_web_app</code>
+							<small class="text-muted">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</small>
+						</p>
+						<!-- <p class="help-block small">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p> -->
 					</div>
 
 					<div class="form-group launch launch-ehr">
@@ -156,7 +161,13 @@
 					<div class="form-group launch launch-ehr">
 						<hr/>
 						<label for="encounter">Encounter <span class="text-muted normal-weight">(simulates the active encounter in EHR when app is launched)</span></label>
-						<input id="encounter" class="form-control" value="" placeholder="Encounter Id">
+						<!-- <input id="encounter" class="form-control" value="" placeholder="Encounter Id"> -->
+						<div class="checkbox">
+							<label>
+								<input type="checkbox" id="select-encounter"> Show encounter selector if your app requests a <code>launch</code> scope
+								<span class="text-muted normal-weight">(otherwise the patient's most recent encounter will be used if available)</span>
+							</label>
+						</div>
 					</div>
 					
 					<div class="form-group launch launch-pt">
@@ -178,7 +189,7 @@
 					</div>
 					<hr/>
 					<div class="form-group">
-						<label for="sb">Simulate Authentication Error for Testing <span class="text-muted normal-weight">(Advanced)</span></label>
+						<label for="sb" class="text-warning">Simulate Authentication Error for Testing <span class="text-muted normal-weight">(Advanced)</span></label>
 						<select id="auth-error" class="form-control">
 							<option value="">None</option>
 							<option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
@@ -192,17 +203,28 @@
 				</div>
 			</div>
 
-			<div class="panel panel-default">
-				<div class="panel-heading"><b class="text-primary">Launch</b></div>
+			<div class="panel panel-success alert-success">
+				<div class="panel-heading"><b class="text-success">Launch</b></div>
 				<div class="panel-body navbar-default">
+
+					<label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
+					<div class="input-group launch launch-ehr">
+						<input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html" placeholder="Launch URL">
+						<span class="input-group-btn">
+							<a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
+						</span>
+					</div>
+					<p class="help-block small launch launch-ehr">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
+
 					<label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
-					<a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a>
+					<!-- <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a> -->
 					<textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
-					<a class="btn btn-primary launch launch-pt launch-prov" id="standalone-launch-url-test" target="_blank">Test</a>
+					<a class="btn btn-success launch launch-pt launch-prov" id="standalone-launch-url-test" target="_blank">Test</a>
 				</div>
 			</div>
 		</div>
 
+		<br/>
 
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
 		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
@@ -375,11 +397,13 @@
 				var baseUrl = getBaseUrl();
 				var paramMap = {
 					"launch-ehr": [
+						["#launch-ehr", "launch_ehr"],
 						["#patient", "patient"],
 						["#encounter", "encounter"],
 						["#auth-error", "auth_error"],
 						["#user-prov", "user"],
-						["#sim-ehr", "sim_ehr"]
+						["#sim-ehr", "sim_ehr"],
+						["#select-encounter", "select_encounter"]
 					],
 					"launch-prov": [
 						["#launch-prov", "launch_prov"],
@@ -423,7 +447,9 @@
 					baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
 					"?response_type=code&client_id=test&scope=patient/*.*" +
 					"&aud=" + encodeURIComponent(standaloneUrl) +
-					"&redirect_uri=whatever&state=abc" +
+					"&redirect_uri=" + encodeURIComponent(
+						location.origin + "/sample-apps/standalone-patient/index.html"
+					) + "&state=abc" +
 					"&patient=" + urlParams.patient
 				);
 			}

@@ -7,7 +7,31 @@ const sandboxify = require("./sandboxify");
 
 module.exports = router;
 
-router.get("/authorize", function (req, res) {
+function getFirstEncounter(serverURL, patientID) {
+	return new Promise((resolve, reject) => {
+		request({
+			url: serverURL + "/Encounter/",
+			qs: {
+				_format: "application/json+fhir",
+				_count : 1,
+				patient: patientID,
+				"_sort:desc": "date"
+			},
+			json: true,
+			strictSSL: false
+		}, (error, response, body) => {
+			if (error) {
+				return reject(error);
+			}
+			if (response.statusCode >= 400) {
+				return reject(response.statusMessage);
+			}
+			resolve(body.entry[0].resource);
+		});
+	});
+};
+
+router.get("/authorize", async function (req, res) {
 	
 	const requiredParams = ["response_type", "client_id", "redirect_uri", "scope", "state", "aud"];
 	const missingParam = requiredParams.find( param => {
@@ -15,6 +39,12 @@ router.get("/authorize", function (req, res) {
 	});
 	if (missingParam) {
 		return res.status(400).send(`Missing ${missingParam} parameter`);
+	}
+
+	// Relative redirect_uri like "whatever" will eventually result in wrong URLs like
+	// "/auth/whatever". We must only support full http URLs.
+	if (req.query.redirect_uri.search(/^https?\:\/\//) !== 0) {
+		return res.status(400).send(`Invalid "redirect_uri" parameter "${req.query.redirect_uri}" (must be http or https URL).`);
 	}
 
 	let sim = {};
@@ -53,37 +83,66 @@ router.get("/authorize", function (req, res) {
 	}
 
 	// handle response from picker, login or auth screen
-	if (req.query.patient) sim.patient = req.query.patient;
-	if (req.query.provider) sim.provider = req.query.provider;
+	if (req.query.patient  ) sim.patient   = req.query.patient;
+	if (req.query.provider ) sim.provider  = req.query.provider;
+	if (req.query.encounter) sim.encounter = req.query.encounter;
 	if (req.query.auth_success) sim.skip_auth = "1";
 	// if (req.query.login_success) sim.skip_login = "1";
 	if (req.query.auth_fail) {
 		return res.status(401).send("Unauthorized");
 	}
 	
-	// show patient picker if provider launch, patient scope and no patient or multiple patients provided
+	// PATIENT PICKER
+	// -------------------------------------------------------------------------
+	// Show patient picker if provider launch, patient scope and no patient
+	// or multiple patients provided
 	if (!sim.launch_pt && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
 		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/picker")  + 
 			(sim.patient ? "&patient=" + encodeURIComponent(sim.patient)  : "")
 		return res.redirect(redirectUrl);
 	}
 
-	// show login screen if patient launch and skip login is not selected, there's no patient or multiple patients provided
+	// PATIENT LOGIN SCREEN
+	// -------------------------------------------------------------------------
+	// Show login screen if patient launch and skip login is not selected,
+	// there's no patient or multiple patients provided
 	if (sim.launch_pt && !sim.skip_login && (!sim.patient || sim.patient.indexOf(",") > -1)) {
 		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/login")  + 
 			(sim.patient && !req.query.patient ? "&patient=" + encodeURIComponent(sim.patient) : "")
 		return res.redirect(redirectUrl);
 	}
 
-	// show login screen if provider launch and skip login is not selected, there's no provider or multiple provider provided
-	else if (sim.launch_prov && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
+	// PROVIDER LOGIN SCREEN
+	// -------------------------------------------------------------------------
+	// show login screen if provider launch and skip login is not selected,
+	// there's no provider or multiple provider provided
+	if (sim.launch_prov && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
 		// console.log(" -------> PROVIDER LOGIN SCREEN", sim.patient);
 		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/login")  + 
 			(sim.provider && !req.query.provider ? "&provider=" + encodeURIComponent(sim.provider) : "")
 		return res.redirect(redirectUrl);
 	}
 
-	// show authorize screen if standalone launch and skip auth is not specified
+	// ENCOUNTER
+	// -------------------------------------------------------------------------
+	if (sim.launch_ehr && sim.patient && req.query.scope.indexOf("launch") != -1 && !sim.encounter) {
+
+		// Show encounter picker
+		if (sim.select_encounter == "1") {
+			let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/encounter") + 
+				"&patient=" + encodeURIComponent(sim.patient);
+			return res.redirect(redirectUrl);
+		}
+
+		// Load the first encounter if a patient is selected
+		else {
+			sim.encounter = (await getFirstEncounter(apiUrl, sim.patient)).id;
+		}
+	}
+
+	// AUTH SCREEN
+	// -------------------------------------------------------------------------
+	// Show authorize screen if standalone launch and skip auth is not specified
 	else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
 		// console.log(" -------> App AUTH SCREEN")
 		let redirectUrl = req.originalUrl.replace( config.authBaseUrl + "/authorize", "/authorize")  + 
@@ -119,6 +178,7 @@ router.get("/authorize", function (req, res) {
 			"/ehr.html?app=" + encodeURIComponent(redirect) +
 			(sim.patient ? "&patient=" + encodeURIComponent(sim.patient) : "") +
 			(sim.provider || sim.user ? "&provider=" + encodeURIComponent(sim.provider || sim.user) : "") +
+			(sim.encounter ? "&encounter=" + encodeURIComponent(sim.encounter) : "") +
 			"&iss=" + encodeURIComponent(apiUrl)
 		);
 	}
@@ -128,6 +188,10 @@ router.get("/authorize", function (req, res) {
 
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
 	
+	if (req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
+		return res.status(401).send('Invalid request content-type header (must be "application/x-www-form-urlencoded").');
+	}
+
 	var grantType = req.body.grant_type;
 	var codeRaw;
 
@@ -140,7 +204,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 	try {
 		var code = jwt.verify(codeRaw, config.jwtSecret);
 	} catch (e) {
-		return res.status(401).send("Invalid token");
+		return res.status(401).send(`Invalid token: ${e.message}`);
 	}
 
 
@@ -149,7 +213,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 	}
 
 	if (code.auth_error == "token_invalid_token") {
-		return res.status(401).send("Invalid token");
+		return res.status(401).send("Invalid token: simulated invalid token error");
 	}
 
 	var token = Object.assign({}, code.context, {

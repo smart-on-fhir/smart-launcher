@@ -72,6 +72,11 @@ app.get(buildRoutePermutations("/picker"), (req, res) => {
     res.sendFile("picker.html", {root: './static'});
 });
 
+// encounter picker
+app.get(buildRoutePermutations("/encounter"), (req, res) => {
+    res.sendFile("encounter-picker.html", {root: './static'});
+});
+
 // login
 app.get(buildRoutePermutations("/login"), (req, res) => {
     res.sendFile("login.html", {root: './static'});

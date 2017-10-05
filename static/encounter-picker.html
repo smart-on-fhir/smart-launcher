@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<title>SMART EHR</title>
+		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/blue-nav.css" rel="stylesheet">
+		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+		<![endif]-->
+		<style>
+			tr.record > td {
+				cursor: pointer;
+			}
+			#global-error,
+            #message-loading,
+            #message-no-records,
+            #record-template,
+            .col-sort-ind,
+			.container,
+            #paging,
+            #paging-previous,
+            #paging-next  {
+				display: none;
+			}
+            .heading {
+                visibility: hidden;
+            }
+			tr:not(.no-hover):hover {
+				background-color: #eee;
+			}
+
+            thead {
+                transition: opacity 0.2s;
+            }
+            thead.transparent {
+                opacity: 0;
+            }
+            .table > thead.transparent > tr > th {
+                border-bottom-color: transparent;
+            }
+            thead.transparent + tbody > tr > td {
+                border-top-color: transparent;
+            }
+		</style>
+	</head>
+	<body>
+		<div class="navbar navbar-custom navbar-static-top">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <div class="pull-left" style="margin: 10px;">
+                        <img src="/img/smart-bug.png" />
+                    </div>
+                    <a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
+                        SMART EHR
+                    </a>
+                </div>
+            </div>
+        </div>
+		<div class="container">
+
+            <div id="global-error" class="row" style="margin-bottom:20px;">
+                <div class="col-xs-12">
+                    <div class="alert alert-danger" role="alert">
+                        <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                        <span id="global-error-message">An error occured loading data, please try again later.</span>
+                    </div>
+                </div>
+            </div>
+
+            <script type="text/template" id="record-row-template">
+                <tr class="record" id="record-{id}">
+                    <td><input type="radio" name="encounter"/></td>
+                    <td>{type}</td>
+                    <td>{reason}</td>
+                    <td>{class}</td>
+                    <td>{status}</td>
+                    <td>{time}</td>
+                </tr>
+            </script>
+            <div class="row picker">
+                <div class="col-sm-12 heading">
+                    <h2>Select encounter for <span class="patient-name text-primary"></span></h2>
+                    <hr/>
+                </div>
+            </div>
+            <div class="row picker">
+                <div class="col-sm-12">
+                    <table class="table">
+                        <thead class="transparent">
+                            <tr class="no-hover">
+                                <th></th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Class</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            <tr>
+                        </thead>
+                        <tbody>
+                            <tr id="message-loading" class="no-hover">
+                                <td colspan="6" style="text-align:center;padding:40px;">
+                                    <img src="/img/ajax-loader.gif"/>
+                                </td>
+                            </tr>				
+                            <tr id="message-no-records" class="no-hover">
+                                <td colspan="6" style="text-align:center;padding:40px;">
+                                    No encounters found.
+                                </td>
+                            </tr>
+                            <tr id="paging" class="no-hover">
+                                <td colspan="6">
+                                    <div>
+                                        <div class="pull-left" style="padding:8px 0;">
+                                            <span id="paging-from">1</span> to <span id="paging-to">10</span> of <span id="paging-total">103</span>
+                                        </div>
+                                        <div class="pull-right">
+                                            <button id="paging-previous" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-menu-left"></span> Previous</button>
+                                            <button id="paging-next" class="btn btn-primary btn-sm">Next <span class="glyphicon glyphicon-menu-right"></span></button>
+                                        </div>	
+                                    <div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+		</div> <!-- container -->
+
+		<script src="/vendor/jquery-1.12.3.min.js"></script>
+		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+		<script src="/vendor/moment.min.js"></script>
+		<script src="/vendor/underscore-1.8.3.min.js"></script>
+		<script src="/lib.js"></script>
+		<!-- <script src="/picker.js"></script> -->
+		<script>
+			jQuery(function($) {
+                var state = $.extend({
+                    skip          : "0",
+                    mode          : "loading",
+                    pageSize      : "10",
+                    apiUrlSegment : "fhir",
+                    authUrlSegment: "auth/authorize",
+                    errorMessage  : ""
+                }, Lib.getUrlQuery());
+
+                state.aud = location.href.split("?")[0].replace(/\/encounter$/, "/fhir");
+                
+                // Validate URL params
+                // -------------------------------------------------------------
+                if (!state.patient) {
+                    state.errorMessage = '"patient" parameter is required!';
+                    state.mode = "error";
+                    return render();
+                }
+
+                state.patient = state.patient.replace(/\s*/g, "");
+
+                function buildFhirUrl() {
+                    return (
+                        state.aud + 
+                        "/Encounter/?_format=application/json+fhir" +
+                        "&_count=" + state.pageSize +
+                        "&patient=" + state.patient + 
+                        "&_sort:desc=date"
+                    );
+                }
+
+                function getLinks(data) {
+                    if (!data.link) return {};
+                    var links = {};
+                    for (var i = 0; i < data.link.length; i++) {
+                        links[data.link[i].relation] = data.link[i].url;
+                    }
+                    return links;
+                }
+
+                function loadFhir(fhirUrl) {
+                    if (!fhirUrl) {
+                        fhirUrl = buildFhirUrl();
+                        state.skip = 0;
+                    }
+                    state.mode = "loading";
+                    render();
+
+                    var tasks = [$.get(fhirUrl), 0];
+
+                    // Don't re-fetch the patient on pagination requests
+                    if (!state.patientData) {
+                        tasks[1] = $.get(state.aud + "/Patient/" + state.patient);
+                    }
+
+                    $.when.apply($, tasks).then(
+                        function(encounters, patientData) {
+                            state.data  = encounters[0];
+                            state.mode  = "data"
+                            state.links = getLinks(encounters[0]);
+                            if (patientData) {
+                                state.patientData = patientData[0];
+                            }
+                            render();
+                        },
+                        function() {
+                            state.mode = "error";
+                            state.errorMessage = "An error occured loading encounters, please try again later.";
+                            render();
+                        }
+                    );
+                }
+
+                function handlePagingClick() {
+                    var dir = 1;
+                    if ($(this).attr("id") == "paging-previous")
+                        dir = -1;
+                    state.skip = "" + (parseInt(state.skip) + parseInt(state.pageSize) * dir);
+                    loadFhir(dir == 1 ? state.links.next : state.links.previous)
+                }
+                
+                // UI Event Handlers
+                function bindUiEvents() {
+                    $("#paging-next, #paging-previous").click(handlePagingClick);
+                    $("table").on("click", ".record", submit);
+                }
+
+                function submit() {
+                    var id = $(this).attr("id").replace("record-", "");
+                    var url = window.location.href
+                        .replace("/encounter", "/" + state.authUrlSegment)
+                        .replace(/(&?)encounter=[^&]*(&|$)/, "$2") + 
+                        "&encounter=" + window.encodeURIComponent(id);
+
+                    if (state.newWindow == "1") {
+                        window.open(url);
+                    } else {
+                        window.location.href = url;
+                    }
+                }
+
+                // encounter-specific functions --------------------------------
+                function getEncounterClass(encounter) {
+                    return encounter.class && typeof encounter.class == "object" ?
+                        Lib.getPath(encounter, "class.type.0.text") :
+                        encounter.class;
+                }
+
+                function getEncounterType(rec) {
+                    var result = Lib.getPath(rec, "type.0.text");
+                    if (result) {
+                        return '<b>' + result + '</b>';
+                    }
+                    
+                    var _class = getEncounterClass(rec);
+                    if (_class) {
+                        return '<span class="text-muted">' + _class + " encounter</span>";
+                    }
+                    return '<small class="text-muted">N/A</small>';
+                }
+
+                function period(data) {
+                    let from = data.start || "";
+                    let to   = data.end   || "";
+
+                    if (from && to) {
+                        from = moment(from);
+                        to   = moment(to);
+
+                        if (from.isSame(to, "day")) {
+                            return (
+                                '<span>' +
+                                    from.format("MM/DD/YYYY") +
+                                    (from.isSame(to, "hour") ?
+                                        '' :
+                                        ('<span>' +
+                                            '<small class="text-muted"> from </small>' +
+                                            from.format("HH:mm") +
+                                            '<small class="text-muted"> to </small>' +
+                                            to.format("HH:mm") +
+                                        '</span>')) +
+                                '</span>'
+                            )
+                        }
+                        else {
+                            return (
+                                '<span>' +
+                                    '<small class="text-muted"> from </small>' +
+                                    from.format("MM/DD/YYYY") +
+                                    '<small class="text-muted"> to </small>' +
+                                    to.format("MM/DD/YYYY") +
+                                '</span>'
+                            );
+                        }
+                    }
+                    else {
+                        if (from) {
+                            from = moment(from);
+                            return (
+                                '<span>' +
+                                    '<small class="text-muted"> from </small>' +
+                                    from.format("MM/DD/YYYY") +
+                                '</span>'
+                            )
+                        }
+                        else if (to) {
+                            to = moment(to);
+                            return (
+                                '<span>' +
+                                    '<small class="text-muted"> to </small>' +
+                                    to.format("MM/DD/YYYY") +
+                                '</span>'
+                            )
+                        }
+                    }
+                    return '<small class="text-muted">N/A</small>';
+                }
+
+                // rendering methods -------------------------------------------
+                function _renderPatient() {
+                    if (state.patientData) {
+                        $(".patient-name").text(Lib.humanName(state.patientData));
+                        $(".heading").css("visibility", "visible");
+                    }
+                }
+
+                function _renderError() {
+                    if (state.errorMessage) {
+                        $("#global-error-message").text(state.errorMessage);
+                    }
+                    $(".picker").hide()
+                    $("#global-error").show();
+                }
+
+                function _renderLoading() {
+                    $(".record").remove();	
+                    $("#paging, #message-no-records").hide();
+                    $("thead").addClass("transparent");
+                    $("#message-loading").show();
+                }
+
+                function _renderNoRecords() {
+                    $("#message-loading").hide();
+                    $("#message-no-records").show();
+                }
+
+                function _renderRecords() {
+                    var tpl = $("#record-row-template").html();
+                    var rows = _.map(state.data.entry, function(entry) {
+                        return _buildRecordRow(
+                            entry.resource,
+                            tpl,
+                            state.showIds == "1",
+                            state.launchUrl == ""
+                        );
+                    });
+                    $(".picker table > tbody").prepend(rows.join(""))
+                    $("thead").removeClass("transparent");
+                    $("#message-loading").hide();
+                }
+
+                function _renderPaging() {
+                    $("#paging-from").text(parseInt(state.skip)+1);
+                    $("#paging-to").text(parseInt(state.skip) + state.data.entry.length);
+                    $("#paging-total").text(state.data.total);
+                    $("#paging-next").toggle(state.data.total > parseInt(state.skip, 10) + state.data.entry.length);
+                    $("#paging-previous").toggle(parseInt(state.skip) > 0);
+                    $("#paging").show();
+                }
+
+                function _buildRecordRow(resource, tpl, showIds, hideButton) {
+                    var na = '<small class="text-muted">N/A</small>';
+                    return tpl
+                        .replace("{id}", resource.id)
+                        .replace("{type}", getEncounterType(resource))
+                        .replace("{reason}", Lib.getPath(resource, "reason.0.coding.0.display") || na)
+                        .replace("{class}", (function() {
+                            var out = getEncounterClass(resource);
+                            return out ? '<b>' + out + '</b>' : na;
+                        })())
+                        .replace("{status}", resource.status || na)
+                        .replace("{time}", period(resource.period || {}))
+                }
+
+                function render() {
+                    $(".container").show();
+                    if (state.mode == "error") {
+                        _renderError();
+                    }
+                    else if (state.mode == "loading") {
+                        _renderLoading();
+                    }
+                    else {
+                        _renderPatient();
+                        if (state.data.entry && state.data.entry.length) {
+                            _renderRecords();
+                            _renderPaging();
+                        }
+                        else {
+                            _renderNoRecords();
+                        }
+                    }
+                }
+
+                bindUiEvents();
+                loadFhir();
+
+            });
+		</script>
+	</body>
+</html>
