@@ -17,6 +17,9 @@
 			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 		<![endif]-->
 		<style>
+			* {
+				box-sizing: border-box;
+			}
 			html {
 				margin: 0;
 				padding: 0;
@@ -53,16 +56,21 @@
 			}
 			.status-bar {
 				display: flex;
-				/* flex: 0 0 20px; */
+				background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
 				box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.2) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
 				color: #444;
-				padding: 2px 1ex;
+				white-space: nowrap;
+    			flex-wrap: nowrap;
+				text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 			}
+			
 			.flex-row {
 				display       : flex;
 				flex-direction: row;
 				flex          : 1 1 0px;
+				width         : 100%;
 			}
+			
 			.header {
 				display    : flex;
 				box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
@@ -123,6 +131,38 @@
 			.text-muted {
 				color: rgba(0, 0, 0, 0.5);
 			}
+
+
+			.status-bar > .flex-row > div {
+				padding: 0 8px;
+				margin: 4px 0 3px;
+				box-sizing: border-box;
+				border-right: 1px solid rgba(0, 0, 0, 0.2);
+				border-left: 1px solid rgba(255, 255, 255, 0.5);
+				line-height: 1.2;
+			}
+			.status-bar > .flex-row > div:last-child {
+				border-right: none;
+			}
+			.status-bar > .flex-row > div:first-child {
+				border-left: none;
+			}
+			.status-bar > .flex-row > div.encounter,
+			.status-bar > .flex-row > div.user,
+			.status-bar > .flex-row > div.patient {
+				flex: 3;
+				opacity: 0;
+				transition: opacity 0.4s;
+				overflow     : hidden;
+				text-overflow: ellipsis;
+				text-align: center;
+			}
+			.status-bar > .flex-row .encounter-id,
+			.status-bar > .flex-row .user-id,
+			.status-bar > .flex-row .patient-id {
+				display       : inline;
+				vertical-align: top;
+			}
 		</style>
 
 	</head>
@@ -154,7 +194,20 @@
 			</div>
 			<iframe id="frame" src="about:blank"></iframe>
 		</div>
-		<div class="status-bar">EHR Status bar</div>
+		<div class="status-bar">
+			<div class="flex-row">
+				<div style="flex: 1">EHR Status bar</div>
+				<div class="patient">
+					<div class="patient-id"></div>
+				</div>
+				<div class="user">
+					<div class="user-id"></div>
+				</div>
+				<div class="encounter">
+					<div class="encounter-id"></div>
+				</div>
+			</div>
+		</div>
 		<script src="/vendor/jquery-1.12.3.min.js"></script>
 		<script src="/vendor/moment.min.js"></script>
 		<script src="/lib.js"></script>
@@ -174,13 +227,21 @@
 						$(".patient-name").text(Lib.humanName(data));
 						$(".patient-age").text(Lib.formatAge(data.birthDate));
 						$(".patient-gender").text(Lib.toCamelCase(data.gender || "unknown", true));
+						$(".patient-id").text(`Patient: ${data.id}`);
 						$(".patient").css({ opacity: 1 });
 					});
 				}
 				if (state.provider) {
 					$.get(state.iss + "/Practitioner/" + state.provider).done(function(data) {
 						$(".provider-name").text(Lib.humanName(data));
-						$(".practitioner").css({ opacity: 1 });
+						$(".user-id").text(`User: ${data.id}`);
+						$(".user, .practitioner").css({ opacity: 1 });
+					});
+				}
+				if (state.encounter) {
+					$.get(state.iss + "/Encounter/" + state.encounter).done(function(data) {
+						$(".encounter-id").text(`Encounter: ${data.id}`);
+						$(".encounter").css({ opacity: 1 });
 					});
 				}
 			}
