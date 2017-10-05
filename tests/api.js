@@ -156,7 +156,7 @@ describe('Proxy', function() {
 });
 
 describe('Auth', function() {
-    buildRoutePermutations("authorize").forEach(path => {
+    buildRoutePermutations("auth/authorize").forEach(path => {
         let query = [];
         [
             "response_type",
@@ -172,17 +172,28 @@ describe('Auth', function() {
                 .expect(400)
                 .expect(`Missing ${name} parameter`)
                 .end(() => {
-                    query.push(name + "=x");
+                    query.push(name + "=" + (name == "redirect_uri" ? "http%3A%2F%2Fx" : "x"));
                     done();
                 });
             });
         });
     });
 
+    buildRoutePermutations("auth/authorize").forEach(path => {
+        it(`${path} - validates the redirect_uri parameter`, done => {
+            request(app)
+            .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
+            .expect(`Invalid "redirect_uri" parameter "x" (must be http or https URL).`)
+            .expect(400)
+            .end(done);
+        });
+    });
+    
+
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
                 request(app)
@@ -195,8 +206,8 @@ describe('Auth', function() {
     }
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid scope error", done => {
                 request(app)
@@ -209,8 +220,8 @@ describe('Auth', function() {
     }
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x"`);
+        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid client_id error", done => {
                 request(app)
@@ -223,7 +234,7 @@ describe('Auth', function() {
     }
 
     buildRoutePermutations(
-        "auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&launch=0&aud=whatever" +
+        "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=whatever" +
         encodeURIComponent(config.fhirServerR2),
         2
     ).forEach(path => {
@@ -237,7 +248,7 @@ describe('Auth', function() {
     });
 
     // buildRoutePermutations(
-    //     "auth/authorize?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&launch=0&aud=",
+    //     "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=",
     //     2
     // ).forEach(path => {
     //     let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
