@@ -10,7 +10,7 @@
      * @param {String} path The path (eg. "a.b.4.c")
      * @returns {*} Whatever is found in the path or undefined
      */
-    function getPath(obj, path = "") {
+    function getPath(obj, path) {
         return path.split(".").reduce((out, key) => out ? out[key] : undefined, obj)
     }
 
@@ -171,7 +171,7 @@
         name = name[0];
         if (!name) name = { family: [ "No Name Listed" ] };
         
-        var out = $.map(["prefix", "given", "family", "suffix"], function(type) {
+        var out = $.map(["prefix", "given", "family"], function(type) {
             if (!name[type]) {
                 name[type] = [ "" ];
             }
@@ -181,7 +181,12 @@
             return name[type].join(" ");
         });
 
-        return $.grep(out, Boolean).join(separator || " ");
+        out = $.grep(out, Boolean).join(separator || " ");
+        if (name.suffix) {
+            out += ", " + name.suffix;
+        }
+
+        return out;
     }
     
     function formatAge(dob) {

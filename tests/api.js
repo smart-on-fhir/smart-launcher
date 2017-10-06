@@ -28,6 +28,19 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     return out;
 }
 
+function testAuthAuthorize(params) {
+    var defaultParams = {
+        "response_type": "code",
+        "client_id"    : "my_web_app",
+        "redirect_uri" : "https://redirect",
+        "scope"        : "patient/*.read launch",
+        "state"        : "x",
+        "aud"          : "x"
+    };
+    var paths2 = buildRoutePermutations("auth/authorize", 2);
+    var paths3 = buildRoutePermutations("auth/authorize", 3);
+}
+
 describe('index', function() {
     it('responds with html', function(done) {
         request(app)
@@ -204,6 +217,7 @@ describe('Auth', function() {
             });
         });
     }
+    
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
@@ -218,6 +232,7 @@ describe('Auth', function() {
             });
         });
     }
+    
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
@@ -247,14 +262,39 @@ describe('Auth', function() {
         });
     });
 
-    // buildRoutePermutations(
-    //     "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=",
-    //     2
-    // ).forEach(path => {
-    //     let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
+    buildRoutePermutations(
+        "auth/authorize" +
+        "?client_id=x" +
+        "&response_type=code" +
+        "&scope=patient%2F*.read%20launch" +
+        "&redirect_uri=https%3A%2F%2Fsb-apps.smarthealthit.org%2Fapps%2Fgrowth-chart%2F" +
+        "&state=x" +
+        "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
+    ).forEach(path => {
+        let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
+        let launch = new Buffer(JSON.stringify({
+            launch_ehr      : 1,
+            select_encounter: 1
+        })).toString("base64");
+        let fullPath = path + "&aud=" + aud + "&launch=" + launch;
+
+        it (path.split("?")[0] + " can show encounter picker", done => {
+
     //     it (path.split("?")[0] + " accepts valid audience value", done => {
     //         request(app).get(path + aud).expect(200).end(done);
     //     });
-    // });
+            request(app)
+            .get(fullPath)
+            // .expect(200)
+            .expect(function(res) {
+                if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
+                    throw new Error("Wrong redirect")
+                }
+            })
+            // .expect('Location', fullPath.replace(/auth/authorize?", "/encounter?") + "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d")
+            // .expect("Bad audience values")
+            .end(done);
+        });
+    });
 
 });

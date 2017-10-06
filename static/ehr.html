@@ -1,252 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<title>SMART EHR</title>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <title>SMART EHR</title>
 
-		<link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
-		<link href="blue-nav.css" rel="stylesheet">
+        <link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+        <link href="blue-nav.css" rel="stylesheet">
 
-		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-		<!--[if lt IE 9]>
-			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-		<![endif]-->
-		<style>
-			* {
-				box-sizing: border-box;
-			}
-			html {
-				margin: 0;
-				padding: 0;
-				position: fixed;
-				display: block;
-				top: 0;
-				right: 0;
-				bottom: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				overflow: hidden;
-			}
-			body {
-				margin: 0;
-				padding: 0;
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-				color: #000;
-				font: menu;
-				cursor: default;
-				background: #ECE9DA;
-				text-shadow: 0 1px 0 #FFF;
-				overflow: hidden;
-			}
-			iframe {
-				border: 1px solid black;
-				display: flex;
-				flex: 1 1 100px;
-				margin: 1px 1px 1px 1px;
-				box-sizing: border-box;
-				background: rgba(0, 0, 0, 0.3);
-			}
-			.status-bar {
-				display: flex;
-				background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
-				box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.2) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
-				color: #444;
-				white-space: nowrap;
-    			flex-wrap: nowrap;
-				text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-			}
-			
-			.flex-row {
-				display       : flex;
-				flex-direction: row;
-				flex          : 1 1 0px;
-				width         : 100%;
-			}
-			
-			.header {
-				display    : flex;
-				box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
-				color      : #444;
-				padding    : 1ex 1em;
-				font-size  : 120%;
-			}
-			.header > .flex-row {
-				flex-wrap: nowrap;
-				white-space: nowrap;
-				line-height: 40px;
-			}
-			.sidebar {
-				background : linear-gradient(#A1B3D7, #6D84D5);
-				display    : flex;
-				flex-grow  : 0;
-				padding    : 2em;
-				box-sizing : border-box;
-				align-items: center;
-				color      :rgba(255, 255, 255, 0.54);
-				text-shadow: none;
-			}
-			
-			.patient {
-				flex: 1;
-				opacity: 0;
-				transition: opacity 0.4s;
-				margin-right: 1em;
-			}
-			.practitioner {
-				opacity: 0;
-				transition: opacity 0.4s;
-			}
-			.logo {
-				color: #ece9d9;
-				background: #3B69BE;
-				display: inline-block;
-				border-radius: 50px;
-				padding: 5px 15px 5px 5px;
-				margin: 0 30px 0 0;
-				text-shadow: none;
-				font-weight: 900;
-				vertical-align: top;
-				line-height: 30px;
-				background-image: linear-gradient(90deg,  #6D84D5, #3B69BE);
-				white-space: nowrap;
-				min-width: 9em;
-			}
-			.logo img {
-				max-height: 30px;
-				display: block;
-				float: left;
-				margin: 0 10px 0px 0;
-			}
-			.blue {
-				color: #3B69BE;
-			}
-			.text-muted {
-				color: rgba(0, 0, 0, 0.5);
-			}
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                margin: 0;
+                padding: 0;
+                position: fixed;
+                display: block;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                color: #000;
+                font: menu;
+                cursor: default;
+                background: #ECE9DA;
+                text-shadow: 0 1px 0 #FFF;
+                overflow: hidden;
+            }
+            iframe {
+                border: 1px solid black;
+                display: flex;
+                flex: 1 1 100px;
+                margin: 1px 1px 1px 1px;
+                box-sizing: border-box;
+                background: rgba(0, 0, 0, 0.3);
+            }
+            .status-bar {
+                display: flex;
+                background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
+                box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.2) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
+                color: #444;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+            }
+            
+            .flex-row {
+                display       : flex;
+                flex-direction: row;
+                flex          : 1 1 0px;
+                width         : 100%;
+                max-width     : 100%;
+            }
+            
+            .header {
+                display    : flex;
+                box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
+                color      : #444;
+                padding    : 1ex 1em;
+                font-size  : 120%;
+            }
+            .header > .flex-row {
+                flex-wrap: nowrap;
+                white-space: nowrap;
+                line-height: 40px;
+            }
+            .sidebar {
+                background : linear-gradient(#A1B3D7, #6D84D5);
+                display    : flex;
+                flex-grow  : 0;
+                padding    : 2em;
+                box-sizing : border-box;
+                align-items: center;
+                color      :rgba(255, 255, 255, 0.54);
+                text-shadow: none;
+            }
+            
+            .header .patient {
+                flex: 1;
+                opacity: 0;
+                transition: opacity 0.4s;
+                margin-right: 1em;
+            }
+            .practitioner {
+                opacity: 0;
+                transition: opacity 0.4s;
+            }
+            .logo {
+                color: #ece9d9;
+                background: #3B69BE;
+                display: inline-block;
+                border-radius: 50px;
+                padding: 5px 15px 5px 5px;
+                margin: 0 30px 0 0;
+                text-shadow: none;
+                font-weight: 900;
+                vertical-align: top;
+                line-height: 30px;
+                background-image: linear-gradient(90deg,  #6D84D5, #3B69BE);
+                white-space: nowrap;
+                min-width: 9em;
+            }
+            .logo img {
+                max-height: 30px;
+                display: block;
+                float: left;
+                margin: 0 10px 0px 0;
+            }
+            .blue {
+                color: #3B69BE;
+            }
+            .text-muted {
+                color: rgba(0, 0, 0, 0.5);
+            }
 
 
-			.status-bar > .flex-row > div {
-				padding: 0 8px;
-				margin: 4px 0 3px;
-				box-sizing: border-box;
-				border-right: 1px solid rgba(0, 0, 0, 0.2);
-				border-left: 1px solid rgba(255, 255, 255, 0.5);
-				line-height: 1.2;
-			}
-			.status-bar > .flex-row > div:last-child {
-				border-right: none;
-			}
-			.status-bar > .flex-row > div:first-child {
-				border-left: none;
-			}
-			.status-bar > .flex-row > div.encounter,
-			.status-bar > .flex-row > div.user,
-			.status-bar > .flex-row > div.patient {
-				flex: 3;
-				opacity: 0;
-				transition: opacity 0.4s;
-				overflow     : hidden;
-				text-overflow: ellipsis;
-				text-align: center;
-			}
-			.status-bar > .flex-row .encounter-id,
-			.status-bar > .flex-row .user-id,
-			.status-bar > .flex-row .patient-id {
-				display       : inline;
-				vertical-align: top;
-			}
-		</style>
+            /* status-bar contents ------------------------------------------ */
+            .status-bar > .flex-row {
+                justify-content: space-between;
+            }
+            .status-bar > .flex-row > div {
+                padding: 0 8px;
+                margin: 4px 0 3px;
+                box-sizing: border-box;
+                border-right: 1px solid rgba(0, 0, 0, 0.2);
+                border-left: 1px solid rgba(255, 255, 255, 0.5);
+                line-height: 1.2;
+                flex-grow: 1;
+            }
+            .status-bar > .flex-row > div:last-child {
+                border-right: none;
+            }
+            .status-bar > .flex-row > div:first-child {
+                border-left: none;
+            }
+            .status-bar > .flex-row > div.encounter,
+            .status-bar > .flex-row > div.user,
+            .status-bar > .flex-row > div.patient {
+                /* flex: 3; */
+                opacity: 0;
+                transition: opacity 0.4s;
+                overflow     : hidden;
+                text-overflow: ellipsis;
+                text-align: center;
+            }
+            .status-bar > .flex-row .encounter-id,
+            .status-bar > .flex-row .user-id,
+            .status-bar > .flex-row .patient-id {
+                display       : inline;
+                vertical-align: top;
+            }
+        </style>
 
-	</head>
-	<body>
-		<div class="header">
-			<div class="flex-row">
-				<div>
-					<div class="logo">
-						<img src="/img/smart-logo.png" /> Fake EHR
-					</div>
-				</div>
-				<div class="patient">
-					<span class="blue"><i class="glyphicon glyphicon-user"></i><b> Patient: </b></span>
-					<b class="patient-name"></b>
-					<span class="text-muted">, age: </span>
-					<b class="patient-age"></b>
-					<span class="text-muted">, sex: </span>
-					<b class="patient-gender"></b>
-				</div>
-				<div class="practitioner">
-					<span class="blue"><i class="glyphicon glyphicon-user"></i><b> User: </b></span>
-					<b class="provider-name"></b>
-				</div>
-			</div>
-		</div>
-		<div class="flex-row">
-			<div class="sidebar">
-				<h3>EHR Sidebar</h3>
-			</div>
-			<iframe id="frame" src="about:blank"></iframe>
-		</div>
-		<div class="status-bar">
-			<div class="flex-row">
-				<div style="flex: 1">EHR Status bar</div>
-				<div class="patient">
-					<div class="patient-id"></div>
-				</div>
-				<div class="user">
-					<div class="user-id"></div>
-				</div>
-				<div class="encounter">
-					<div class="encounter-id"></div>
-				</div>
-			</div>
-		</div>
-		<script src="/vendor/jquery-1.12.3.min.js"></script>
-		<script src="/vendor/moment.min.js"></script>
-		<script src="/lib.js"></script>
-		<script>
-		(function() {
-			var state = $.extend({
-				apiUrlSegment: "fhir"
-			}, Lib.getUrlQuery());
+    </head>
+    <body>
+        <div class="header">
+            <div class="flex-row">
+                <div>
+                    <div class="logo">
+                        <img src="/img/smart-logo.png" /> Fake EHR
+                    </div>
+                </div>
+                <div class="patient">
+                    <span class="blue"><i class="glyphicon glyphicon-user"></i><b> Patient: </b></span>
+                    <b class="patient-name"></b>
+                    <span class="text-muted">, age: </span>
+                    <b class="patient-age"></b>
+                    <span class="text-muted">, sex: </span>
+                    <b class="patient-gender"></b>
+                </div>
+                <div class="practitioner">
+                    <span class="blue"><i class="glyphicon glyphicon-user"></i><b> User: </b></span>
+                    <b class="provider-name"></b>
+                </div>
+            </div>
+        </div>
+        <div class="flex-row">
+            <div class="sidebar">
+                <h3>EHR Sidebar</h3>
+            </div>
+            <iframe id="frame" src="about:blank"></iframe>
+        </div>
+        <div class="status-bar">
+            <div class="flex-row">
+                <div>EHR Status bar</div>
+                <div class="patient">
+                    <div class="patient-id"></div>
+                </div>
+                <div class="user">
+                    <div class="user-id"></div>
+                </div>
+                <div class="encounter">
+                    <div class="encounter-id"></div>
+                </div>
+            </div>
+        </div>
+        <script src="/vendor/jquery-1.12.3.min.js"></script>
+        <script src="/vendor/moment.min.js"></script>
+        <script src="/lib.js"></script>
+        <script>
+        (function() {
+            var state = $.extend({
+                apiUrlSegment: "fhir"
+            }, Lib.getUrlQuery());
 
-			if (state.app) {
-				$("#frame").prop("src", state.app);
-			}
+            if (state.app) {
+                $("#frame").prop("src", state.app);
+            }
 
-			if (state.iss) {
-				if (state.patient) {
-					$.get(state.iss + "/Patient/" + state.patient).done(function(data) {
-						$(".patient-name").text(Lib.humanName(data));
-						$(".patient-age").text(Lib.formatAge(data.birthDate));
-						$(".patient-gender").text(Lib.toCamelCase(data.gender || "unknown", true));
-						$(".patient-id").text(`Patient: ${data.id}`);
-						$(".patient").css({ opacity: 1 });
-					});
-				}
-				if (state.provider) {
-					$.get(state.iss + "/Practitioner/" + state.provider).done(function(data) {
-						$(".provider-name").text(Lib.humanName(data));
-						$(".user-id").text(`User: ${data.id}`);
-						$(".user, .practitioner").css({ opacity: 1 });
-					});
-				}
-				if (state.encounter) {
-					$.get(state.iss + "/Encounter/" + state.encounter).done(function(data) {
-						$(".encounter-id").text(`Encounter: ${data.id}`);
-						$(".encounter").css({ opacity: 1 });
-					});
-				}
-			}
-		})();
-		</script>
+            if (state.iss) {
+                if (state.patient) {
+                    $.get(state.iss + "/Patient/" + state.patient).done(function(data) {
+                        $(".patient-name").text(Lib.humanName(data));
+                        $(".patient-age").text(Lib.formatAge(data.birthDate));
+                        $(".patient-gender").text(Lib.toCamelCase(data.gender || "unknown", true));
+                        $(".patient-id").text(`Patient ID: ${data.id}`);
+                        $(".patient").css({ opacity: 1 });
+                    });
+                }
+                else {
+                    $(".patient").css({ opacity: 1 });
+                }
 
-	</body>
+                if (state.provider) {
+                    $.get(state.iss + "/Practitioner/" + state.provider).done(function(data) {
+                        $(".provider-name").text(Lib.humanName(data));
+                        $(".user-id").text(`User ID: ${data.id}`);
+                        $(".user, .practitioner").css({ opacity: 1 });
+                    });
+                }
+                else {
+                    $(".user").css({ opacity: 1 });
+                }
+
+                if (state.encounter) {
+                    $.get(state.iss + "/Encounter/" + state.encounter).done(function(data) {
+                        $(".encounter-id").text(`Encounter ID: ${data.id}`);
+                        $(".encounter").css({ opacity: 1 });
+                    });
+                }
+                else {
+                    $(".encounter").css({ opacity: 1 });
+                }
+            }
+        })();
+        </script>
+
+    </body>
 </html>

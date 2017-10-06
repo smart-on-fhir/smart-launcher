@@ -1,165 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<title>SMART EHR</title>
 
-		<link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
-		<link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
-		<link href="/blue-nav.css" rel="stylesheet">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>SMART EHR</title>
 
-		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-		<!--[if lt IE 9]>
-			<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-			<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-		<![endif]-->
-		<style>
-			.container {
-				margin-top: 40px;
-			}
-		</style>
+    <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="/blue-nav.css" rel="stylesheet">
 
-	</head>
-	<body>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    <style>
+        .container {
+            margin-top: 40px;
+        }
+    </style>
 
-		<div class="navbar navbar-custom navbar-static-top"><div class="container-fluid">
-			<div class="navbar-header">
-				<div class="pull-left" style="margin: 10px;">
-					<img src="/img/smart-bug.png" />
-				</div>
-				<a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
-					SMART EHR
-				</a>
-			</div>
-		</div></div>
+</head>
 
-		<div class="container" id="loading"><div class="row">
-				<div class="col-xs-12" style="text-align: center;">
-					<img src="/img/ajax-loader.gif"/>
-				</div>
-		</div></div>
+<body>
 
-		<div class="container" id="content"><div class="row">
+    <div class="navbar navbar-custom navbar-static-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <div class="pull-left" style="margin: 10px;">
+                    <img src="/img/smart-bug.png" />
+                </div>
+                <a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
+                    SMART EHR
+                </a>
+            </div>
+        </div>
+    </div>
 
-			<div class="col-xs-12 col-md-offset-2 col-md-8"><div class="panel panel-primary">
-				<div class="panel-heading">Login</div>
+    <div class="container" id="loading">
+        <div class="row">
+            <div class="col-xs-12" style="text-align: center;">
+                <img src="/img/ajax-loader.gif" />
+            </div>
+        </div>
+    </div>
 
-				<div class="panel-body navbar-default"><form id="login">
+    <div class="container" id="content">
+        <div class="row">
 
-					<div class="form-group" id="user-id">
-						<label>User Name</label>
-						<select class="form-control user"></select>
-					</div>
+            <div class="col-xs-12 col-md-offset-2 col-md-8">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Login</div>
 
-					<div class="form-group" id="user-name">
-						<label>User Id</label>
-						<input class="form-control user">						
-					</div>
+                    <div class="panel-body navbar-default">
+                        <form id="login">
 
-					<div class="form-group">
-						<label for="password">Password</label>
-						<input type="password" id="password" value="demo" class="form-control">
-					</div>
+                            <div class="form-group" id="user-id">
+                                <label>User Name</label>
+                                <select class="form-control user"></select>
+                            </div>
 
-					<div class="form-group">
-						<div class="col-xs-offset-4 col-xs-4">
-							<button type="submit" class="btn btn-success btn-block">Login</button>
-						</div>				
-					</div>
-				</form></div>
-			</div></div>
-		</div></div> <!-- row / container -->
+                            <div class="form-group" id="user-name">
+                                <label>User Id</label>
+                                <input class="form-control user">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" value="demo" class="form-control">
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-xs-offset-4 col-xs-4">
+                                    <button type="submit" class="btn btn-success btn-block">Login</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- row / container -->
 
 
-		<script src="/vendor/jquery-1.12.3.min.js"></script>
-		<script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
-		<script src="/vendor/moment.min.js"></script>
-		<script src="/lib.js"></script>
-		<script>
+    <script src="/vendor/jquery-1.12.3.min.js"></script>
+    <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script src="/vendor/moment.min.js"></script>
+    <script src="/lib.js"></script>
+    <script>
+        var state = $.extend({
+            apiUrlSegment: "fhir",
+            authUrlSegment: "auth/authorize",
+        }, Lib.getUrlQuery());
 
-			var state = $.extend({
-				apiUrlSegment: "fhir",
-				authUrlSegment: "auth/authorize",
-			}, Lib.getUrlQuery());
 
+        $("#login").submit(function (e) {
+            //TODO validate id here!
+            e.preventDefault();
+            var userId = $(".user:visible").val();
+            var qs = Lib.getUrlQuery();
+            var url = location.origin + location.pathname.replace("login", state.authUrlSegment);
 
-			$("#login").submit( function(e) {
-				//TODO validate id here!
-				e.preventDefault();
-				var userId = $(".user:visible").val();
-				var qs = Lib.getUrlQuery();
-				var url = location.origin + location.pathname.replace("login", state.authUrlSegment);
+            if (qs.login_type == "provider") {
+                qs.provider = userId;
+                qs.patient = undefined;
+            } else {
+                qs.provider = undefined
+                qs.patient = userId;
+            }
+            qs.login_success = 1;
+            console.info(url + "?" + Lib.compileUrlQuery(qs))
+            window.location.href = url + "?" + Lib.compileUrlQuery(qs);
+        });
 
-				if (qs.login_type == "provider") {
-					qs.provider = userId;
-					qs.patient = undefined;
-				}
-				else {
-					qs.provider = undefined
-					qs.patient = userId;
-				}
-				qs.login_success = 1;
-				window.location.href = url + "?" + Lib.compileUrlQuery(qs);
-			});
+        function entryToLoginId(entry) {
+            var name = entry.resource.name;
+            var loginId = [];
+            if (name && name[0] && name[0].given)
+                loginId = name[0].given;
+            if (name && name[0] && name[0].family)
+                loginId.push($.isArray(name[0].family) ? name[0].family[0] : name[0].family);
+            if (loginId.length == 0)
+                loginId.push(entry.resource.id);
+            return loginId.join("_").toLowerCase();
+        }
 
-			function entryToLoginId(entry) {
-				var name = entry.resource.name;
-				var loginId = [];
-				if (name && name[0] && name[0].given) 
-					loginId = name[0].given;
-				if (name && name[0] && name[0].family)
-					loginId.push($.isArray(name[0].family) ? name[0].family[0] : name[0].family);
-				if (loginId.length == 0) 
-					loginId.push(entry.resource.id); 
-				return loginId.join("_").toLowerCase();
-			}
+        function renderPatients(entries) {
+            $.each(entries, function (i, entry) {
+                var loginId = entryToLoginId(entry);
+                $("select").append([
+                    "<option value='", entry.resource.id, "'>",
+                    loginId,
+                    "</option>"
+                ].join(""));
+            });
 
-			function renderPatients(entries) {
-				$.each( entries, function(i, entry) {
-					var loginId = entryToLoginId(entry);
-					$("select").append([
-						"<option value='", entry.resource.id, "'>",
-						loginId,
-						"</option>"
-					].join(""));
-				});
+            $("#user-name").hide();
+            $(".container").hide().filter("#content").show();
+        }
 
-				$("#user-name").hide();	
-				$(".container").hide().filter("#content").show();
-			}
-			function renderInput() {
-				$("#user-id").hide();	
-				$(".container").hide().filter("#content").show();
-			}
+        function renderInput() {
+            $("#user-id").hide();
+            $(".container").hide().filter("#content").show();
+        }
 
-			//smart-967332,smart-2080416
-			if (!state.provider && !state.patient) {
-				renderInput()
-			} else {
-				var fhirUrl = state.apiUrlSegment + 
-					"/" + (state.login_type == "provider" ? "Practitioner" : "Patient") + 
-					"?_format=application/json+fhir&_summary=true" +
-					"&_count=10&_sort=given" + 
-					"&_id=" + (state.provider || state.patient); 
+        //smart-967332,smart-2080416
+        if (!state.provider && !state.patient) {
+            renderInput()
+        } else {
+            var _id = (state.provider || state.patient);
+            if ($.isArray(_id)) {
+                _id = _id.join(",");
+            }
+            var fhirUrl = state.apiUrlSegment +
+                "/" + (state.login_type == "provider" ? "Practitioner?" : "Patient?") +
+                Lib.compileUrlQuery({
+                    _format : "application/json+fhir",
+                    _summary: "true",
+                    _count  : 10,
+                    _sort   : "given",
+                    _id     : _id
+                });
 
-				$.get(fhirUrl)
-					.done( function(data) {
-						if (data.entry) {
-							renderPatients(data.entry)
-						} else {
-							renderInput();
-						}
-					}).fail(renderInput);
-			}
+            $.get(fhirUrl)
+                .done(function (data) {
+                    if (data.entry) {
+                        renderPatients(data.entry)
+                    } else {
+                        renderInput();
+                    }
+                }).fail(renderInput);
+        }
 
-			if (state.login_type != "provider") 
-				$("title, .navbar-brand").text("SMART Patient Portal");
+        if (state.login_type != "provider")
+            $("title, .navbar-brand").text("SMART Patient Portal");
+    </script>
 
-		</script>
+</body>
 
-	</body>
 </html>
