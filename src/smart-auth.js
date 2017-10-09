@@ -83,7 +83,6 @@ router.get("/authorize", async function (req, res) {
         redirectUrl.query = Object.assign(redirectUrl.query, query, {
             aud_validated: sim.aud_validated
         });
-        // redirectUrl.query.aud = undefined
         redirectUrl.search = null
         redirectUrl.pathname = redirectUrl.pathname.replace(
             config.authBaseUrl + "/authorize",
@@ -177,20 +176,20 @@ router.get("/authorize", async function (req, res) {
     // Show patient picker if provider launch, patient scope and no patient
     // or multiple patients provided
     if ((sim.launch_prov || sim.launch_ehr) && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
-        return res.redirect(Url.format(buildRedirectUrl("/picker", { patient: sim.patient })));
+        return res.redirect(Url.format(buildRedirectUrl("/picker", { patient: sim.patient, aud: "" })));
     }
 
     // ENCOUNTER
     // -------------------------------------------------------------------------
     if (sim.launch_ehr && sim.patient && req.query.scope.indexOf("launch") != -1 && !sim.encounter) {
-        return res.redirect(Url.format(buildRedirectUrl("/encounter", { patient: sim.patient, select_first: sim.select_encounter != "1" })));
+        return res.redirect(Url.format(buildRedirectUrl("/encounter", { patient: sim.patient, select_first: sim.select_encounter != "1", aud: "" })));
     }
 
     // AUTH SCREEN
     // -------------------------------------------------------------------------
     // Show authorize screen if standalone launch and skip auth is not specified
     else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
-        return res.redirect(Url.format(buildRedirectUrl("/authorize", { patient: sim.patient })));
+        return res.redirect(Url.format(buildRedirectUrl("/authorize", { patient: sim.patient, aud: "" })));
     }
 
     // Build and sign the "code" param

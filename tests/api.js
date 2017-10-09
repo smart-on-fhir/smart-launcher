@@ -269,6 +269,7 @@ describe('Auth', function() {
         "&scope=patient%2F*.read%20launch" +
         "&redirect_uri=https%3A%2F%2Fsb-apps.smarthealthit.org%2Fapps%2Fgrowth-chart%2F" +
         "&state=x" +
+        "&login_success=1" +
         "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
     ).forEach(path => {
         let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
@@ -288,7 +289,7 @@ describe('Auth', function() {
             // .expect(200)
             .expect(function(res) {
                 if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
-                    throw new Error("Wrong redirect")
+                    throw new Error(`Wrong redirect ${res.headers.location}`)
                 }
             })
             // .expect('Location', fullPath.replace(/auth/authorize?", "/encounter?") + "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d")
