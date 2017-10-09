@@ -110,8 +110,12 @@
                                 </td>
                             </tr>				
                             <tr id="message-no-records" class="no-hover">
-                                <td colspan="6" style="text-align:center;padding:40px;">
-                                    No encounters found.
+                                <td colspan="6" style="text-align:center;padding:0 40px 40px;">
+                                    <p class="text-danger">No encounters found!</p>
+                                    <p>
+                                        <br/>
+                                        <button id="btn-no-encounters" class="btn btn-success">Continue Without Encounter</button>
+                                    </p>
                                 </td>
                             </tr>
                             <tr id="paging" class="no-hover">
@@ -147,7 +151,8 @@
                     pageSize      : "10",
                     apiUrlSegment : "fhir",
                     authUrlSegment: "auth/authorize",
-                    errorMessage  : ""
+                    errorMessage  : "",
+                    select_first  : false
                 }, Lib.getUrlQuery());
 
                 state.aud = location.href.split("?")[0].replace(/\/encounter$/, "/fhir");
@@ -192,8 +197,10 @@
                         fhirUrl = buildFhirUrl();
                         state.skip = 0;
                     }
+                    
                     state.mode = "loading";
                     render();
+                    
 
                     var tasks = [$.get(fhirUrl), 0];
 
@@ -231,11 +238,15 @@
                 // UI Event Handlers
                 function bindUiEvents() {
                     $("#paging-next, #paging-previous").click(handlePagingClick);
-                    $("table").on("click", ".record", submit);
+                    $("table").on("click", ".record", function() {
+                        submit($(this).attr("id").replace("record-", ""))
+                    });
+                    $("#btn-no-encounters").on("click", function() { submit(); });
                 }
 
-                function submit() {
-                    var id = $(this).attr("id").replace("record-", "");
+                function submit(id) {
+                    id = id || "-1";
+                    try { parent.setEncounterID(id); } catch(ex) {}
                     var url = window.location.href
                         .replace("/encounter", "/" + state.authUrlSegment)
                         .replace(/(&?)encounter=[^&]*(&|$)/, "$2") + 
@@ -411,8 +422,39 @@
                     }
                 }
 
-                bindUiEvents();
-                loadFhir();
+                // Show the navbar for standalone picker
+                if (!parent || parent === self) {
+                    $(".navbar").show();
+                }
+                // Hide the navbar for picker in EHR
+                else {
+                    $(".navbar").replaceWith("<br/>");
+                }
+
+                // If "select_first" param is passed select the first encounter
+                // (if any) and only show a spinner
+                if (state.select_first == "true") {
+                    state.mode = "loading";
+                    state.pageSize = 1;
+                    render(); // spinner
+                    $.get(buildFhirUrl()).then(function(encounters) {
+                        var id = ""
+                        if (encounters.total) {
+                            id = encounters.entry[0].resource.id
+                            try {parent.setEncounterID(id);} catch(ex) {}
+                        }
+                        var url = window.location.href
+                        .replace("/encounter", "/" + state.authUrlSegment)
+                        .replace(/(&?)encounter=[^&]*(&|$)/, "$2") + 
+                        "&encounter=" + window.encodeURIComponent(id || "-1");
+                        location.href = url;
+                    });
+                }
+                else {
+                    // TODO: handle cases where we don't have encounters!
+                    bindUiEvents();
+                    loadFhir();
+                }
 
             });
         </script>
