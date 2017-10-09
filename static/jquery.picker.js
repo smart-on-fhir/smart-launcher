@@ -101,7 +101,7 @@
     Picker.prototype.onOptionMouseDown = function(e) {        
         var inst = this;
         var oldVal = this._input.val();
-        var newVal = $(e.target).data("id");
+        var newVal = $(e.target).closest("a[data-id]").data("id");
 
         if (this.options.multiple) {
             e.preventDefault();
