@@ -22,6 +22,9 @@
         .container {
             margin-top: 40px;
         }
+        .navbar {
+            display: none;
+        }
     </style>
 
 </head>
@@ -54,26 +57,31 @@
 
             <div class="col-xs-12 col-md-offset-2 col-md-8">
                 <div class="panel panel-primary">
-                    <div class="panel-heading">Login</div>
-
+                    <div class="panel-heading">
+                        <i class="glyphicon glyphicon-user"></i> <span id="login-type"></span> Login
+                    </div>
                     <div class="panel-body navbar-default">
                         <form id="login">
-
                             <div class="form-group" id="user-id">
                                 <label>User Name</label>
                                 <select class="form-control user"></select>
                             </div>
-
                             <div class="form-group" id="user-name">
                                 <label>User Id</label>
                                 <input class="form-control user">
                             </div>
-
                             <div class="form-group">
                                 <label for="password">Password</label>
                                 <input type="password" id="password" value="demo" class="form-control">
+                                <p class="help-text">
+                                    <small class="text-muted">
+                                        <i class="glyphicon glyphicon-info-sign"></i>
+                                        &nbsp;This is just a demo login screen. ANY password will be accepted.
+                                    </small>
+                                </p>
                             </div>
 
+                            <hr/>
                             <div class="form-group">
                                 <div class="col-xs-offset-4 col-xs-4">
                                     <button type="submit" class="btn btn-success btn-block">Login</button>
@@ -98,87 +106,109 @@
             authUrlSegment: "auth/authorize",
         }, Lib.getUrlQuery());
 
+        function init() {
+            // Show/hide navbar
+            if (!parent || parent === self) {
 
-        $("#login").submit(function (e) {
-            //TODO validate id here!
-            e.preventDefault();
-            var userId = $(".user:visible").val();
-            var qs = Lib.getUrlQuery();
-            var url = location.origin + location.pathname.replace("login", state.authUrlSegment);
-
-            if (qs.login_type == "provider") {
-                qs.provider = userId;
-                qs.patient = undefined;
-            } else {
-                qs.provider = undefined
-                qs.patient = userId;
+                // Set brand text
+                if (state.login_type != "provider") {
+                    $("title, .navbar-brand").text("SMART Patient Portal");
+                }
+                $(".navbar").show();
             }
-            qs.login_success = 1;
-            console.info(url + "?" + Lib.compileUrlQuery(qs))
-            window.location.href = url + "?" + Lib.compileUrlQuery(qs);
-        });
+            else {
+                $(".navbar").replaceWith("<br/>");
+            }
 
-        function entryToLoginId(entry) {
-            var name = entry.resource.name;
-            var loginId = [];
-            if (name && name[0] && name[0].given)
-                loginId = name[0].given;
-            if (name && name[0] && name[0].family)
-                loginId.push($.isArray(name[0].family) ? name[0].family[0] : name[0].family);
-            if (loginId.length == 0)
-                loginId.push(entry.resource.id);
-            return loginId.join("_").toLowerCase();
+            // Set heading text
+            $("#login-type").text(
+                state.login_type == "provider" ? "Practitioner" : "Patient"
+            );
+
+            $("#user-name").toggle(state.login_type != "provider");
+            $("#user-id").toggle(state.login_type == "provider");
+
+            // Set the submit action
+            $("#login").submit(function (e) {
+                //TODO validate id here!
+                e.preventDefault();
+                var userId = $(".user:visible").val();
+                var user   = $(".user:visible option:selected").data("entry");
+                var qs     = Lib.getUrlQuery();
+                var url    = location.origin +
+                    location.pathname.replace("login", state.authUrlSegment);
+
+                if (user) {
+                    try {
+                        parent.setUser(user);
+                    } catch(ex) {}
+                }
+
+                if (qs.login_type == "provider") {
+                    qs.provider = userId;
+                    qs.patient = undefined;
+                } else {
+                    qs.provider = undefined
+                    qs.patient = userId;
+                }
+                qs.login_success = 1;
+                console.info(url + "?" + Lib.compileUrlQuery(qs))
+                window.location.href = url + "?" + Lib.compileUrlQuery(qs);
+            });
+
+            if (state.login_type == "provider" || (
+                state.login_type == "patient" && state.patient && state.patient.indexOf(",") > -1
+            )) {
+                var _id = state.login_type == "provider" ?
+                    state.provider :
+                    state.patient;
+                if ($.isArray(_id)) {
+                    _id = _id.join(",");
+                }
+                var fhirUrl = state.apiUrlSegment +
+                    "/" + (state.login_type == "provider" ? "Practitioner?" : "Patient?") +
+                    Lib.compileUrlQuery({
+                        _format : "application/json+fhir",
+                        _summary: "true",
+                        _count  : 10,
+                        _sort   : "given",
+                        _id     : _id || undefined
+                    });
+
+                $.get(fhirUrl)
+                    .done(function (data) {
+                        if (data.entry) {
+                            renderPatients(data.entry)
+                        }
+                    })
+                    .always(function() {
+                        $(".container").hide().filter("#content").show();
+                    });
+            }
+            else {
+                renderInput()
+            }
         }
 
         function renderPatients(entries) {
             $.each(entries, function (i, entry) {
-                var loginId = entryToLoginId(entry);
-                $("select").append([
-                    "<option value='", entry.resource.id, "'>",
-                    loginId,
-                    "</option>"
-                ].join(""));
+                $("select").append(
+                    $("<option/>")
+                        .attr("value", entry.resource.id)
+                        .text(Lib.humanName(entry.resource))
+                        .data("entry", entry.resource)
+                );
             });
+        }
 
+        function renderInput() {
+            $("#user-id").show();
             $("#user-name").hide();
             $(".container").hide().filter("#content").show();
         }
 
-        function renderInput() {
-            $("#user-id").hide();
-            $(".container").hide().filter("#content").show();
-        }
-
-        //smart-967332,smart-2080416
-        if (!state.provider && !state.patient) {
-            renderInput()
-        } else {
-            var _id = (state.provider || state.patient);
-            if ($.isArray(_id)) {
-                _id = _id.join(",");
-            }
-            var fhirUrl = state.apiUrlSegment +
-                "/" + (state.login_type == "provider" ? "Practitioner?" : "Patient?") +
-                Lib.compileUrlQuery({
-                    _format : "application/json+fhir",
-                    _summary: "true",
-                    _count  : 10,
-                    _sort   : "given",
-                    _id     : _id
-                });
-
-            $.get(fhirUrl)
-                .done(function (data) {
-                    if (data.entry) {
-                        renderPatients(data.entry)
-                    } else {
-                        renderInput();
-                    }
-                }).fail(renderInput);
-        }
-
-        if (state.login_type != "provider")
-            $("title, .navbar-brand").text("SMART Patient Portal");
+        // console.log(state)
+        init();
     </script>
 
 </body>

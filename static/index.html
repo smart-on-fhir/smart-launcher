@@ -375,6 +375,7 @@
 
                 $("#user-prov").picker({
                     url: getBaseUrl() + "/fhir/Practitioner",
+                    multiple: true,
                     onChange: function() {
                         buildUrls();
                         formToQs();
@@ -433,8 +434,14 @@
                 var standaloneUrl = baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/fhir";
                 var appLaunchUrl = $("#launch-url").val();
                 var ehrLaunchUrl = appLaunchUrl + "?" + 
-                    "iss=" +  window.encodeURIComponent(openUrl) +
+                    "iss=" +  encodeURIComponent(openUrl) +
                     "&launch=" + btoa(JSON.stringify(urlParams));
+
+                if (urlParams.sim_ehr) {
+                    ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
+                        "&user=" + encodeURIComponent(urlParams.user || "") +
+                        "&encounter=" + encodeURIComponent(urlParams.encounter || "");
+                }
 
                 $("#open-url").text(openUrl);
                 $("#open-url-preview").attr("href", openUrl + "/metadata");

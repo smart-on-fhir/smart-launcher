@@ -94,6 +94,7 @@ router.get("/authorize", async function (req, res) {
 
     // handle response from picker, login or auth screen
     if (req.query.patient      ) sim.patient       = req.query.patient;
+    if (sim.user               ) sim.provider      = sim.user;
     if (req.query.provider     ) sim.provider      = req.query.provider;
     if (req.query.encounter    ) sim.encounter     = req.query.encounter;
     if (req.query.auth_success ) sim.skip_auth     = "1";
@@ -156,7 +157,7 @@ router.get("/authorize", async function (req, res) {
     // Show login screen if patient launch and skip login is not selected,
     // there's no patient or multiple patients provided
     if (sim.launch_pt && !sim.skip_login && (!sim.patient || sim.patient.indexOf(",") > -1)) {
-        let url = buildRedirectUrl("/login", { patient: sim.patient, aud: "" })
+        let url = buildRedirectUrl("/login", { patient: sim.patient, aud: "", login_type: "patient" })
         return res.redirect(Url.format(url));
     }
 
@@ -164,8 +165,8 @@ router.get("/authorize", async function (req, res) {
     // -------------------------------------------------------------------------
     // show login screen if provider launch and skip login is not selected,
     // there's no provider or multiple provider provided
-    if (sim.launch_prov && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
-        let url = buildRedirectUrl("/login", { provider: sim.provider, aud: "" })
+    if ((sim.launch_prov || sim.launch_ehr) && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
+        let url = buildRedirectUrl("/login", { provider: sim.provider, aud: "", login_type: "provider" })
         // url.query.aud = undefined
         console.log(Url.format(url))
         return res.redirect(Url.format(url));
@@ -175,14 +176,14 @@ router.get("/authorize", async function (req, res) {
     // -------------------------------------------------------------------------
     // Show patient picker if provider launch, patient scope and no patient
     // or multiple patients provided
-    if (sim.launch_prov && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
+    if ((sim.launch_prov || sim.launch_ehr) && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
         return res.redirect(Url.format(buildRedirectUrl("/picker", { patient: sim.patient })));
     }
 
     // ENCOUNTER
     // -------------------------------------------------------------------------
     if (sim.launch_ehr && sim.patient && req.query.scope.indexOf("launch") != -1 && !sim.encounter) {
-        return res.redirect(Url.format(buildRedirectUrl(sim.select_encounter == "1" ? "/encounter" : "/first_encounter", { patient: sim.patient})));
+        return res.redirect(Url.format(buildRedirectUrl("/encounter", { patient: sim.patient, select_first: sim.select_encounter != "1" })));
     }
 
     // AUTH SCREEN
@@ -205,7 +206,7 @@ router.get("/authorize", async function (req, res) {
 
     Object.keys(sim).forEach( param => {
         if (["patient", "encounter"].indexOf(param) != -1) {
-            code.context[param] = sim[param];
+            code.context[param] = sim[param] == "-1" ? undefined : sim[param];
         } else {
             code[param] = sim[param];
         }
@@ -215,18 +216,6 @@ router.get("/authorize", async function (req, res) {
     
     RedirectURL.query.code = signedCode
     RedirectURL.query.state = req.query.state
-
-    // Fake EHR
-    // -------------------------------------------------------------------------
-    if (sim.sim_ehr) {
-        return res.redirect(
-            "/ehr.html?app=" + encodeURIComponent(Url.format(RedirectURL)) +
-            (sim.patient ? "&patient=" + encodeURIComponent(sim.patient) : "") +
-            (sim.provider || sim.user ? "&provider=" + encodeURIComponent(sim.provider || sim.user) : "") +
-            (sim.encounter ? "&encounter=" + encodeURIComponent(sim.encounter) : "") +
-            "&iss=" + encodeURIComponent(apiUrl)
-        );
-    }
 
     // Launch!
     // -------------------------------------------------------------------------
