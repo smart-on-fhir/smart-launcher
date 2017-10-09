@@ -4,12 +4,9 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
         <title>SMART EHR</title>
-
         <link href="vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
         <link href="blue-nav.css" rel="stylesheet">
-
         <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
         <!--[if lt IE 9]>
@@ -50,7 +47,7 @@
                 border: 1px solid black;
                 display: flex;
                 flex: 1 1 100px;
-                margin: 1px 1px 1px 1px;
+                margin: 0px 1px 1px 1px;
                 box-sizing: border-box;
                 background: rgba(0, 0, 0, 0.3);
             }
@@ -71,7 +68,6 @@
                 width         : 100%;
                 max-width     : 100%;
             }
-            
             .header {
                 display    : flex;
                 box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
@@ -85,16 +81,22 @@
                 line-height: 40px;
             }
             .sidebar {
-                background : linear-gradient(#A1B3D7, #6D84D5);
-                display    : flex;
-                flex-grow  : 0;
-                padding    : 2em;
-                box-sizing : border-box;
+                background: linear-gradient(rgb(195, 193, 178), rgb(182, 180, 162));
+                display: flex;
+                flex-grow: 0;
+                padding: 1em;
+                box-sizing: border-box;
                 align-items: center;
-                color      :rgba(255, 255, 255, 0.54);
-                text-shadow: none;
+                color: rgba(189, 187, 170, 0.5);
+                text-shadow: 0px 0px 0px rgba(0, 0, 0, 0.6), -1px 0px 0px rgba(255, 255, 255, 0.5);
+                border-top: 1px solid rgba(255, 255, 255, 0.56);
+                width: 3em;
             }
-            
+            .sidebar h3 {
+                transform: rotate(-90deg);
+                white-space: nowrap;
+                margin: 0px 0px 0px -61px;
+            }
             .header .patient {
                 flex: 1;
                 opacity: 0;
@@ -156,21 +158,19 @@
             .status-bar > .flex-row > div.encounter,
             .status-bar > .flex-row > div.user,
             .status-bar > .flex-row > div.patient {
-                /* flex: 3; */
-                opacity: 0;
-                transition: opacity 0.4s;
                 overflow     : hidden;
                 text-overflow: ellipsis;
-                text-align: center;
+                text-align   : center;
             }
             .status-bar > .flex-row .encounter-id,
             .status-bar > .flex-row .user-id,
             .status-bar > .flex-row .patient-id {
                 display       : inline;
                 vertical-align: top;
+                opacity       : 0;
+                transition    : opacity 0.4s;
             }
         </style>
-
     </head>
     <body>
         <div class="header">
@@ -218,52 +218,82 @@
         <script src="/vendor/moment.min.js"></script>
         <script src="/lib.js"></script>
         <script>
+
         (function() {
             var state = $.extend({
                 apiUrlSegment: "fhir"
             }, Lib.getUrlQuery());
 
+            window.setPatient = function(patient) {
+                $(".patient-name").text(Lib.humanName(patient));
+                $(".patient-age").text(Lib.formatAge(patient.birthDate));
+                $(".patient-gender").text(Lib.toCamelCase(patient.gender || "unknown", true));
+                $(".patient-id").text(`Patient ID: ${patient.id}`);
+                $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
+            };
+
+            window.setEncounterID = function(id) {
+                if (!id || id == "none" || id == "-1") {
+                    $(".encounter-id").html(`Encounter ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
+                }
+                else {
+                    $(".encounter-id").text(`Encounter ID: ${id}`).css({ opacity: 1 });
+                }
+            };
+
+            window.setUser = function(user) {
+                if (!user) {
+                    $(".user-id").html(`User ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
+                }
+                else {
+                    $(".provider-name").text(Lib.humanName(user));
+                    $(".user-id").text(`User ID: ${user.id}`);
+                    $(".practitioner, .user div").css({ opacity: 1 });
+                }
+            };
+
+            var appParams = Lib.getUrlQuery({ queryString: state.app.split("?")[1] });
+            var iss = appParams.iss;
+            var launch = atob(appParams.launch || "");
+            try {
+                launch = JSON.parse(launch || "{}");
+            }
+            catch(error) {
+                console.error(error);
+            }
+            // console.dir("appParams: ", appParams)
+            // console.log("launch: ", launch)
+            // console.log("state: ", state)
+
+            // Set frame location
             if (state.app) {
                 $("#frame").prop("src", state.app);
             }
-
-            if (state.iss) {
-                if (state.patient) {
-                    $.get(state.iss + "/Patient/" + state.patient).done(function(data) {
-                        $(".patient-name").text(Lib.humanName(data));
-                        $(".patient-age").text(Lib.formatAge(data.birthDate));
-                        $(".patient-gender").text(Lib.toCamelCase(data.gender || "unknown", true));
-                        $(".patient-id").text(`Patient ID: ${data.id}`);
-                        $(".patient").css({ opacity: 1 });
-                    });
-                }
-                else {
-                    $(".patient").css({ opacity: 1 });
-                }
-
-                if (state.provider) {
-                    $.get(state.iss + "/Practitioner/" + state.provider).done(function(data) {
-                        $(".provider-name").text(Lib.humanName(data));
-                        $(".user-id").text(`User ID: ${data.id}`);
-                        $(".user, .practitioner").css({ opacity: 1 });
-                    });
-                }
-                else {
-                    $(".user").css({ opacity: 1 });
-                }
-
-                if (state.encounter) {
-                    $.get(state.iss + "/Encounter/" + state.encounter).done(function(data) {
-                        $(".encounter-id").text(`Encounter ID: ${data.id}`);
-                        $(".encounter").css({ opacity: 1 });
-                    });
-                }
-                else {
-                    $(".encounter").css({ opacity: 1 });
-                }
+            // Load the patient?
+            if (iss && launch && launch.patient && launch.patient.indexOf(",") == -1) {
+                $.get(iss + "/Patient/" + launch.patient).done(setPatient);
             }
+            else {
+                $(".patient-id").html(`Patient ID: <b style="color: #900">none</b>`);
+                $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
+            }
+
+            // Load the user?
+            if (iss && state.user &&  state.user.indexOf(",") == -1) {
+                $.get(iss + "/Practitioner/" + state.user).done(function(data) {
+                    $(".provider-name").text(Lib.humanName(data));
+                    $(".user-id").text(`User ID: ${data.id}`);
+                    $(".practitioner, .user div").css({ opacity: 1 });
+                });
+            }
+            else {
+                $(".user-id").html('User ID: <b style="color: #900">none</b>').css({ opacity: 1 });
+                $(".user").css({ opacity: 1 });
+            }
+
+            // initial encounter id html
+            $(".encounter-id").html(`Encounter ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
         })();
         </script>
-
     </body>
 </html>
