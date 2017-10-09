@@ -1,20 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const logger = require('morgan');
-const bodyParser = require('body-parser');
-const smartAuth = require("./smart-auth");
+const express      = require("express");
+const cors         = require("cors");
+const path         = require("path");
+const logger       = require('morgan');
+const bodyParser   = require('body-parser');
+const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
-const config = require("./config");
-const fhirError = require("./fhir-error");
-const fs = require('fs');
-const https = require('https');
-const sandboxify = require("./sandboxify");
-const request = require('request');
-const lib = require('./lib');
-const privateKey  = fs.readFileSync('./privatekey.pem', 'utf8');
-const certificate = fs.readFileSync('./cert.pem', 'utf8');
-const credentials = {key: privateKey, cert: certificate};
+const config       = require("./config");
+const fhirError    = require("./fhir-error");
+const fs           = require('fs');
+const https        = require('https');
+const sandboxify   = require("./sandboxify");
+const lib          = require('./lib');
+const privateKey   = fs.readFileSync('./privatekey.pem', 'utf8');
+const certificate  = fs.readFileSync('./cert.pem', 'utf8');
+const credentials  = {key: privateKey, cert: certificate};
 
 
 const handleParseError = function(err, req, res, next) {
@@ -88,43 +87,6 @@ app.get(buildRoutePermutations("/login"), (req, res) => {
 // authorize
 app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendFile("authorize.html", {root: './static'});
-});
-
-// authorize
-app.get(buildRoutePermutations("/first_encounter"), (req, res) => {
-    const apiUrl = sandboxify.buildUrlPath(
-        config.baseUrl,
-        req.originalUrl.replace("/first_encounter", config.fhirBaseUrl)
-    ).split("?")[0];
-
-    request({
-        url: apiUrl + "/Encounter",
-        qs: {
-            _format: "application/json+fhir",
-            _count : 1,
-            patient: req.query.patient,
-            "_sort:desc": "date"
-        },
-        json: true,
-        strictSSL: false
-    }, (error, response, body) => {
-        
-        if (error) {
-            return res.status(400).send(error.message);
-        }
-
-        if (response.statusCode >= 400) {
-            return res.status(response.statusCode).send(response.statusMessage);
-        }
-
-        let id = lib.getPath(body, "entry.0.resource.id") || 0;
-        let redirectUrl = req.originalUrl.replace(
-            "/first_encounter",
-            config.authBaseUrl + "/authorize"
-        ) + "&encounter=" + encodeURIComponent(id);
-
-        return res.redirect(redirectUrl);
-    });
 });
 
 // auth request
