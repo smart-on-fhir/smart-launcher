@@ -64,6 +64,11 @@ var SmartPicker = (function() {
         if (state.launchUrl == "") return;
 
         var patientId = $(this).attr("id").replace("patient-", "");
+        try {
+            parent.setPatient(state.data.entry.find(function(e) {
+                return e.resource.id === patientId
+            }).resource);
+        } catch(ex) {}
         if (state.showIds != "1" || e.target.tagName == "BUTTON") {
             launchApp(patientId);
         }
@@ -127,14 +132,13 @@ var SmartPicker = (function() {
 
     // Launcher
     function launchApp(patientId) {
-        console.log(window.location.href.replace("picker", state.authUrlSegment))
-        console.log(window.location.href.replace("picker", state.authUrlSegment).replace(/(&?)patient=[^&]*/g, ""))
-        console.log(window.location.href.replace("picker", state.authUrlSegment).replace(/(&?)patient=[^&]*/g, "") + "&patient=" + window.encodeURIComponent(patientId))
+        
         var url = window.location.href
             .replace("picker", state.authUrlSegment)
             .replace(/(&?)patient=[^&]*/g, "") + 
             "&patient=" + window.encodeURIComponent(patientId);
 
+        
         if (state.newWindow == "1") {
             window.open(url);
         } else {
@@ -235,6 +239,9 @@ var SmartPicker = (function() {
     return {
         init: function(config) {
             state = _.extend(state, config, getQsParams());
+            if (!state.aud) {
+                state.aud = location.href.split("?")[0].replace(/\/picker$/, "/fhir");
+            }
             bindUiEvents();
             $(".container").show()
             loadFhir();
