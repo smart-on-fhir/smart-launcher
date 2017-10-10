@@ -1,1 +1,8 @@
 node_modules
+
+tests/e2e/bin
+tests/e2e/reports
+tests/e2e/screenshots
+selenium-debug.log
+
+!.gitkeep

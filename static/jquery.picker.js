@@ -112,12 +112,11 @@
             var idx = values.indexOf(newVal);
             if (idx == -1) {
                 values.push(newVal);
-                newVal = values.join(",");
             }
             else {
                 values.splice(idx, 1);
-                newVal = values.join(",");
             }
+            newVal = values.filter(Boolean).join(",");
             this.setValue(newVal);
             inst._menu.html(renderMenu({
                 data    : inst.data,

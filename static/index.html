@@ -136,7 +136,7 @@
                     <div class="form-group launch launch-ehr launch-prov">
                         <hr/>
                         <label for="user">Provider <span class="text-muted normal-weight">(simulates user who is launching the app)</span></label>
-                        <input id="user-prov" class="form-control" placeholder="Provider ID">
+                        <input id="provider" class="form-control" placeholder="Provider ID">
                         <p class="help-block small">Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
                         <div class="checkbox launch launch-prov">
                             <label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span></label>
@@ -373,7 +373,7 @@
                     }
                 });
 
-                $("#user-prov").picker({
+                $("#provider").picker({
                     url: getBaseUrl() + "/fhir/Practitioner",
                     multiple: true,
                     onChange: function() {
@@ -402,7 +402,7 @@
                         ["#patient", "patient"],
                         ["#encounter", "encounter"],
                         ["#auth-error", "auth_error"],
-                        ["#user-prov", "user"],
+                        ["#provider", "user"],
                         ["#sim-ehr", "sim_ehr"],
                         ["#select-encounter", "select_encounter"]
                     ],
@@ -413,7 +413,7 @@
                         ["#auth-error", "auth_error"],
                         ["#prov-skip-login", "skip_login"], 
                         ["#prov-skip-auth", "skip_auth"], 
-                        ["#user-prov", "user"]
+                        ["#provider", "user"]
                     ],
                     "launch-pt": [
                         ["#launch-pt", "launch_pt"],
