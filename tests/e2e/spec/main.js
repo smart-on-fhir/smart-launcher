@@ -141,4 +141,4 @@ exports["Can simulate authentication errors"] = function(browser) {
     browser.end();
 };
 
-// exports['@disabled'] = true;
+exports['@disabled'] = false;
