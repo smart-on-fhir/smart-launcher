@@ -2,6 +2,9 @@
 
     // private helpers ---------------------------------------------------------
     function renderMenu(props) {
+        if (!Array.isArray(props.data.entry) || !props.data.entry.length) {
+            return ('<li class="text-center text-danger">No Providers Found</li>');
+        }
         var values = String(props.value || "").trim().split(/\s*,\s*/);
         return $.map(props.data.entry, function(o) {
             if ("name" in o.resource) {
@@ -67,12 +70,16 @@
     };
 
     Picker.prototype.load = function() {
-        var inst  = this;
-        var menu  = this._menu.html('<li><a>Loading...</a></li>');
-        var value = this._input.val();
+        var inst    = this;
+        var menu    = this._menu.html('<li><a>Loading...</a></li>');
+        var value   = this._input.val();
         var options = this.options;
+        var url     = options.url;
+        if (typeof url == "function") {
+            url = url();
+        }
         $.ajax({
-            url: this.options.url
+            url: url
         }).then(function(data) {
             inst.data = data;
             menu.html(renderMenu({

@@ -108,7 +108,7 @@
 
         function init() {
             // Show/hide navbar
-            if (!parent || parent === self) {
+            if (!state.hide_navbar && (!parent || parent === self)) {
 
                 // Set brand text
                 if (state.login_type != "provider") {
@@ -124,9 +124,6 @@
             $("#login-type").text(
                 state.login_type == "provider" ? "Practitioner" : "Patient"
             );
-
-            $("#user-name").toggle(state.login_type != "provider");
-            $("#user-id").toggle(state.login_type == "provider");
 
             // Set the submit action
             $("#login").submit(function (e) {
@@ -154,11 +151,14 @@
                 qs.login_success = 1;
                 console.info(url + "?" + Lib.compileUrlQuery(qs))
                 window.location.href = url + "?" + Lib.compileUrlQuery(qs);
+
             });
 
             if (state.login_type == "provider" || (
                 state.login_type == "patient" && state.patient && state.patient.indexOf(",") > -1
             )) {
+                $("#user-id").show();
+                $("#user-name").hide();
                 var _id = state.login_type == "provider" ?
                     state.provider :
                     state.patient;
@@ -202,8 +202,8 @@
         }
 
         function renderInput() {
-            $("#user-id").show();
-            $("#user-name").hide();
+            $("#user-id").hide();
+            $("#user-name").show();
             $(".container").hide().filter("#content").show();
         }
 

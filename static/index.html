@@ -247,7 +247,7 @@
                         return $.map(v.tags, function(t) {
                             return '<div class="checkbox sb ' + v.name + '">' +
                                 '<label>' +
-                                    '<input type="checkbox" id="' + t.id + '" value="' + t.value +
+                                    '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
                                     '"' + (t.selected ? ' checked' : '') + '>' +
                                         '<b>' + t.displayName + '</b> <small class="text-muted">(' +
                                             t.description + ')</small>' +
@@ -256,44 +256,6 @@
                         }).join("");
                     }).join("")
                 );
-            }
-
-            function qsToForm() {
-                var query = ((window.location.search).substring(1) || "").split("&");
-                $.each(query, function(i, param) {
-                    var p = param.split('=');
-                    var key = p[0].replace(/_/g, "-");
-                    var value = decodeURIComponent(p[1]);
-                    var target = $("#"+key);
-                    if (target.is(":checkbox,:radio")) {
-                        target.prop("checked", value === "1");
-                    } else {
-                        target.val(value);
-                    }
-                });
-                if (!$("#sb").val()) $("#sb").val(Lib.generateUID());
-            }
-
-            function formToQs() {
-                var qs = {};
-                $("input[id],select[id]").each( function() {
-                    var target = $(this);
-                    var key = target.attr("id").replace(/-/g, "_");
-                    if (target.is(":checkbox")) {
-                        qs[key] = target.prop("checked") ? "1" : "0";
-                    } else if (target.is(":radio")) {
-                        if(target.prop("checked")) qs[key] = "1";
-                    } else {
-                        qs[key] = (target.val() || "");						
-                    }
-                });
-                var sortedQs = Object.keys(qs).sort().map(function(key) {
-                    return key + "=" + encodeURIComponent(qs[key]);
-                }).join("&")
-                var newUrl = window.location.href.split("?")[0] + "?" + sortedQs;
-                if (window.history && newUrl != window.location.href) {
-                    window.history.replaceState({}, document.title, newUrl);
-                }
             }
 
             function bindEventHandlers() {
@@ -319,15 +281,31 @@
                     else if (fhirVersion == "r3") {
                         fhirVersion = "STU-3"
                     }
+
+                    var tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
+                        return {
+                            key  : cb.value,
+                            label: $(cb).parent().text(),
+                            selected: true
+                        };
+                    }).get();
+
+                    tags.unshift({
+                        key: $("#sb").val(),
+                        label: "My Own Data",
+                        selected: true
+                    });
+
                     // alert(getBaseUrl() + "/fhir")
                     Lib.selectPatients(input.val(), {
                         pickerSettings: {
                             server: {
                                 url : getBaseUrl() + "/fhir",
                                 type: fhirVersion,
-                                tags: [],
+                                tags: tags,
                                 conditions: []
-                            }
+                            },
+                            hideTagSelector: true
                         }
                     }).then(sel => {
                         if (sel || sel === "") {// ignore cancel and close cases
@@ -346,15 +324,31 @@
                     else if (fhirVersion == "r3") {
                         fhirVersion = "STU-3"
                     }
+
+                    var tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
+                        return {
+                            key  : cb.value,
+                            label: $(cb).parent().text(),
+                            selected: true
+                        };
+                    }).get();
+
+                    tags.unshift({
+                        key: $("#sb").val(),
+                        label: "My Own Data",
+                        selected: true
+                    });
+                    // console.log(tags);
                     // alert(getBaseUrl() + "/fhir")
                     Lib.selectPatients(input.val(), {
                         pickerSettings: {
                             server: {
                                 url : getBaseUrl() + "/fhir",
                                 type: fhirVersion,
-                                tags: [],
+                                tags: tags,
                                 conditions: []
-                            }
+                            },
+                            hideTagSelector: true
                         }
                     }).then(sel => {
                         if (sel || sel === "") {// ignore cancel and close cases
@@ -369,17 +363,23 @@
                     multiple: true,
                     onChange: function() {
                         buildUrls();
-                        formToQs();
+                        Lib.formToQs();
                     }
                 });
 
                 $("#provider").picker({
-                    url: getBaseUrl() + "/fhir/Practitioner",
+                    url: function() {
+                        return getBaseUrl() + "/fhir/Practitioner";
+                    },
                     multiple: true,
                     onChange: function() {
                         buildUrls();
-                        formToQs();
+                        Lib.formToQs();
                     }
+                });
+
+                $(".fhir-tags input:checkbox").on("change", function() {
+                    $("#provider").closest(".dropdown").find(".dropdown-menu").empty();
                 });
             }
 
@@ -466,14 +466,15 @@
                 $(".launch").hide().filter("." + $("input[name=launch-type]:checked").attr("id")).show();
                 $(".sb").hide().filter(".sb." + $("#fhir-version").val()).show();
                 buildUrls();
-                formToQs();
+                Lib.formToQs();
             }
 
             function init() {
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
-                qsToForm();
+                Lib.qsToForm();
+                if (!$("#sb").val()) $("#sb").val(Lib.generateUID());
                 bindEventHandlers();
                 handleFormChange();
             }

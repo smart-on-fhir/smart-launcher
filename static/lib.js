@@ -67,6 +67,46 @@
         return out.join("&");
     }
 
+    function qsToForm() {
+        var query = getUrlQuery();
+        $.each(query, function(key, value) {
+            var target = $('[name="' + key + '"], #' + key.replace(/_/g, "-"));
+            if (target.is(":checkbox,:radio")) {
+                target.prop("checked", (/^(1|true|yes)$/i).test(value));
+            } else {
+                target.val(value);
+            }
+        });
+    }
+
+    function formToQs() {
+        var qs = {};
+        $("input,select").filter("[id], [name]").each( function() {
+            var target = $(this);
+            var key = (this.id || this.name).replace(/-/g, "_");
+            if (target.is(":checkbox")) {
+                qs[key] = target.prop("checked") ? "1" : "0";
+            } else if (target.is(":radio")) {
+                if(target.prop("checked")) qs[key] = "1";
+            } else {
+                qs[key] = (target.val() || "");						
+            }
+        });
+
+        var sortedQs = Object.keys(qs).sort().map(function(key) {
+            return key + "=" + encodeURIComponent(qs[key]);
+        }).join("&");
+
+        var newUrl = location.href.split("?")[0] + "?" + sortedQs;
+        if (history && newUrl != location.href) {
+            if (typeof history.replaceState == "function") {
+                history.replaceState({}, document.title, newUrl);
+            } else {
+                location.replace(newUrl);
+            }
+        }
+    }
+
     /**
      * Converts the input string to camelCase. Detects "-" and "_", removes them
      * and converts the following character to upper case. By default this
@@ -117,6 +157,17 @@
         if (selection) {
             // path += "&config=" + cfg.config;
             path += "#/?_selection=" + encodeURIComponent(selection);
+        }
+
+        var tags = getPath(cfg, "pickerSettings.server.tags");
+        if (tags && Array.isArray(tags)) {
+            tags = tags.map(function(tag) {
+                return tag.selected ? tag.key : null
+            }).filter(Boolean);
+            if (tags.length) {
+                path += (path.indexOf("#/?") > -1 ? "&" : "#/?") +
+                    "tags=" + encodeURIComponent(tags.join(","));
+            }
         }
 
         // Open the popup
@@ -190,18 +241,18 @@
     }
     
     function formatAge(dob) {
-		if (!dob) return "";
-		
-		//fix year or year-month style dates 
-		if (/\d{4}$/.test(dob))
-			dob = dob + "-01";
-		if (/\d{4}-d{2}$/.test(dob))
-			dob = dob + "-01"
+        if (!dob) return "";
+        
+        //fix year or year-month style dates 
+        if (/\d{4}$/.test(dob))
+            dob = dob + "-01";
+        if (/\d{4}-d{2}$/.test(dob))
+            dob = dob + "-01"
 
-		return moment(dob).fromNow(true)
-			.replace("a ", "1 ")
-			.replace(/minutes?/, "min");
-	}
+        return moment(dob).fromNow(true)
+            .replace("a ", "1 ")
+            .replace(/minutes?/, "min");
+    }
 
     // Export
     // =========================================================================
@@ -214,7 +265,9 @@
         generateUID      : generateUID,
         selectPatients   : selectPatients,
         humanName        : humanName,
-        formatAge        : formatAge
+        formatAge        : formatAge,
+        qsToForm         : qsToForm,
+        formToQs         : formToQs
     };
 
     // Export at window.Lib:
