@@ -64,7 +64,7 @@
                         </div>
 
                         <div class="form-group col-sm-6">
-                            <a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-primary pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
+                            <a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-default pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
                             <label for="open-url">
                                 Open FHIR Endpoint URL
                             </label>
@@ -77,7 +77,7 @@
                     </div>
                 </div>
             </div>
-    
+
             <div class="panel panel-default">
                 <div class="panel-heading"><b class="text-primary">App Launch</b></div>
                 <div class="panel-body navbar-default">
@@ -90,6 +90,11 @@
                                 Provider EHR Launch Flow
                                 <span class="text-muted small">(user opens the app from within an EHR)</span>
                             </label>
+                            <div style="margin: 5px 0 10px">
+                                <label id="sim-ehr-label">
+                                    <input type="checkbox" id="sim-ehr" checked> Simulate launch within the EHR user interface
+                                </label>
+                            </div>
                         </div>
                         <div class="radio">
                             <label>
@@ -106,32 +111,14 @@
                             </label>
                         </div>
                     </div>
-                    
-                    <!-- <div class="form-group launch launch-ehr">
-                        <hr/>
-                        <label for="launch-url">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
-                        <!-- <input id="launch-url" class="form-control" value="http://127.0.0.1:9090/launch.html"> --><!--
-                        <input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html">
-                        <p class="help-block small">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
-                    </div> -->
-                    
-                    <div class="form-group">
-                        <hr/>
-                        <label for="client-id">App Client Id</label>
-                        <p class="form-control-static">
-                            <code id="client-id">my_web_app</code>
-                            <small class="text-muted">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</small>
-                        </p>
-                        <!-- <p class="help-block small">This is not validated on the SMART test server, so any text string will work. Use the error simulator to simulate the server response to an invalid client_id.</p> -->
-                    </div>
 
-                    <div class="form-group launch launch-ehr">
+                    <!-- <div class="form-group launch launch-ehr">
                         <hr/>
                         <label for="client-id">App User Interface</label>
                         <div class="checkbox launch launch-ehr">
                             <label><input type="checkbox" id="sim-ehr" checked>Simulate launch within the EHR user interface</label>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="form-group launch launch-ehr launch-prov">
                         <hr/>
@@ -155,16 +142,16 @@
                                 <button class="btn btn-default" type="button" id="patient-select-button">Select <span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">A patient picker will be displayed as part of the launch flow if no Patient Id is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified, or if multiple comma delimited Patient Ids are specified</p>
+                        <p class="help-block small">A patient picker will be displayed as part of the launch flow if no Patient ID is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified in your app, or if multiple comma delimited Patient IDs are specified</p>
                     </div>
                     
                     <div class="form-group launch launch-ehr">
                         <hr/>
-                        <label for="encounter">Encounter <span class="text-muted normal-weight">(simulates the active encounter in EHR when app is launched)</span></label>
+                        <label for="encounter">Encounter <span class="text-muted normal-weight">(simulates the active encounter in EHR when app is launched and if that app requests a <code>launch</code> scope)</span></label>
                         <!-- <input id="encounter" class="form-control" value="" placeholder="Encounter Id"> -->
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" id="select-encounter"> Show encounter selector if your app requests a <code>launch</code> scope
+                                <input type="checkbox" id="select-encounter"> Show encounter selector
                                 <span class="text-muted normal-weight">(otherwise the patient's most recent encounter will be used if available)</span>
                             </label>
                         </div>
@@ -205,7 +192,22 @@
 
             <div class="panel panel-success alert-success">
                 <div class="panel-heading"><b class="text-success">Launch</b></div>
-                <div class="panel-body navbar-default">
+                <div class="panel-body list-group-item-warning"style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
+                    <h3 class="glyphicon glyphicon-info-sign pull-left text-warning" style="margin:0"></h3>
+                    <ul style="margin: 0 0 0 10px">
+                        <li>
+                            <span class="label label-default">Client Id</span>
+                            <small>The app's client id is not validated on the SMART test server,
+                            so any text string will work. You can use the error simulator to
+                            simulate the server response to an invalid client_id.</small>
+                        </li>
+                        <li>
+                            <span class="label label-default">Client Secret</span>
+                            <small>The app's client secret is not validated on the SMART test server, so...</small>
+                        </li>
+                    </ul>
+                </div>
+                <div class="panel-body navbar-default" style="border-radius: 0 0 4px 4px">
 
                     <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
                     <div class="input-group launch launch-ehr">
@@ -219,7 +221,11 @@
                     <label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
                     <!-- <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a> -->
                     <textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
-                    <a class="btn btn-success launch launch-pt launch-prov" id="standalone-launch-url-test" target="_blank">Test</a>
+                    <div class="text-center launch launch-pt launch-prov">
+                        <hr/>
+                        <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Test App</a>
+                        <br/>
+                    </div>
                 </div>
             </div>
         </div>
@@ -379,7 +385,8 @@
                 });
 
                 $(".fhir-tags input:checkbox").on("change", function() {
-                    $("#provider").closest(".dropdown").find(".dropdown-menu").empty();
+                    $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
+                    $("#patient, #user-pt").val("");
                 });
             }
 
@@ -402,7 +409,7 @@
                         ["#patient", "patient"],
                         ["#encounter", "encounter"],
                         ["#auth-error", "auth_error"],
-                        ["#provider", "user"],
+                        ["#provider", "provider"],
                         ["#sim-ehr", "sim_ehr"],
                         ["#select-encounter", "select_encounter"]
                     ],
@@ -413,7 +420,7 @@
                         ["#auth-error", "auth_error"],
                         ["#prov-skip-login", "skip_login"], 
                         ["#prov-skip-auth", "skip_auth"], 
-                        ["#provider", "user"]
+                        ["#provider", "provider"]
                     ],
                     "launch-pt": [
                         ["#launch-pt", "launch_pt"],
@@ -449,10 +456,12 @@
                 $("#standalone-launch-url").text(standaloneUrl);
                 
                 // $("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
+                console.log(JSON.stringify(urlParams, null, 4))
                 $("#standalone-launch-url-test").attr(
                     "href",
                     baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
-                    "?response_type=code&client_id=test&scope=patient/*.*" +
+                    "?response_type=code&client_id=test" +
+                    "&scope=" + encodeURIComponent("patient/*.* launch openid offline_access profile") +
                     "&aud=" + encodeURIComponent(standaloneUrl) +
                     "&redirect_uri=" + encodeURIComponent(
                         location.origin + "/sample-apps/standalone-patient/index.html"
@@ -463,8 +472,11 @@
             }
 
             function handleFormChange() {
-                $(".launch").hide().filter("." + $("input[name=launch-type]:checked").attr("id")).show();
+                var launchType = $("input[name=launch-type]:checked").attr("id");
+                $(".launch").hide().filter("." + launchType).show();
                 $(".sb").hide().filter(".sb." + $("#fhir-version").val()).show();
+                $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
+                $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
                 Lib.formToQs();
             }

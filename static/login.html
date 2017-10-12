@@ -22,8 +22,18 @@
         .container {
             margin-top: 40px;
         }
-        .navbar {
+        .navbar, .show-if-no-records {
             display: none;
+        }
+        .alert {
+            line-height: normal;
+        }
+        .alert h5 {
+            margin: 0 0 15px;
+        }
+        .btn-success {
+            padding-left: 2em;
+            padding-right: 2em;
         }
     </style>
 
@@ -61,6 +71,17 @@
                         <i class="glyphicon glyphicon-user"></i> <span id="login-type"></span> Login
                     </div>
                     <div class="panel-body navbar-default">
+                        <div class="alert alert-danger show-if-no-records">
+                            <h5><i class="glyphicon glyphicon-exclamation-sign"></i> No Providers Found!</h5>
+                            <small>
+                                Perhaps you need to create some first
+                                or include some of the predefined datasets
+                                in your sandbox.<br/>
+                                You can still continue without an user if the
+                                launched app does not need it or if you want to
+                                test it's behaviour with missung user.
+                            </small>
+                        </div>
                         <form id="login">
                             <div class="form-group" id="user-id">
                                 <label>User Name</label>
@@ -83,8 +104,11 @@
 
                             <hr/>
                             <div class="form-group">
-                                <div class="col-xs-offset-4 col-xs-4">
-                                    <button type="submit" class="btn btn-success btn-block">Login</button>
+                                <div class="col-xs-12 text-center">
+                                    <button type="submit" class="btn btn-success">
+                                        <span class="show-if-no-records">Continue Without User</span>
+                                        <span class="show-if-records">Login</span>
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -177,8 +201,13 @@
 
                 $.get(fhirUrl)
                     .done(function (data) {
-                        if (data.entry) {
+                        if (data.entry && data.entry.length) {
                             renderPatients(data.entry)
+                        }
+                        else {
+                            $(".show-if-records").hide()
+                            $(".show-if-no-records").show()
+                            $("input, select").prop("disabled", true);
                         }
                     })
                     .always(function() {
