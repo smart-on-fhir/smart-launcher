@@ -93,7 +93,7 @@ router.get("/authorize", async function (req, res) {
 
     // handle response from picker, login or auth screen
     if (req.query.patient      ) sim.patient       = req.query.patient;
-    if (sim.user               ) sim.provider      = sim.user;
+    // if (sim.user               ) sim.provider      = sim.user;
     if (req.query.provider     ) sim.provider      = req.query.provider;
     if (req.query.encounter    ) sim.encounter     = req.query.encounter;
     if (req.query.auth_success ) sim.skip_auth     = "1";
@@ -203,6 +203,9 @@ router.get("/authorize", async function (req, res) {
         scope: req.query.scope,
     };
 
+    if (sim.launch_pt && sim.patient) sim.user = `Patient/${sim.patient}`;
+    if (sim.launch_prov && sim.provider) sim.user = `Practitioner/${sim.provider}`;
+
     Object.keys(sim).forEach( param => {
         if (["patient", "encounter"].indexOf(param) != -1) {
             code.context[param] = sim[param] == "-1" ? undefined : sim[param];
@@ -264,9 +267,9 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         token.sim_error = "Token expired";
     }
 
-    if (code.user && code.scope.indexOf("profile") && code.scope.indexOf("openid")) {
+    if (code.user && code.scope.indexOf("profile") > -1 && code.scope.indexOf("openid") > -1) {
         token.id_token = jwt.sign({
-            profile: "Practitioner/" + code.user,
+            profile: code.user,
             aud: req.body.client_id,
             iss: config.baseUrl
         }, config.oidcKeypair.d, config.oidcKeypair.alg);
