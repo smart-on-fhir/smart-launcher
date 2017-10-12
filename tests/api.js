@@ -67,13 +67,6 @@ describe('index', function() {
 
 describe('Proxy', function() {
     buildRoutePermutations("fhir/metadata").forEach(path => {
-        it(path + ' responds with json+fhir', done => {
-            request(app)
-            .get(path)
-            // .set('Accept', 'application/json')
-            .expect('Content-Type', /^application\/json\+fhir/)
-            .expect(200, done);
-        });
         it(path + ' responds with html in browsers', done => {
             request(app)
             .get(path)
@@ -129,6 +122,28 @@ describe('Proxy', function() {
     it ("Inject the SMART information in metadata responses");
     it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query");
     it ("Pretty print if called from a browser");
+
+    it ("Replies with application/fhir+json for STU3", done => {
+        request(app)
+        .get("/v/r3/fhir/Patient")
+        .expect("content-Type", /^application\/fhir\+json/i)
+        .end(done);
+    });
+
+    it ("Replies with application/json+fhir for DSTU2", done => {
+        request(app)
+        .get("/v/r2/fhir/Patient")
+        .expect("content-Type", /^application\/json\+fhir/i)
+        .expect(/\n.+/, done);
+    });
+
+    it ("Replies with formatted JSON for bundles", done => {
+        request(app).get("/v/r3/fhir/Patient").expect(/\n.+/, done);
+    });
+
+    it ("Replies with formatted JSON for single resources", done => {
+        request(app).get("/v/r3/fhir/Observation/smart-5328-height").expect(/\n.+/, done);
+    });
 
     it ("Handles pagination", done => {
         request(app)
