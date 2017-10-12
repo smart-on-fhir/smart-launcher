@@ -43,7 +43,7 @@ module.exports = function (req, res) {
 	let fhirRequest = {
 		headers: {
 			"content-type": "application/json",
-			"accept"      :"application/json+fhir"
+			"accept"      : req.params.fhir_release.toUpperCase() == "R2" ? "application/json+fhir" : "application/fhir+json"
 		},
 		method: req.method
 	}
@@ -122,6 +122,7 @@ module.exports = function (req, res) {
 				res.status(404);
 				body = fhirError(`Resource ${req.url.slice(1)} is not known`);
 			}
+			body = JSON.stringify(body, null, 4);
 		}
 
 		// pretty print if called from a browser
