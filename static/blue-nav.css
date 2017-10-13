@@ -137,3 +137,44 @@ hr.solid {
 textarea {
   resize: vertical;
 }
+
+.baner {
+  padding   : 0;
+  box-shadow: 0 1px 0px 0 rgba(0, 0, 0, 0.3), 0 5px 5px 0 rgba(0, 0, 0, 0.3);
+  position  : relative;
+  z-index   : 10000;
+  height    : 0;
+  overflow  : hidden;
+  opacity   : 0;
+  transition: height 0.3s ease-in-out 0.1s, opacity 0.2s linear;
+}
+
+.baner-message {
+  font-size: 16px;
+  line-height: normal;
+  position: relative;
+  padding: 12px 15px 3px 50px;
+  font-weight: 500;
+}
+
+.baner .bottom-row {
+  padding-bottom: 10px;
+}
+
+.baner .glyphicon {
+  font-size: 30px;
+  height: 30px;
+  width: 30px;
+  top: 50%;
+  position: absolute;
+  left: 15px;
+  margin: -10px 0 0 0;
+}
+
+.baner .checkbox {
+  margin: 7px 0;
+}
+
+.baner hr {
+  margin: 10px 0;
+}

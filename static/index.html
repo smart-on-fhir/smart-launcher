@@ -20,6 +20,29 @@
     </head>
     <body>
 
+        <div class="baner bg-warning">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xs-12 baner-message text-warning">
+                        <i class="glyphicon glyphicon-info-sign"></i>
+                        You can bookmark this page to save your settings! You can also email or share this URL.
+                    </div>
+                </div>
+                <hr />
+                <div class="row bottom-row">
+                    <div class="col-xs-8">
+                        <div class="checkbox text-muted">
+                            <label>
+                                <input type="checkbox" class="remember-baner"/> Don't show again
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 text-right">
+                        <button class="btn btn-primary close-baner">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="navbar navbar-custom navbar-static-top">
             <div class="container-fluid">
                 <div class="navbar-header">
@@ -283,7 +306,11 @@
 
             function bindEventHandlers() {
 
-                $("input,select").on("input change", function() {
+                $("input.remember-baner").on("change", function(e) {
+                    e.stopPropagation();
+                });
+
+                $(document).on("input change", "input,select", function() {
                     handleFormChange();
                 });
 
@@ -405,6 +432,31 @@
                     $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
                     $("#patient, #user-pt").val("");
                 });
+
+                $(".close-baner").on("click", hideBaner);
+            }
+
+            function showBaner() {
+                $(".baner").css({
+                    height: $(".baner")[0].scrollHeight,
+                    opacity: 1
+                });
+                setTimeout(function() {
+                    $(".baner").css({ height: "auto" })
+                }, 400);
+            }
+
+            function hideBaner() {
+                if ($("input.remember-baner").prop("checked")) {
+                    Lib.setCookie("hide-baner", "1", 730);
+                }
+                $(".baner").css("height", $(".baner")[0].scrollHeight);
+                setTimeout(function() {
+                    $(".baner").css({
+                        height: 0,
+                        opacity: 0
+                    });
+                }, 0);
             }
 
             function getBaseUrl() {
@@ -498,7 +550,7 @@
                 Lib.formToQs();
             }
 
-            function init() {
+            $(function init() {
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
@@ -506,9 +558,10 @@
                 if (!$("#sb").val()) $("#sb").val(Lib.generateUID());
                 bindEventHandlers();
                 handleFormChange();
-            }
-
-            init();
+                if (!Lib.getCookie("hide-baner")) {
+                    showBaner();
+                }
+            });
 
         </script>
     </body>
