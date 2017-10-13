@@ -44,7 +44,6 @@
             <div class="panel panel-info alert-info">
                 <div class="panel-heading"><b class="text-primary">My Sandbox</b></div>
                 <div class="panel-body navbar-default" style="padding-bottom: 0">
-                    <div class="row">
                         <div class="form-group col-sm-6">
                             <label for="sb">Name</label>
                             <input id="sb" class="form-control"><!-- wyg7nz -->
@@ -54,10 +53,10 @@
                         <div class="form-group col-sm-6">
                             <label for="fhir-version">Version</label>
                             <select id="fhir-version" class="form-control"></select>
-                            <p class="help-block small">FHIR Version</p>
+                            <p class="help-block small">&nbsp;<!-- FHIR Version --></p>
                         </div>
-                    </div>
-                    <div class="row">
+
+                        <br clear="all" />
                         <div class="form-group col-sm-6">
                             <p><label>Also include read access to these pre-defined datasets</label></p>
                             <div class="fhir-tags"></div>
@@ -74,7 +73,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+
                 </div>
             </div>
 
@@ -82,7 +81,8 @@
                 <div class="panel-heading"><b class="text-primary">App Launch</b></div>
                 <div class="panel-body navbar-default">
                 
-                    <div class="form-group">
+                    <!-- Launch Type ======================================= -->
+                    <div class="form-group col-xs-12">
                         <label for="launch-type">Launch Type</label>
                         <div class="radio">
                             <label>
@@ -112,119 +112,136 @@
                         </div>
                     </div>
 
-                    <!-- <div class="form-group launch launch-ehr">
-                        <hr/>
-                        <label for="client-id">App User Interface</label>
-                        <div class="checkbox launch launch-ehr">
-                            <label><input type="checkbox" id="sim-ehr" checked>Simulate launch within the EHR user interface</label>
-                        </div>
-                    </div> -->
-
-                    <div class="form-group launch launch-ehr launch-prov">
-                        <hr/>
-                        <label for="user">Provider <span class="text-muted normal-weight">(simulates user who is launching the app)</span></label>
-                        <input id="provider" class="form-control" placeholder="Provider ID">
-                        <p class="help-block small">Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
-                        <div class="checkbox launch launch-prov">
-                            <label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span></label>
-                        </div>
-                        <div class="checkbox launch launch-prov">
-                            <label><input type="checkbox" id="prov-skip-auth" checked>Skip app authorization screen</label>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group launch launch-ehr launch-prov">
-                        <hr/>
-                        <label for="patient">Patient <span class="text-muted normal-weight">(simulates the active patient in EHR when app is launched)</span></label>
+                    <!-- Patient =========================================== -->
+                    <div class="form-group col-sm-6 launch launch-ehr launch-prov">
+                        <label for="patient">Patient</label>
                         <div class="input-group">
                             <input id="patient" class="form-control" value="" placeholder="Patient ID">
                             <span class="input-group-btn">
-                                <button class="btn btn-default" type="button" id="patient-select-button">Select <span class="caret"></span></button>
+                                <button class="btn btn-default" type="button" id="patient-select-button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">A patient picker will be displayed as part of the launch flow if no Patient ID is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified in your app, or if multiple comma delimited Patient IDs are specified</p>
+                        <p class="help-block small">Simulates the active patient in EHR when app is launched. A patient picker will be displayed as part of the launch flow if no Patient ID is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified in your app, or if multiple comma delimited Patient IDs are specified</p>
+                    </div>
+
+                    <!-- Provider ========================================== -->
+                    <div class="form-group col-sm-6 launch launch-ehr launch-prov">
+                        <label for="user">Provider</label>
+                        <input id="provider" class="form-control" placeholder="Provider ID">
+                        <p class="help-block small">Simulates user who is launching the app. Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
                     </div>
                     
-                    <div class="form-group launch launch-ehr">
-                        <hr/>
-                        <label for="encounter">Encounter <span class="text-muted normal-weight">(simulates the active encounter in EHR when app is launched and if that app requests a <code>launch</code> scope)</span></label>
-                        <!-- <input id="encounter" class="form-control" value="" placeholder="Encounter Id"> -->
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" id="select-encounter"> Show encounter selector
-                                <span class="text-muted normal-weight">(otherwise the patient's most recent encounter will be used if available)</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group launch launch-pt">
-                        <hr/>
+                    <!-- Patient =========================================== -->
+                    <div class="form-group col-xs-12 launch launch-pt">
+                        <!-- <hr/> -->
                         <label for="user">Patient <span class="text-muted normal-weight">(simlulates user who is launching the app)</span></label>
                         <div class="input-group">
                             <input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
                             <span class="input-group-btn">
-                                <button class="btn btn-default" id="user-pt-select" type="button">Select <span class="caret"></span></button>
+                                <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
+                        <!-- <p class="help-block small">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
                         <div class="checkbox launch launch-pt">
                             <label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span></label>
                         </div>
                         <div class="checkbox launch launch-pt">
                             <label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
-                        </div>
+                        </div> -->
                     </div>
-                    <hr/>
-                    <div class="form-group">
-                        <label for="sb" class="text-warning">Simulate Authentication Error for Testing <span class="text-muted normal-weight">(Advanced)</span></label>
-                        <select id="auth-error" class="form-control">
-                            <option value="">None</option>
-                            <option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
-                            <option value="auth_invalid_redirect_uri">Authorize - Invalid Redirect Url</option>
-                            <option value="auth_invalid_scope">Authorize - Invalid Scope</option>
-                            <option value="token_invalid_token">Token - Invalid Token</option>
-                            <option value="request_invalid_token">Request - Invalid Token</option>	
-                            <option value="request_expired_token">Request - Expired Token</option>	
-                        </select>
+                    
+                    <div class="form-group col-xs-12">
+                        <!-- <br/> -->
+                        <label class="text-warning">Advanced</label>
+                        <hr class="solid fg-warning"/>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <label class="launch launch-ehr">
+                                    Active Encounter in EHR <span class="text-muted normal-weight">(if the app requests a <code>launch</code> scope)</span>
+                                </label>
+                                <div class="radio launch launch-ehr" style="margin-top: 0">
+                                    <label>
+                                        <input type="radio" name="select-encounter" id="select-encounter" checked> Show encounter selector
+                                    </label><br/>
+                                    <label>
+                                        <input type="radio" name="select-encounter"> Use the patient's most recent encounter if available
+                                    </label>
+                                </div>
+                                <label class="launch launch-prov launch-pt">
+                                    Auth Flow
+                                </label>
+                                <div class="launch launch-prov">
+                                    <div class="checkbox" style="margin-top: 0">
+                                        <label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span></label>
+                                    </div>
+                                    <div class="checkbox">
+                                        <label><input type="checkbox" id="prov-skip-auth" checked>Skip app authorization screen</label>
+                                    </div>
+                                </div>
+                                <div class="launch launch-pt">
+                                    <div class="checkbox" style="margin-top: 0">
+                                        <label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span></label>
+                                    </div>
+                                    <div class="checkbox">
+                                        <label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="sb">Simulate Authentication Error for Testing</label>
+                                <select id="auth-error" class="form-control">
+                                    <option value="">None</option>
+                                    <option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
+                                    <option value="auth_invalid_redirect_uri">Authorize - Invalid Redirect Url</option>
+                                    <option value="auth_invalid_scope">Authorize - Invalid Scope</option>
+                                    <option value="token_invalid_token">Token - Invalid Token</option>
+                                    <option value="request_invalid_token">Request - Invalid Token</option>	
+                                    <option value="request_expired_token">Request - Expired Token</option>	
+                                </select>
+                                <br/>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="panel panel-success alert-success">
                 <div class="panel-heading"><b class="text-success">Launch</b></div>
-                <div class="panel-body list-group-item-warning"style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
-                    <h3 class="glyphicon glyphicon-info-sign pull-left text-warning" style="margin:0"></h3>
-                    <ul style="margin: 0 0 0 10px">
+                <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
+                    <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0"></h3>
+                    <ul style="margin: 0 0 0 10px" class="text-muted">
                         <li>
-                            <span class="label label-default">Client Id</span>
+                            <span class="label label-default">client_id</span>
                             <small>The app's client id is not validated on the SMART test server,
                             so any text string will work. You can use the error simulator to
                             simulate the server response to an invalid client_id.</small>
                         </li>
                         <li>
-                            <span class="label label-default">Client Secret</span>
+                            <span class="label label-default">client_secret</span>
                             <small>The app's client secret is not validated on the SMART test server, so...</small>
                         </li>
                     </ul>
                 </div>
                 <div class="panel-body navbar-default" style="border-radius: 0 0 4px 4px">
-
-                    <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
-                    <div class="input-group launch launch-ehr">
-                        <input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html" placeholder="Launch URL">
-                        <span class="input-group-btn">
-                            <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
-                        </span>
-                    </div>
-                    <p class="help-block small launch launch-ehr">Web address that will initialize the SMART session (typically the full url of your launch.html file)</p>
-
-                    <label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
-                    <!-- <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success btn-block launch launch-ehr">Launch App!</a> -->
-                    <textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
-                    <div class="text-center launch launch-pt launch-prov">
-                        <hr/>
-                        <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Test App</a>
-                        <br/>
+                    <div class="form-group col-xs-12">
+                        <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
+                        <div class="input-group launch launch-ehr">
+                            <input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html" placeholder="Launch URL">
+                            <span class="input-group-btn">
+                                <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
+                            </span>
+                        </div>
+                        <p class="help-block small launch launch-ehr">
+                            Web address that will initialize the SMART session (typically the full url of your launch.html file)
+                        </p>
+                        <label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
+                        <textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
+                        <p class="help-block small launch launch-pt launch-prov">Your app should use the URL above to authenticate with the server...</p>
+                        <div class="text-center launch launch-pt launch-prov">
+                            <hr/>
+                            <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Test App</a>
+                            <br/>
+                        </div>
                     </div>
                 </div>
             </div>
