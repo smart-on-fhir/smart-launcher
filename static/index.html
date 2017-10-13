@@ -463,7 +463,7 @@
 
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
-                        "&user=" + encodeURIComponent(urlParams.user || "") +
+                        "&user=" + encodeURIComponent(urlParams.provider || "") +
                         "&encounter=" + encodeURIComponent(urlParams.encounter || "");
                 }
 
