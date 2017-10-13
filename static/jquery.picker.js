@@ -50,7 +50,7 @@
         input.parent().append(
             '<span class="input-group-btn">' +
                 '<button class="btn btn-default" type="button">' +
-                'Select <span class="caret"></span></button>' +
+                '<span class="caret"></span></button>' +
             '</span>'
         );
 

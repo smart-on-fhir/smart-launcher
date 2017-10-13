@@ -50,6 +50,7 @@
                 margin: 0px 1px 1px 1px;
                 box-sizing: border-box;
                 background: rgba(0, 0, 0, 0.3);
+                transition: all 1s linear;
             }
             .status-bar {
                 display: flex;
@@ -267,7 +268,7 @@
 
             // Set frame location
             if (state.app) {
-                $("#frame").prop("src", state.app);
+                $("#frame").prop("src", state.app).css("background", "#FFF");
             }
             // Load the patient?
             if (iss && launch && launch.patient && launch.patient.indexOf(",") == -1) {

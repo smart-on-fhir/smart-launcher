@@ -81,9 +81,9 @@
 
     function formToQs() {
         var qs = {};
-        $("input,select").filter("[id], [name]").each( function() {
+        $("input[id],select[id]").each( function() {
             var target = $(this);
-            var key = (this.id || this.name).replace(/-/g, "_");
+            var key = this.id.replace(/-/g, "_");
             if (target.is(":checkbox")) {
                 qs[key] = target.prop("checked") ? "1" : "0";
             } else if (target.is(":radio")) {

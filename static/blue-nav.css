@@ -109,6 +109,11 @@ hr {
   border-top: 1px dashed rgba(0, 0, 0, 0.1);
   border-bottom: 1px dashed rgba(255, 255, 255, 1);
 }
+hr.solid {
+  border-style: solid;
+  border-top: 1px double rgba(138, 109, 60, 0.4);
+  margin: -5px 0 10px;
+}
 .panel-body.navbar-default, .panel-heading {
   text-shadow: 0 1px 0 #FFF;
 }
@@ -122,4 +127,13 @@ hr {
   color: #777;
   text-shadow: 0 1px 0 #FFF;
   cursor: default;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+/* .form-group > hr {
+  margin: 10px 0;
+} */
+textarea {
+  resize: vertical;
 }
