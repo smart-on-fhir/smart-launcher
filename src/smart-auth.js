@@ -156,7 +156,7 @@ router.get("/authorize", async function (req, res) {
     // -------------------------------------------------------------------------
     // Show login screen if patient launch and skip login is not selected,
     // there's no patient or multiple patients provided
-    if (sim.launch_pt && !sim.skip_login && (!sim.patient || sim.patient.indexOf(",") > -1)) {
+    if (sim.launch_pt && !sim.skip_login) {
         let url = buildRedirectUrl("/login", { patient: sim.patient, aud: "", login_type: "patient" })
         return res.redirect(Url.format(url));
     }
@@ -165,7 +165,10 @@ router.get("/authorize", async function (req, res) {
     // -------------------------------------------------------------------------
     // show login screen if provider launch and skip login is not selected,
     // there's no provider or multiple provider provided
-    if ((sim.launch_prov || sim.launch_ehr) && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1)) {
+    if (
+        (sim.launch_prov && !sim.skip_login) ||
+        (sim.launch_ehr && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1))
+    ) {
         let url = buildRedirectUrl("/login", { provider: sim.provider, aud: "", login_type: "provider" })
         // url.query.aud = undefined
         console.log(Url.format(url))

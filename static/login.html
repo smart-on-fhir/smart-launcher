@@ -231,8 +231,15 @@
         }
 
         function renderInput() {
+            var value = "";
+            if (state.login_type == "provider" && state.provider && state.provider.indexOf(",") == -1) {
+                value = state.provider;
+            }
+            else if (state.login_type == "patient" && state.patient && state.patient.indexOf(",") == -1) {
+                value = state.patient;
+            }
             $("#user-id").hide();
-            $("#user-name").show();
+            $("#user-name").show().find("input").val(value);
             $(".container").hide().filter("#content").show();
         }
 
