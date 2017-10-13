@@ -401,7 +401,7 @@
                     }
                 });
 
-                $(".fhir-tags input:checkbox").on("change", function() {
+                $(".fhir-tags input:checkbox, #fhir-version").on("change", function() {
                     $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
                     $("#patient, #user-pt").val("");
                 });
