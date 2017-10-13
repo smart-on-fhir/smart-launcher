@@ -4,6 +4,7 @@ const router     = require("express").Router({ mergeParams: true });
 const config     = require('./config');
 const sandboxify = require("./sandboxify");
 const Url        = require('url');
+const Lib        = require("./lib");
 
 module.exports = router;
 
@@ -247,7 +248,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
 
     if (code.scope.indexOf('offline_access') >= 0) {
-        code.context['refresh_token'] = jwt.sign(code, config.jwtSecret);
+        code.context['refresh_token'] = Lib.generateRefreshToken(code);
     }
 
     if (code.auth_error == "token_invalid_token") {

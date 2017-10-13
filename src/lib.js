@@ -1,3 +1,6 @@
+const jwt    = require("jsonwebtoken");
+const config = require("./config");
+
 /**
  * Walks thru an object (ar array) and returns the value found at the
  * provided path. This function is very simple so it intentionally does not
@@ -11,6 +14,17 @@ function getPath(obj, path = "") {
     return path.split(".").reduce((out, key) => out ? out[key] : undefined, obj)
 }
 
+function generateRefreshToken(code) {
+    let token = {};
+    ["context", "client_id", "scope", "user", "iat", "exp"].forEach(key => {
+        if (code.hasOwnProperty(key)) {
+            token[key] = code[key];
+        }
+    });
+    return jwt.sign(token, config.jwtSecret);
+}
+
 module.exports = {
-    getPath
+    getPath,
+    generateRefreshToken
 };
