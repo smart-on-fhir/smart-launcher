@@ -236,13 +236,18 @@
                     <ul style="margin: 0 0 0 10px" class="text-muted">
                         <li>
                             <span class="label label-default">client_id</span>
-                            <small>The app's client id is not validated on the SMART test server,
+                            <small>The app's <code>client_id</code> is not validated on the SMART test server,
                             so any text string will work. You can use the error simulator to
-                            simulate the server response to an invalid client_id.</small>
+                            simulate the server response to an invalid <code>client_id</code>.</small>
                         </li>
                         <li>
                             <span class="label label-default">client_secret</span>
-                            <small>The app's client secret is not validated on the SMART test server, so...</small>
+                            <small>The app's <code>client_secret</code> is not validated on the SMART test server,
+                            so any secret will work. If provided, the <code>Authorization</code> header must conform
+                            to the standart format (<a target="_blank" href="http://docs.smarthealthit.org/authorization/basic-auth-example/"
+                            >Example</a>). You can also use the error simulator to simulate the server response to an invalid
+                            <code>client_secret</code>.
+                            </small>
                         </li>
                     </ul>
                 </div>
@@ -526,7 +531,7 @@
                 $("#standalone-launch-url").text(standaloneUrl);
                 
                 // $("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
-                console.log(JSON.stringify(urlParams, null, 4))
+                // console.log(JSON.stringify(urlParams, null, 4))
                 $("#standalone-launch-url-test").attr(
                     "href",
                     baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
