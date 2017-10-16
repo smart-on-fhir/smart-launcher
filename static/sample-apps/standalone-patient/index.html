@@ -7,9 +7,10 @@
         <title>SMART Sample App - Standalone, launched by patient</title>
         <style>
             body {
-                display    : flex;
+                display    : block;
                 flex-flow  : column;
-                flex: 1 1 0px;
+                flex       : 1 1 0px;
+                height     : 100%;
                 /* align-items: stretch; */
             }
             .row {
@@ -41,6 +42,19 @@
                 color        : #333;
                 border       : 1px solid #EEE;
             }
+            .auth-errors > div {
+                padding      : 1ex;
+                flex         : 1;
+                max-width    : 100%;
+                border-radius: 4px;
+                border       : 1px solid #dcb4b4;
+                color        : #900;
+                background   : #F7E6E6;
+                margin       : 0 0 20px;
+            }
+            .auth-errors h3 {
+                margin: 0 0 5px;
+            }
             .error {
                 color: #900;
             }
@@ -49,12 +63,19 @@
                 background: #F7E6E6;
             }
             .has-success { border-color: #bddac2 }
+            .hidden { display: none }
         </style>
     </head>
     <body>
         <h1>SMART Sample Standalone App</h1>
         <hr/>
-        <div class="row">
+        <div class="row auth-errors hidden">
+            <div>
+                <h3>Authorization failed</h3>
+                <div></div>
+            </div>
+        </div>
+        <div class="row content">
             <div class="panel">
                 <h4>Access Token Response</h4>
                 <pre class="token-response">Loading...</pre>
@@ -87,8 +108,9 @@
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/lib.js"></script>
         <script>
-            var state = Lib.getUrlQuery();
-            var aud = "https://localhost:8443/v/r3/sb/a6yzhl,smart-7-2017,synthea-7-2017,pro-7-2017/fhir";
+            var state       = Lib.getUrlQuery();
+            var aud         = "https://localhost:8443/v/r3/sb/a6yzhl,smart-7-2017,synthea-7-2017,pro-7-2017/fhir";
+            var tokenResponse;
 
             function decodeToken(token) {
                 return String(token || "").split(".").map(function(data) {
@@ -154,14 +176,19 @@
                 $.ajax({
                     method: "POST",
                     url: "/v/r3/auth/token",
+                    headers: {
+                        Authorization: "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz"
+                    },
                     data: {
                         grant_type   : "authorization_code",
                         code         : code,
                         redirect_uri : location.origin + location.path,
-                        client_id    : "whatever"
+                        client_id    : "whatever",
+                        // auth_error   : "auth_invalid_client_secret",
                     }
                 }).then(
                     function onTokenSuccess(data) {
+                        tokenResponse = data;
                         $(".token-response").addClass("has-success").text(JSON.stringify(data, null, 4));
 
                         if (data.access_token) {
@@ -198,7 +225,12 @@
 
             function loadPatient(patientId) {
                 $(".patient").text("Loading patient " + patientId + "...");
-                $.ajax(aud + "/Patient/" + patientId).then(
+                $.ajax({
+                    url: aud + "/Patient/" + patientId,
+                    headers: {
+                        Authorization: "Bearer " + tokenResponse.access_token
+                    }
+                }).then(
                     function onPatientSuccess(data) {
                         $(".patient").addClass("has-success").text(JSON.stringify(data, null, 4));
                     },
@@ -215,7 +247,12 @@
 
             function loadUser(path) {
                 $(".user").text("Loading user " + path + "...");
-                $.ajax(aud + "/" + path).then(
+                $.ajax({
+                    url: aud + "/" + path,
+                    headers: {
+                        Authorization: "Bearer " + tokenResponse.access_token
+                    }
+                }).then(
                     function onPatientSuccess(data) {
                         $(".user").addClass("has-success").text(JSON.stringify(data, null, 4));
                     },
@@ -230,7 +267,19 @@
                 )
             }
 
-            if (state.code) {
+            if (state.error || state.error_description) {
+                $(".content").hide();
+                $(".auth-errors").find("> div > div").html(
+                    [state.error, state.error_description].filter(Boolean).join("<br/>")
+                ).end().show();
+            }
+
+            else if (state.code) {
+                try {
+                    console.info("code: ", JSON.parse(atob(state.code.split(".")[1])));
+                } catch (ex) {
+                    console.warn("Failed to decode the passed code parameter!");
+                }
                 loadAccessToken(state.code);
             }
         </script>
