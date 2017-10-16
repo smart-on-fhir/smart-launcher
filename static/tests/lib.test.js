@@ -38,4 +38,199 @@ describe('Lib', function() {
             });
         });
     });
+
+    describe('scopeToText', function() {
+        it ("'profile' -> Your profile information (r)", function() {
+            expect(Lib.scopeToText("profile")).to.deep.equal({
+                read: "Your profile information",
+                write: "",
+                access: ""
+            });
+        });
+
+        it ("Invalid scope ('x') -> none", function() {
+            expect(Lib.scopeToText("x")).to.deep.equal({
+                read : "",
+                write: "",
+                access: ""
+            });
+        });
+
+        it ("'patient/*.read' as practitioner -> All data on the current patient (r)", function() {
+            expect(Lib.scopeToText("patient/*.read")).to.deep.equal({
+                read: "All data on the current patient",
+                write: "",
+                access: ""
+            });
+        });
+
+        it ("'patient/*.read' as patient -> Your medical information (r)", function() {
+            expect(
+                Lib.scopeToText("patient/*.read", true).read
+            ).to.equal("Your medical information");
+        });
+
+        it ("'patient/Observation.read' as practitioner -> Observation data on the current patient (r)", function() {
+            expect(
+                Lib.scopeToText("patient/Observation.read").read
+            ).to.equal("Observation data on the current patient");
+        });
+
+        it ("'patient/Observation.read' as patient -> Your information of type \"Observation\" (r)", function() {
+            expect(
+                Lib.scopeToText("patient/Observation.read", true).read
+            ).to.equal('Your information of type "Observation"');
+        });
+
+        it ("'patient/Observation.*' as practitioner -> Observation data on the current patient (rw)", function() {
+            expect(
+                Lib.scopeToText("patient/Observation.*")
+            ).to.deep.equal({
+                read: "Observation data on the current patient",
+                write: "Observation data on the current patient",
+                access: ""
+            });
+        });
+
+        it ("'patient/Observation.*' as patient -> Your information of type \"Observation\" (rw)", function() {
+            expect(
+                Lib.scopeToText("patient/Observation.*", true)
+            ).to.deep.equal({
+                read: 'Your information of type "Observation"',
+                write: 'Your information of type "Observation"',
+                access: ""
+            });
+        });
+
+        it ("'patient/*.*' as practitioner -> All data on the current patient (rw)", function() {
+            expect(
+                Lib.scopeToText("patient/*.*")
+            ).to.deep.equal({
+                read: "All data on the current patient",
+                write: "All data on the current patient",
+                access: ""
+            });
+        });
+
+        it ("'patient/*.*' as patient -> Your medical information (rw)", function() {
+            expect(
+                Lib.scopeToText("patient/*.*", true)
+            ).to.deep.equal({
+                read: 'Your medical information',
+                write: 'Your medical information',
+                access: ""
+            });
+        });
+
+        it ("'user/*.read' as practitioner -> All data you have access to in the EHR system (r)", function() {
+            expect(
+                Lib.scopeToText("user/*.read").read
+            ).to.equal("All data you have access to in the EHR system");
+        });
+
+        it ("'user/*.read' as patient -> Your medical information (r)", function() {
+            expect(
+                Lib.scopeToText("user/*.read", true).read
+            ).to.equal("Your medical information");
+        });
+
+        it ("'user/Observation.read' as practitioner -> Observation data you have access to in the EHR system (r)", function() {
+            expect(
+                Lib.scopeToText("user/Observation.read").read
+            ).to.equal("Observation data you have access to in the EHR system");
+        });
+
+        it ("'user/Observation.read' as patient -> Your information of type \"Observation\" (r)", function() {
+            expect(
+                Lib.scopeToText("user/Observation.read", true).read
+            ).to.equal('Your information of type "Observation"');
+        });
+
+        it ("'user/Observation.*' as practitioner -> Observation data you have access to in the EHR system (rw)", function() {
+            expect(
+                Lib.scopeToText("user/Observation.*")
+            ).to.deep.equal({
+                read: 'Observation data you have access to in the EHR system',
+                write: 'Observation data you have access to in the EHR system',
+                access: ""
+            });
+        });
+
+        it ("'user/Observation.*' as patient -> Your information of type \"Observation\" (rw)", function() {
+            expect(
+                Lib.scopeToText("user/Observation.*", true)
+            ).to.deep.equal({
+                read : 'Your information of type "Observation"',
+                write: 'Your information of type "Observation"',
+                access: ""
+            });
+        });
+
+        it ("'user/*.*' as practitioner -> All data you have access to in the EHR system (rw)", function() {
+            expect(
+                Lib.scopeToText("user/*.*")
+            ).to.deep.equal({
+                read : "All data you have access to in the EHR system",
+                write: "All data you have access to in the EHR system",
+                access: ""
+            });
+        });
+
+        it ("'user/*.*' as patient -> Your medical information (rw)", function() {
+            expect(
+                Lib.scopeToText("user/*.*", true)
+            ).to.deep.equal({
+                read : 'Your medical information',
+                write: 'Your medical information',
+                access: ""
+            });
+        });
+
+        it ("'user/patient.read' as practitioner -> Demographic data you have access to in the EHR system (r)", function() {
+            expect(
+                Lib.scopeToText("user/patient.read")
+            ).to.deep.equal({
+                read: "Demographic data you have access to in the EHR system",
+                write: "",
+                access: ""
+            });
+        });
+
+        it ("'user/patient.read' as patient -> Your information of type \"Demographic\" (r)", function() {
+            expect(
+                Lib.scopeToText("user/patient.read", true)
+            ).to.deep.equal({
+                read: 'Your information of type "Demographic"',
+                write: "",
+                access: ""
+            });
+        });
+    });
+
+    describe("scopeListToPermissions", function() {
+
+        it ("Works with no scopes", function() {
+            expect(Lib.scopeListToPermissions("")).to.deep.equal({
+                read  : [],
+                write : [],
+                access: []
+            })
+        });
+
+        it ("Works with one scope", function() {
+            expect(Lib.scopeListToPermissions("profile")).to.deep.equal({
+                read  : ["Your profile information"],
+                write : [],
+                access: []
+            })
+        });
+
+        it ("Works with multiple scopes", function() {
+            expect(Lib.scopeListToPermissions("profile user/*.*", true)).to.deep.equal({
+                read  : ["Your profile information", "Your medical information"],
+                write : ["Your medical information"],
+                access: []
+            })
+        });
+    });
 });

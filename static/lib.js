@@ -122,7 +122,7 @@
         })).join("");
     }
 
-    //this is temporary - should use a better algorithm to prevent conflicts
+    // this is temporary - should use a better algorithm to prevent conflicts
     function generateUID() {
         var firstPart  = (Math.random() * 46656) | 0;
         var secondPart = (Math.random() * 46656) | 0;
@@ -293,22 +293,159 @@
         return null;
     }
 
+    /**
+     * 
+     * @param {Array} array 
+     */
+    function arrayToUnique(array) {
+        return array.reduce(function(prev, current) {
+            if (prev.indexOf(current) == -1) {
+                prev.push(current);
+            }
+            return prev;
+        }, []);
+    }
+
+    function scopeToText(scope, isPatient) {
+        var out = {
+            read  : "",
+            write : "",
+            access: ""
+        };
+
+        if (scope == "profile") {
+            out.read = "Your profile information";
+            return out;
+        }
+
+        if (scope == "launch") { 
+            out.read = "The current patient and encounter selection in the EHR system";
+            return out;
+        }
+
+        if (scope == "launch/Patient") { 
+            out.read = "The current patient selection";
+            return out;
+        }
+
+        if (scope == "launch/Encounter") {
+            out.read = "The current encounter selection";
+            return out;
+        }
+
+        if (scope == "online_access") {
+            out.access = "The app will be able to access data until it is online.";
+            return out;
+        }
+        
+        if (scope == "offline_access") {
+            out.access = "The app will be able to access data until it is revoked manually.";
+            return out;
+        }
+
+        var scopeParts = scope.split(/[/.]/);
+        if (scopeParts.length < 2) return out;
+
+        if (scopeParts[1].toLowerCase() == "patient")
+            scopeParts[1] = "Demographic";
+
+        var text;
+        if (!isPatient) {
+            text = (scopeParts[1] == "*") ? "All" : scopeParts[1];
+            if (scopeParts[0] == "user") {
+                text += " data you have access to in the EHR system";
+            } else {
+                text += " data on the current patient";
+            }
+        } else {
+            if 	(scopeParts[1] == "*") {
+                text = "Your medical information";
+            } else {
+                text = 'Your information of type "' + scopeParts[1] + '"';
+            }
+        }
+
+        if (scopeParts[2] == "write" || scopeParts[2] == "*") {
+            out.write = text;
+        }
+
+        if (scopeParts[2] == "read" || scopeParts[2] == "*") {
+            out.read = text;
+        }
+
+        return out;
+    }
+
+    function scopeListToPermissions(scopes, isPatient) {
+        var read = [], write = [], access = [];
+        var _scopes = $.trim(String(scopes || "")).split(/\s+/);
+        
+        if (_scopes.indexOf("offline_access") > -1 &&
+            _scopes.indexOf("online_access") > -1) {
+            access.push(
+                "You have requested both <code>offline_access</code> and " +
+                "<code>online_access</code> scopes. Please make sure you only " +
+                "use one of them."
+            );
+        }
+
+        if (_scopes.indexOf("launch") > -1) {
+            if (_scopes.indexOf("launch/Patient") > -1) {
+                access.push(
+                    "You have requested both <code>launch</code> and <code>launch/Patient</code> scopes. " +
+                    "You probably only need to use one of them. The <code>launch</code> scope " +
+                    "is used in the EHR launch flow while <code>launch/Patient</code> is for " +
+                    "the standalone flow."
+                )
+            }
+            if (_scopes.indexOf("launch/Encounter") > -1) {
+                access.push(
+                    "You have requested both <code>launch</code> and <code>launch/Encounter</code> scopes. " +
+                    "You probably only need to use one of them. The <code>launch</code> scope " +
+                    "is used in the EHR launch flow while <code>launch/Encounter</code> is for " +
+                    "the standalone flow."
+                )
+            }
+        }
+
+        $.each(_scopes, function(i, scope) {
+            var permissions = scopeToText(scope, isPatient);
+            if (permissions.read) {
+                read.push(permissions.read);
+            }
+            if (permissions.write) {
+                write.push(permissions.write);
+            }
+            if (permissions.access) {
+                access.push(permissions.access);
+            }
+        });
+
+        return {
+            read  : arrayToUnique(read),
+            write : arrayToUnique(write),
+            access: arrayToUnique(access)
+        };
+    }
+
     // Export
     // =========================================================================
     
     const Lib = {
-        getPath          : getPath,
-        getUrlQuery      : getUrlQuery,
-        compileUrlQuery  : compileUrlQuery,
-        toCamelCase      : toCamelCase,
-        generateUID      : generateUID,
-        selectPatients   : selectPatients,
-        humanName        : humanName,
-        formatAge        : formatAge,
-        qsToForm         : qsToForm,
-        formToQs         : formToQs,
-        setCookie        : setCookie,
-        getCookie        : getCookie
+        getPath               : getPath,
+        getUrlQuery           : getUrlQuery,
+        compileUrlQuery       : compileUrlQuery,
+        toCamelCase           : toCamelCase,
+        generateUID           : generateUID,
+        selectPatients        : selectPatients,
+        humanName             : humanName,
+        formatAge             : formatAge,
+        qsToForm              : qsToForm,
+        formToQs              : formToQs,
+        setCookie             : setCookie,
+        getCookie             : getCookie,
+        scopeToText           : scopeToText,
+        scopeListToPermissions: scopeListToPermissions
     };
 
     // Export at window.Lib:

@@ -459,10 +459,10 @@
                 $(".baner").css("height", $(".baner")[0].scrollHeight);
                 setTimeout(function() {
                     $(".baner").css({
-                        height: 0,
+                        height : 0,
                         opacity: 0
                     });
-                }, 0);
+                }, 20);
             }
 
             function getBaseUrl() {
@@ -536,7 +536,7 @@
                     "href",
                     baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
                     "?response_type=code&client_id=test" +
-                    "&scope=" + encodeURIComponent("patient/*.* launch openid offline_access profile") +
+                    "&scope=" + encodeURIComponent("patient/*.* launch launch/Patient openid offline_access profile") +
                     "&aud=" + encodeURIComponent(standaloneUrl) +
                     "&redirect_uri=" + encodeURIComponent(
                         location.origin + "/sample-apps/standalone-patient/index.html"
