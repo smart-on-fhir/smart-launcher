@@ -17,5 +17,26 @@ module.exports = {
     "n": "5RJvk54BcrmwJH0nUlGERrdlAtfEixCas90GJs6VbcdfgQVa_V5lU3HT-Zxc5rpE_TvRP6j1yW0zEiuQGy1uffd31u27135hFjKodAJDywmGISJ1AeYDYR4TRWpfc7tdQE0h1J2UfxUZEUsDXDa9Nl0B4tjC9FCSyJa3DikHecNIT_goBheV_GllORsWzss0yQ7NQOB9M4zzUhMdN5X0-1z6HooEQiRgg80gwW5b8zVumULUsAHcexBXZMVSbTNSMbPOq7UhlxFbHmgrowtvi68uEcIp46-qGxlU2ZtBNRtXPyWmL-1Mt29euPgdO7_nW00_6UTLsrYMMkpuHtxvNw",
     "kid": "b449e771431b358a24d91d153a3e78e1743e96db",
     "x5t": "b449e771431b358a24d91d153a3e78e1743e96db"
-  } 
+  },
+  errors: {
+    "missing_parameter"              : "Missing %s parameter",
+    "missing_response_type_parameter": "Missing response_type parameter",
+    "missing_client_id_parameter"    : "Missing client_id parameter",
+    "missing_scope_parameter"        : "Missing scope parameter",
+    "missing_state_parameter"        : "Missing state parameter",
+    "missing_redirect_uri_parameter" : "Missing redirect_uri parameter",
+    "bad_redirect_uri"               : "Bad redirect_uri: %s",
+    "bad_audience"                   : "Bad audience value",
+    "no_redirect_uri_protocol"       : "Invalid redirect_uri parameter '%s' (must be full URL)",
+    "unauthorized"                   : "Unauthorized",
+    "form_content_type_required"     : "Invalid request content-type header (must be 'application/x-www-form-urlencoded')",
+    "sim_invalid_client_id"          : "Simulated invalid client_id parameter error",
+    "sim_invalid_redirect_uri"       : "Simulated invalid redirect_uri parameter error",
+    "sim_invalid_scope"              : "Simulated invalid scope error",
+    "sim_invalid_client_secret"      : "Simulated invalid client secret error",
+    "sim_invalid_token"              : "Simulated invalid token error",
+    "invalid_token"                  : "Invalid token: %s",
+    "empty_auth_header"              : "The authorization header '%s' cannot be empty",
+    "bad_auth_header"                : "Bad authorization header '%s': %s"
+  }
 }

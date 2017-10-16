@@ -2,6 +2,7 @@ const request = require('supertest');
 const app     = require("../src/index.js");
 const config  = require("../src/config");
 const jwt     = require("jsonwebtoken");
+const Url     = require("url");
 
 function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
@@ -184,6 +185,8 @@ describe('Proxy', function() {
 });
 
 describe('Auth', function() {
+
+    // auth/authorize Checks for required params
     buildRoutePermutations("auth/authorize").forEach(path => {
         let query = [];
         [
@@ -207,17 +210,18 @@ describe('Auth', function() {
         });
     });
 
+    // auth/authorize validates the redirect_uri parameter
     buildRoutePermutations("auth/authorize").forEach(path => {
         it(`${path} - validates the redirect_uri parameter`, done => {
             request(app)
             .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
-            .expect(`Invalid "redirect_uri" parameter "x" (must be http or https URL).`)
+            .expect(/^Invalid redirect_uri parameter/)
             .expect(400)
             .end(done);
         });
     });
-    
 
+    // can simulate invalid redirect_uri error
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
@@ -226,13 +230,18 @@ describe('Auth', function() {
             it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
                 request(app)
                 .get(path)
-                .expect(400)
-                .expect("Invalid redirect_uri parameter")
+                .expect(302)
+                .expect(function(res) {
+                    if (!res.headers.location || res.headers.location.indexOf("error=sim_invalid_redirect_uri") == -1) {
+                        throw new Error(`No error passed to the redirect ${res.headers.location}`)
+                    }
+                })
                 .end(done);
             });
         });
     }
-    
+
+    // can simulate invalid scope error
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
@@ -241,13 +250,22 @@ describe('Auth', function() {
             it (path.split("?")[0] + " can simulate invalid scope error", done => {
                 request(app)
                 .get(path)
-                .expect(400)
-                .expect("Invalid scope parameter")
+                .expect(302)
+                .expect(function(res) {
+                    if (!res.headers.location) {
+                        throw new Error(`No redirect`)
+                    }
+                    let url = Url.parse(res.headers.location, true);
+                    if (url.query.error != "sim_invalid_scope") {
+                        throw new Error(`Wrong redirect ${res.headers.location}`)
+                    }
+                })
                 .end(done);
             });
         });
     }
-    
+
+    // can simulate invalid client_id error
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
@@ -256,13 +274,22 @@ describe('Auth', function() {
             it (path.split("?")[0] + " can simulate invalid client_id error", done => {
                 request(app)
                 .get(path)
-                .expect(400)
-                .expect("Invalid client_id parameter")
+                .expect(302)
+                .expect(function(res) {
+                    if (!res.headers.location) {
+                        throw new Error(`No redirect`)
+                    }
+                    let url = Url.parse(res.headers.location, true);
+                    if (url.query.error != "sim_invalid_client_id") {
+                        throw new Error(`Wrong redirect ${res.headers.location}`)
+                    }
+                })
                 .end(done);
             });
         });
     }
 
+    // rejects invalid audience value
     buildRoutePermutations(
         "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=whatever" +
         encodeURIComponent(config.fhirServerR2),
@@ -271,12 +298,21 @@ describe('Auth', function() {
         it (path.split("?")[0] + " rejects invalid audience value", done => {
             request(app)
             .get(path)
-            .expect(400)
-            .expect("Bad audience value")
+            .expect(302)
+            .expect(function(res) {
+                if (!res.headers.location) {
+                    throw new Error(`No redirect`)
+                }
+                let url = Url.parse(res.headers.location, true);
+                if (url.query.error != "bad_audience") {
+                    throw new Error(`Wrong redirect ${res.headers.location}`)
+                }
+            })
             .end(done);
         });
     });
 
+    // can show encounter picker
     buildRoutePermutations(
         "auth/authorize" +
         "?client_id=x" +
@@ -295,21 +331,79 @@ describe('Auth', function() {
         let fullPath = path + "&aud=" + aud + "&launch=" + launch;
 
         it (path.split("?")[0] + " can show encounter picker", done => {
-
-    //     it (path.split("?")[0] + " accepts valid audience value", done => {
-    //         request(app).get(path + aud).expect(200).end(done);
-    //     });
             request(app)
             .get(fullPath)
-            // .expect(200)
+            .expect(302)
             .expect(function(res) {
                 if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
                     throw new Error(`Wrong redirect ${res.headers.location}`)
                 }
             })
-            // .expect('Location', fullPath.replace(/auth/authorize?", "/encounter?") + "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d")
-            // .expect("Bad audience values")
             .end(done);
+        });
+    });
+
+    describe('Confidential Clients', function() {
+        buildRoutePermutations("auth/token").forEach(path => {
+            let token = jwt.sign("whatever", config.jwtSecret);
+
+            it (`${path} - can simulate auth_invalid_client_secret`, done => {
+                request(app)
+                .post(path)
+                .type('form')
+                .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
+                .send({
+                    grant_type: "refresh_token",
+                    auth_error: "auth_invalid_client_secret",
+                    refresh_token: token
+                })
+                .expect("Simulated invalid client secret error")
+                .expect(401)
+                .end(done);
+            });
+
+            it (`${path} - rejects empty auth header`, done => {
+                request(app)
+                .post(path)
+                .type('form')
+                .set("Authorization", "Basic")
+                .send({
+                    grant_type: "refresh_token",
+                    refresh_token: token
+                })
+                .expect("The authorization header 'Basic' cannot be empty")
+                .expect(401)
+                .end(done);
+            });
+
+            it (`${path} - rejects invalid auth header`, done => {
+                request(app)
+                .post(path)
+                .type('form')
+                .set("Authorization", "Basic bXktYXB")
+                .send({
+                    grant_type: "refresh_token",
+                    refresh_token: token
+                })
+                .expect(/^Bad authorization header/)
+                .expect(401)
+                .end(done);
+            });
+
+            it (`${path} - can simulate sim_invalid_token`, done => {
+                let code = jwt.sign({ auth_error:"token_invalid_token" }, config.jwtSecret);
+                request(app)
+                .post(path)
+                .type('form')
+                .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
+                .send({
+                    grant_type: "authorization_code",
+                    code
+                })
+                .expect("Simulated invalid token error")
+                .expect(401)
+                .end(done);
+            });
         });
     });
 
