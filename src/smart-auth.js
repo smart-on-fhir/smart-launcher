@@ -1,4 +1,4 @@
-// @ts-check
+//@ts-nocheck
 const jwt        = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const router     = require("express").Router({ mergeParams: true });
@@ -6,6 +6,9 @@ const config     = require("./config");
 const sandboxify = require("./sandboxify");
 const Url        = require("url");
 const Lib        = require("./lib");
+const jwkToPem   = require("jwk-to-pem");
+
+const jwkAsPem = jwkToPem(config.oidcKeypair);
 
 module.exports = router;
 
@@ -305,10 +308,15 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
     if (code.user && code.scope.indexOf("profile") > -1 && code.scope.indexOf("openid") > -1) {
         token.id_token = jwt.sign({
-            profile: code.user,
-            aud: req.body.client_id,
-            iss: config.baseUrl
-        }, config.oidcKeypair.d, config.oidcKeypair.alg);
+                profile: code.user,
+                aud: req.body.client_id,
+                iss: config.baseUrl
+            },
+            jwkAsPem,
+            {
+                algorithm: "HS256"
+            }
+        );
     }
 
     token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn: "1h" });

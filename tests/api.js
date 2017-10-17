@@ -1,8 +1,89 @@
-const request = require('supertest');
-const app     = require("../src/index.js");
-const config  = require("../src/config");
-const jwt     = require("jsonwebtoken");
-const Url     = require("url");
+const Request  = require('request');
+const request  = require('supertest');
+const app      = require("../src/index.js");
+const config   = require("../src/config");
+const jwt      = require("jsonwebtoken");
+const Url      = require("url");
+const jwkToPem = require("jwk-to-pem");
+
+
+////////////////////////////////////////////////////////////////////////////////
+function expectStatusCode(res, code) {
+    if (res.statusCode !== code) {
+        throw new Error(`Expecting status code of ${code} but received ${res.statusCode}`);
+    }
+}
+function expectResponseHeader(res, name, value = null) {
+    let header = String(res.headers[name.toLowerCase()] || "");
+    if (!header) {
+        throw new Error(`Expecting ${name} response header but it wasn't sent`);
+    }
+    if (value) {
+        if (value instanceof RegExp) {
+            if (!value.test(header)) {
+                throw new Error(`The ${name} response header did not match the specified RegExp`);
+            }
+        }
+        else if (header !== value) {
+            throw new Error(`Expecting ${name} response header to ewual ${value} but found ${header}`);
+        }
+    }
+}
+
+function lookupOidcKeys(done) {
+    const path = `${config.baseUrl}/.well-known/openid-configuration/`;
+    let keysLocation, keys;
+    
+    Request({
+        url: path,
+        json: true,
+        strictSSL: false
+    }, (error, res, body) => {
+        if (error) {
+            return done(error)
+        }
+
+        try {
+            expectStatusCode(res, 200);
+            expectResponseHeader(res, 'Content-Type', /^application\/json/);
+            if (!body) {
+                throw new Error(`${path} did not return a JSON`);
+            }
+            if (!body.jwks_uri) {
+                throw new Error(`${path} did not return proper keys location`);
+            }
+        } catch(ex) {
+            return done(ex);
+        }
+
+        Request({
+            url: body.jwks_uri,
+            json: true,
+            strictSSL: false
+        }, (error2, res2, body2) => {
+            if (error2) {
+                return done(error2)
+            }
+            
+            try {
+                expectStatusCode(res2, 200);
+                expectResponseHeader(res, 'Content-Type', /^application\/json/);
+                if (!body2) {
+                    throw new Error(`${keysLocation} did not return a JSON`)
+                }
+                if (!body2.keys) {
+                    throw new Error(`${keysLocation} did not return keys`);
+                }
+            } catch(ex) {
+                return done(ex);
+            }
+
+            done(null, body2.keys);
+        })
+    });
+}
+////////////////////////////////////////////////////////////////////////////////
+
 
 function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
@@ -407,4 +488,68 @@ describe('Auth', function() {
         });
     });
 
+    describe('OIDC signature algorithm works correctly', function() {
+        buildRoutePermutations().forEach(path => {
+            let code, idToken, key, keysLocation;
+            let aud = config.baseUrl + path + "fhir";
+            let launch = new Buffer(JSON.stringify({
+                launch_pt : 1,
+                skip_login: 1,
+                skip_auth : 1,
+                patient   : "abc"
+            })).toString("base64");
+            it(`${path}auth/authorize - generates a code`, done => {
+                request(app)
+                .get(`${path}auth/authorize?response_type=code&launch=${launch}&patient=abc&client_id=x&redirect_uri=http://x.y&scope=profile%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
+                .expect(302)
+                .expect(function(res) {
+                    if (!res.headers.location) {
+                        throw new Error(`auth/authorize did not redirect to the redirect_uri`)
+                    }
+                    let url = Url.parse(res.headers.location, true);
+                    code = url.query.code;
+                    if (!code) {
+                        console.log(res.headers.location)
+                        throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
+                    }
+                    // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
+                })
+                .end(done);
+            });
+
+            it(`${path}auth/token - exchanges the code for token`, done => {
+                request(app)
+                .post(`${path}auth/token`)
+                .type("form")
+                .send({
+                    grant_type: "authorization_code",
+                    code
+                })
+                .expect('Content-Type', /^application\/json/)
+                .expect(function(res) {
+                    if (!res.body || !res.body.id_token) {
+                        // console.log(res.body)
+                        throw new Error(`auth/token did not return id_token`)
+                    }
+                    idToken = res.body.id_token
+                })
+                .end(done);
+            });
+
+            it(`the access token can be verified`, done => {
+                lookupOidcKeys((error, keys) => {
+                    if (error) {
+                        return done(error);
+                    }
+                    key = keys[0]
+                    try {
+                        jwt.verify(idToken, jwkToPem(key), { algorithms: ["HS256"] })
+                        done()
+                    } catch (ex) {
+                        done(ex)
+                    }
+                });
+            });
+        });
+    });
 });
