@@ -128,6 +128,11 @@ hr.solid {
   text-shadow: 0 1px 0 #FFF;
   cursor: default;
 }
+*.btn.disabled {
+  pointer-events: none;
+  background: #EEE;
+  border-color: #AAA;
+}
 .form-group {
   margin-bottom: 15px;
 }
@@ -177,4 +182,34 @@ textarea {
 
 .baner hr {
   margin: 10px 0;
+}
+
+.hide-if-no-sandboxes {
+  display: block;
+  display: initial;
+}
+.show-if-no-sandboxes {
+  display: none;
+}
+.hide-if-sandboxes {
+  display: none;
+}
+.show-if-sandboxes {
+  display: block;
+  display: initial;
+}
+
+.no-sandboxes .hide-if-no-sandboxes {
+  display: none;
+}
+.no-sandboxes .show-if-no-sandboxes {
+  display: block;
+  display: initial;
+}
+.no-sandboxes .hide-if-sandboxes {
+  display: block;
+  display: initial;
+}
+.no-sandboxes .show-if-sandboxes {
+  display: none;
 }

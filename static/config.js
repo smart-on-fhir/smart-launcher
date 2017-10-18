@@ -1,4 +1,5 @@
 var CONFIG = {
+    enableSandboxes: false,
     fhirVersions: [
         {
             name: "r2",

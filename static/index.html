@@ -64,53 +64,58 @@
             </div>
         </div>
         <div class="container" id="content" style="display:none;">
-            <div class="panel panel-info alert-info">
-                <div class="panel-heading"><b class="text-primary">My Sandbox</b></div>
+            <div class="panel panel-info alert-info sandbox-panel" style="display:none">
+                <div class="panel-heading">
+                    <b class="text-primary">My Sandbox</b>
+                </div>
                 <div class="panel-body navbar-default" style="padding-bottom: 0">
-                        <div class="form-group col-sm-6">
-                            <label for="sb">Name</label>
-                            <input id="sb" class="form-control"><!-- wyg7nz -->
-                            <p class="help-block small">Randomly generated name, reuse a previous name to share data between launch simulations</p>
-                        </div>
-                    
-                        <div class="form-group col-sm-6">
-                            <label for="fhir-version">Version</label>
-                            <select id="fhir-version" class="form-control"></select>
-                            <p class="help-block small">&nbsp;<!-- FHIR Version --></p>
-                        </div>
+                    <div class="form-group col-sm-6">
+                        <label for="sb">Name</label>
+                        <input id="sb" class="form-control">
+                        <p class="help-block small">Randomly generated name, reuse a previous name to share data between launch simulations</p>
+                    </div>
+                
+                    <div class="form-group col-sm-6">
+                        <label for="fhir-version-1">Version</label>
+                        <select id="fhir-version-1" class="form-control fhir-version"></select>
+                        <p class="help-block small">&nbsp;</p>
+                    </div>
 
-                        <br clear="all" />
-                        <div class="form-group col-sm-6">
-                            <p><label>Also include read access to these pre-defined datasets</label></p>
-                            <div class="fhir-tags"></div>
-                        </div>
+                    <br clear="all" />
+                    <div class="form-group col-sm-6">
+                        <p><label>Also include read access to these pre-defined datasets</label></p>
+                        <div class="fhir-tags"></div>
+                    </div>
 
-                        <div class="form-group col-sm-6">
-                            <a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-default pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
-                            <label for="open-url">
-                                Open FHIR Endpoint URL
-                            </label>
-                            <div class="alert alert-info" style="margin: 0">
-                                <div>
-                                    <a class="form-control-static" id="open-url"></a>
-                                </div>
+                    <div class="form-group col-sm-6">
+                        <a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-default pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
+                        <label for="open-url">
+                            Open FHIR Endpoint URL
+                        </label>
+                        <div class="alert alert-info" style="margin: 0">
+                            <div>
+                                <a class="form-control-static" id="open-url"></a>
                             </div>
                         </div>
-
+                    </div>
                 </div>
             </div>
 
             <div class="panel panel-default">
-                <div class="panel-heading"><b class="text-primary">App Launch</b></div>
+                <div class="panel-heading">
+                    <b class="text-primary">
+                        <i class="glyphicon glyphicon-cog"></i> App Launch Options
+                    </b>
+                </div>
                 <div class="panel-body navbar-default">
                 
                     <!-- Launch Type ======================================= -->
-                    <div class="form-group col-xs-12">
+                    <div class="form-group col-sm-6">
                         <label for="launch-type">Launch Type</label>
-                        <div class="radio">
+                        <div class="radio" style="margin-top: 0">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-ehr" checked>
-                                Provider EHR Launch Flow
+                                Provider EHR Launch
                                 <span class="text-muted small">(user opens the app from within an EHR)</span>
                             </label>
                             <div style="margin: 5px 0 10px">
@@ -122,18 +127,25 @@
                         <div class="radio">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-prov">
-                                Provider Standalone Launch Flow 
-                                <span class="text-muted small">(practitioner opens the app directly and connects to FHIR server)</span>
+                                Provider Standalone Launch 
+                                <span class="text-muted small">(practitioner opens the app directly and connects to FHIR)</span>
                             </label>
                         </div>
                         <div class="radio">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-pt">
-                                Patient Standalone Launch Flow 
-                                <span class="text-muted small">(patient opens the app directly and connects to FHIR server)</span>
+                                Patient Standalone Launch 
+                                <span class="text-muted small">(patient opens the app directly and connects to FHIR)</span>
                             </label>
                         </div>
                     </div>
+
+                    <!-- FHIR Version ====================================== -->
+                    <div class="form-group col-sm-6">
+                        <label for="fhir-version-2">FHIR Version</label>
+                        <select id="fhir-version-2" class="form-control fhir-version"></select>
+                    </div>
+                    <br clear="all" class="launch launch-ehr launch-prov hidden-xs show-if-no-sandboxes"/>
 
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
@@ -155,7 +167,7 @@
                     </div>
                     
                     <!-- Patient =========================================== -->
-                    <div class="form-group col-xs-12 launch launch-pt">
+                    <div class="form-group col-sm-6 launch launch-pt">
                         <!-- <hr/> -->
                         <label for="user">Patient <span class="text-muted normal-weight">(simlulates user who is launching the app)</span></label>
                         <div class="input-group">
@@ -164,13 +176,6 @@
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <!-- <p class="help-block small">If no Patient Id is entered or a comma delimited Patient Ids are specified, the patient login screen will be displayed as part of the launch flow</p>
-                        <div class="checkbox launch launch-pt">
-                            <label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span></label>
-                        </div>
-                        <div class="checkbox launch launch-pt">
-                            <label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
-                        </div> -->
                     </div>
                     
                     <div class="form-group col-xs-12">
@@ -230,7 +235,11 @@
             </div>
 
             <div class="panel panel-success alert-success">
-                <div class="panel-heading"><b class="text-success">Launch</b></div>
+                <div class="panel-heading">
+                    <b class="text-success">
+                        <i class="glyphicon glyphicon-new-window"></i> Launch
+                    </b>
+                </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
                     <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0"></h3>
                     <ul style="margin: 0 0 0 10px" class="text-muted">
@@ -263,12 +272,17 @@
                         <p class="help-block small launch launch-ehr">
                             Web address that will initialize the SMART session (typically the full url of your launch.html file)
                         </p>
-                        <label for="user" class="launch launch-pt launch-prov">FHIR Server Url</label>
-                        <textarea id="standalone-launch-url" class="form-control launch launch-pt launch-prov" readonly></textarea>
-                        <p class="help-block small launch launch-pt launch-prov">Your app should use the URL above to authenticate with the server...</p>
+                        <div class="launch launch-pt launch-prov">
+                            <label class="">FHIR Server Url</label>
+                            <textarea id="standalone-launch-url" class="form-control" readonly></textarea>
+                            <p class="help-block small">
+                                Your app should use the URL above as base URL (and <code>aud</code> parameter) and authenticate as
+                                described <a target="_blank" href="http://docs.smarthealthit.org/authorization/#standalone-launch-sequence">here</a>.
+                            </p>
+                        </div>
                         <div class="text-center launch launch-pt launch-prov">
                             <hr/>
-                            <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Test App</a>
+                            <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Demo App</a>
                             <br/>
                         </div>
                     </div>
@@ -284,36 +298,97 @@
         <script src="/lib.js"></script>
         <script src="/jquery.picker.js"></script>
         <script>
+            // Getters ---------------------------------------------------------
+            function getFhirVersion() {
+                return $(".fhir-version").val() || CONFIG.fhirVersions[0].name;
+            }
+
+            function getSandboxName() {
+                return CONFIG.enableSandboxes ? $("#sb").val() || "public" : "public";
+            }
+
+            function getLaunchType() {
+                return $("input[name=launch-type]:checked").attr("id");
+            }
+
+            function getTags() {
+                var tags, sb = getSandboxName();
+                if (CONFIG.enableSandboxes) {
+                    tags = $(".sb :checked").filter(":visible").map(
+                        function () { return $(this).val() }
+                    ).get();
+                }
+                else {
+                    var fhirVersion = getFhirVersion();
+                    tags = CONFIG.fhirVersions.find(function(cfg) {
+                        return cfg.name = fhirVersion;
+                    }).tags.map(function(tag) {
+                        return tag.value;
+                    });
+                }
+                if (sb) {
+                    tags.unshift(sb);
+                }
+                return tags;
+            }
+
+            function getLaunchUrl() {
+                return $.trim($("#launch-url").val());
+            }
+
+            // -----------------------------------------------------------------
+
             function buildForm() {
 
+                // Build the FHIR tag checkboxes
+                if (CONFIG.enableSandboxes) {
+                    $(".sandbox-panel").show();
+                    $("#fhir-version-2").closest(".col-sm-6")/*.prev().removeClass("col-sm-6").addClass("col-xs-12").end()*/.remove()
+                    $(".fhir-tags").html(
+                        $.map(CONFIG.fhirVersions, function(v) {
+                            return $.map(v.tags, function(t) {
+                                return '<div class="checkbox sb ' + v.name + '">' +
+                                    '<label>' +
+                                        '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
+                                        '"' + (t.selected ? ' checked' : '') + '>' +
+                                            '<b>' + t.displayName + '</b> <small class="text-muted">(' +
+                                                t.description + ')</small>' +
+                                        '</label>' +
+                                    '</div>';
+                            }).join("");
+                        }).join("")
+                    );
+                }
+
                 // Build the FHIR version selector
-                $("#fhir-version").html(
+                $(".fhir-version").html(
                     $.map(CONFIG.fhirVersions, function(v) {
                         return '<option value="' + v.name + '">' + v.displayName + '</option>';
                     }).join()
                 );
+            }
 
-                // Build the FHIR tag checkboxes
-                $(".fhir-tags").html(
-                    $.map(CONFIG.fhirVersions, function(v) {
-                        return $.map(v.tags, function(t) {
-                            return '<div class="checkbox sb ' + v.name + '">' +
-                                '<label>' +
-                                    '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
-                                    '"' + (t.selected ? ' checked' : '') + '>' +
-                                        '<b>' + t.displayName + '</b> <small class="text-muted">(' +
-                                            t.description + ')</small>' +
-                                    '</label>' +
-                                '</div>';
-                        }).join("");
-                    }).join("")
-                );
+            function validateLaunchUrl() {
+                var val = getLaunchUrl();
+                var idx = val.indexOf(":");
+                if (!val || idx < 1 || idx === val.length - 1) {
+                    $("#ehr-launch-url").prop("disabled", true).addClass("disabled");
+                    return false;
+                }
+                $("#ehr-launch-url").prop("disabled", false).removeClass("disabled");
+                return true;
             }
 
             function bindEventHandlers() {
 
                 $("input.remember-baner").on("change", function(e) {
                     e.stopPropagation();
+                });
+
+                $("#launch-url").on("change input", function(e) {
+                    if (!validateLaunchUrl()) {
+                        // e.stopPropagation();
+                    }
                 });
 
                 $(document).on("input change", "input,select", function() {
@@ -330,7 +405,7 @@
 
                 $("#patient-select-button").on("click", function() {
                     var input = $("#patient");
-                    var fhirVersion = $("#fhir-version").val();
+                    var fhirVersion = getFhirVersion();
                     if (fhirVersion == "r2") {
                         fhirVersion = "DSTU-2"
                     }
@@ -373,7 +448,7 @@
 
                 $("#user-pt-select").on("click", function() {
                     var input = $("#user-pt");
-                    var fhirVersion = $("#fhir-version").val();
+                    var fhirVersion = getFhirVersion();
                     if (fhirVersion == "r2") {
                         fhirVersion = "DSTU-2"
                     }
@@ -434,7 +509,7 @@
                     }
                 });
 
-                $(".fhir-tags input:checkbox, #fhir-version").on("change", function() {
+                $(".fhir-tags input:checkbox, .fhir-version").on("change", function() {
                     $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
                     $("#patient, #user-pt").val("");
                 });
@@ -467,57 +542,67 @@
 
             function getBaseUrl() {
                 var baseUrl = window.location.href.split("?")[0].replace(/index\.html/, "");
-                var sandboxes = $(".sb :checked").filter(":visible").map( 
-                    function () { return $(this).val() }
-                ).get();
-                if ($("#sb").val()) sandboxes.unshift( $("#sb").val() );
-                baseUrl += "v/" + $("#fhir-version").val();
-                if (sandboxes.length) baseUrl += "/sb/" + sandboxes.join(",");
+                var sandboxes = getTags();
+                baseUrl += "v/" + getFhirVersion();
+                if (sandboxes.length) {
+                    baseUrl += "/sb/" + sandboxes.join(",");
+                }
                 return baseUrl;
             }
 
             function buildUrls() {
                 var baseUrl = getBaseUrl();
+                var launchType = getLaunchType();
                 var paramMap = {
                     "launch-ehr": [
-                        ["#launch-ehr", "launch_ehr"],
-                        ["#patient", "patient"],
-                        ["#encounter", "encounter"],
-                        ["#auth-error", "auth_error"],
-                        ["#provider", "provider"],
-                        ["#sim-ehr", "sim_ehr"],
+                        ["#launch-ehr"      , "launch_ehr"      ],
+                        ["#patient"         , "patient"         ],
+                        ["#encounter"       , "encounter"       ],
+                        ["#auth-error"      , "auth_error"      ],
+                        ["#provider"        , "provider"        ],
+                        ["#sim-ehr"         , "sim_ehr"         ],
                         ["#select-encounter", "select_encounter"]
                     ],
                     "launch-prov": [
-                        ["#launch-prov", "launch_prov"],
-                        ["#patient", "patient"],
-                        ["#encounter", "encounter"],
-                        ["#auth-error", "auth_error"],
-                        ["#prov-skip-login", "skip_login"], 
-                        ["#prov-skip-auth", "skip_auth"], 
-                        ["#provider", "provider"]
+                        ["#launch-prov"    , "launch_prov"],
+                        ["#patient"        , "patient"    ],
+                        ["#encounter"      , "encounter"  ],
+                        ["#auth-error"     , "auth_error" ],
+                        ["#prov-skip-login", "skip_login" ], 
+                        ["#prov-skip-auth" , "skip_auth"  ], 
+                        ["#provider"       , "provider"   ]
                     ],
                     "launch-pt": [
-                        ["#launch-pt", "launch_pt"],
-                        ["#auth-error", "auth_error"],
+                        ["#launch-pt"    , "launch_pt" ],
+                        ["#auth-error"   , "auth_error"],
                         ["#pt-skip-login", "skip_login"],
-                        ["#pt-skip-auth", "skip_auth"],
-                        ["#user-pt", "patient"]
+                        ["#pt-skip-auth" , "skip_auth" ],
+                        ["#user-pt"      , "patient"   ]
                     ]
-                }
+                };
 
                 var urlParams = {};
-                $.each( paramMap[$("input[name=launch-type]:checked").attr("id")], function(i, param) {
-                    var val = $(param[0]).is(":checkbox,:radio") ? $(param[0]).is(":checked") : $(param[0]).val();
-                    if (val) urlParams[param[1]] = (val === true ? "1" : val);
-                })
+                $.each(paramMap[launchType], function(i, param) {
+                    var val = $(param[0]).is(":checkbox,:radio") ?
+                        $(param[0]).is(":checked") :
+                        $(param[0]).val();
+                    if (val) {
+                        urlParams[param[1]] = (val === true ? "1" : val);
+                    }
+                });
 
-                var openUrl = baseUrl + "/fhir";
+                var openUrl       = baseUrl + "/fhir";
                 var standaloneUrl = baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/fhir";
-                var appLaunchUrl = $("#launch-url").val();
-                var ehrLaunchUrl = appLaunchUrl + "?" + 
+                var appLaunchUrl  = getLaunchUrl();
+                var ehrLaunchUrl  = appLaunchUrl + "?" + 
                     "iss=" +  encodeURIComponent(openUrl) +
                     "&launch=" + btoa(JSON.stringify(urlParams));
+
+                // console.log(btoa(JSON.stringify(urlParams)))
+                // console.log(Lib.base64UrlEncode(JSON.stringify(urlParams)))
+                // console.log(JSON.stringify(urlParams).split("").map(c => c.charCodeAt(0).toString(16)).join(""))
+                // var struct = Object.values(urlParams).join("|")
+                // console.log(btoa(struct))
 
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
@@ -547,9 +632,11 @@
             }
 
             function handleFormChange() {
-                var launchType = $("input[name=launch-type]:checked").attr("id");
+                var launchType = getLaunchType();
                 $(".launch").hide().filter("." + launchType).show();
-                $(".sb").hide().filter(".sb." + $("#fhir-version").val()).show();
+                if (CONFIG.enableSandboxes) {
+                    $(".sb").hide().filter(".sb." + getFhirVersion()).show();
+                }
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
                 $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
@@ -557,13 +644,17 @@
             }
 
             $(function init() {
+                $("body").toggleClass("no-sandboxes", !CONFIG.enableSandboxes);
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
-                if (!$("#sb").val()) $("#sb").val(Lib.generateUID());
+                if (CONFIG.enableSandboxes && !$("#sb").val()) {
+                    $("#sb").val(Lib.generateUID());
+                }
                 bindEventHandlers();
                 handleFormChange();
+                validateLaunchUrl();
                 if (!Lib.getCookie("hide-baner")) {
                     showBaner();
                 }
