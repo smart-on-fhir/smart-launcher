@@ -1,3 +1,5 @@
+// TODO: HSPC SB - standalone launch to show the login dialog
+
 //@ts-nocheck
 const jwt        = require("jsonwebtoken");
 const bodyParser = require("body-parser");
@@ -7,6 +9,7 @@ const sandboxify = require("./sandboxify");
 const Url        = require("url");
 const Lib        = require("./lib");
 const jwkToPem   = require("jwk-to-pem");
+const base64url  = require("base64-url");
 
 const jwkAsPem = jwkToPem(config.oidcKeypair);
 
@@ -16,12 +19,7 @@ function getRequestedSIM(request) {
     let sim = {};
     if (request.query.launch || request.params.sim) {
         try {
-            sim = JSON.parse(
-                Buffer.from(
-                    request.query.launch || request.params.sim,
-                    'base64'
-                ).toString()
-            );
+            sim = JSON.parse(base64url.decode(request.query.launch || request.params.sim));
         }
         catch(ex) {
             sim = null;

@@ -13,6 +13,7 @@
   "author": "Dan Gottlieb",
   "license": "ISC",
   "dependencies": {
+    "base64-url": "^2.0.0",
     "body-parser": "^1.14.1",
     "cors": "^2.7.1",
     "express": "^4.13.3",

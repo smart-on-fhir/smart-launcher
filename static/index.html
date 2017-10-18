@@ -88,13 +88,13 @@
                     </div>
 
                     <div class="form-group col-sm-6">
-                        <a href="#" target="_blank" id="open-url-preview" class="btn btn-sm btn-default pull-right" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
+                        <a href="#" target="_blank" class="btn btn-sm btn-default pull-right open-url-preview" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
                         <label for="open-url">
                             Open FHIR Endpoint URL
                         </label>
                         <div class="alert alert-info" style="margin: 0">
                             <div>
-                                <a class="form-control-static" id="open-url"></a>
+                                <a class="form-control-static open-url"></a>
                             </div>
                         </div>
                     </div>
@@ -144,42 +144,64 @@
                     <div class="form-group col-sm-6">
                         <label for="fhir-version-2">FHIR Version</label>
                         <select id="fhir-version-2" class="form-control fhir-version"></select>
+                        <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
+                            <a class="pull-right btn btn-info btn-xs open-url-preview" href="#" target="_blank">Test</a>
+                            <span class="text-muted"> FHIR Base URL: </b>
+                            <a class="form-control-static open-url text-info"></a>
+                            </i>
+                        </div>
                     </div>
                     <br clear="all" class="launch launch-ehr launch-prov hidden-xs show-if-no-sandboxes"/>
 
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="patient">Patient</label>
+                        <label for="patient">Patient(s)</label>
                         <div class="input-group">
                             <input id="patient" class="form-control" value="" placeholder="Patient ID">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button" id="patient-select-button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">Simulates the active patient in EHR when app is launched. A patient picker will be displayed as part of the launch flow if no Patient ID is entered and a <code>patient</code> or <code>launch/patient</code> scope is specified in your app, or if multiple comma delimited Patient IDs are specified</p>
+                        <p class="help-block small">
+                            Simulates the active patient in EHR when app is launched.
+                            A patient picker will be displayed as part of the launch
+                            flow if no Patient ID is entered and a <code>patient</code>
+                            or <code>launch/patient</code> scope is specified in your
+                            app, or if multiple comma delimited Patient IDs are specified.
+                        </p>
                     </div>
 
                     <!-- Provider ========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="user">Provider</label>
+                        <label for="user">Provider(s)</label>
                         <input id="provider" class="form-control" placeholder="Provider ID">
-                        <p class="help-block small">Simulates user who is launching the app. Only required when <code>profile</code> and <code>openid</code> scopes are specified</p>
+                        <p class="help-block small">
+                            Simulates user who is launching the app. Only required when
+                            <code>profile</code> and <code>openid</code> scopes are
+                            specified. If you select multiple providers you will have
+                            to pick one of them on the login page.
+                        </p>
                     </div>
                     
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-pt">
-                        <!-- <hr/> -->
-                        <label for="user">Patient <span class="text-muted normal-weight">(simlulates user who is launching the app)</span></label>
+                        <label for="user">Patient(s)</label>
                         <div class="input-group">
                             <input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
                         </div>
+                        <p class="help-block small">
+                            Simulates the user who is launching the app. A patient picker
+                            will be displayed as part of the launch flow if no Patient ID
+                            is entered and a <code>patient</code> or <code>launch/patient</code>
+                            scope is specified in your app, or if multiple comma delimited
+                            Patient IDs are specified.
+                        </p>
                     </div>
-                    
+
                     <div class="form-group col-xs-12">
-                        <!-- <br/> -->
                         <label class="text-warning">Advanced</label>
                         <hr class="solid fg-warning"/>
                         <div class="row">
@@ -211,7 +233,7 @@
                                         <label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span></label>
                                     </div>
                                     <div class="checkbox">
-                                        <label><input type="checkbox" id="pt-skip-auth"  checked>Skip app authorization screen</label>
+                                        <label><input type="checkbox" id="pt-skip-auth" checked>Skip app authorization screen</label>
                                     </div>
                                 </div>
                             </div>
@@ -298,9 +320,10 @@
         <script src="/lib.js"></script>
         <script src="/jquery.picker.js"></script>
         <script>
+
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
-                return $(".fhir-version").val() || CONFIG.fhirVersions[0].name;
+                return $(".fhir-version:visible").val() || CONFIG.fhirVersions[0].name;
             }
 
             function getSandboxName() {
@@ -312,22 +335,15 @@
             }
 
             function getTags() {
-                var tags, sb = getSandboxName();
+                var tags = [], sb = getSandboxName();
                 if (CONFIG.enableSandboxes) {
                     tags = $(".sb :checked").filter(":visible").map(
                         function () { return $(this).val() }
                     ).get();
-                }
-                else {
-                    var fhirVersion = getFhirVersion();
-                    tags = CONFIG.fhirVersions.find(function(cfg) {
-                        return cfg.name = fhirVersion;
-                    }).tags.map(function(tag) {
-                        return tag.value;
-                    });
-                }
-                if (sb) {
-                    tags.unshift(sb);
+
+                    if (sb) {
+                        tags.unshift(sb);
+                    }
                 }
                 return tags;
             }
@@ -343,7 +359,7 @@
                 // Build the FHIR tag checkboxes
                 if (CONFIG.enableSandboxes) {
                     $(".sandbox-panel").show();
-                    $("#fhir-version-2").closest(".col-sm-6")/*.prev().removeClass("col-sm-6").addClass("col-xs-12").end()*/.remove()
+                    $("#fhir-version-2").closest(".col-sm-6").remove();
                     $(".fhir-tags").html(
                         $.map(CONFIG.fhirVersions, function(v) {
                             return $.map(v.tags, function(t) {
@@ -385,11 +401,7 @@
                     e.stopPropagation();
                 });
 
-                $("#launch-url").on("change input", function(e) {
-                    if (!validateLaunchUrl()) {
-                        // e.stopPropagation();
-                    }
-                });
+                $("#launch-url").on("change input", validateLaunchUrl);
 
                 $(document).on("input change", "input,select", function() {
                     handleFormChange();
@@ -551,33 +563,34 @@
             }
 
             function buildUrls() {
+                // debugger;
                 var baseUrl = getBaseUrl();
                 var launchType = getLaunchType();
                 var paramMap = {
                     "launch-ehr": [
-                        ["#launch-ehr"      , "launch_ehr"      ],
-                        ["#patient"         , "patient"         ],
-                        ["#encounter"       , "encounter"       ],
-                        ["#auth-error"      , "auth_error"      ],
-                        ["#provider"        , "provider"        ],
-                        ["#sim-ehr"         , "sim_ehr"         ],
-                        ["#select-encounter", "select_encounter"]
+                        [ "#launch-ehr"      , "launch_ehr"       ],
+                        [ "#patient"         , "patient"          ],
+                        [ "#encounter"       , "encounter"        ],
+                        [ "#auth-error"      , "auth_error"       ],
+                        [ "#provider"        , "provider"         ],
+                        [ "#sim-ehr"         , "sim_ehr"          ],
+                        [ "#select-encounter", "select_encounter" ]
                     ],
                     "launch-prov": [
-                        ["#launch-prov"    , "launch_prov"],
-                        ["#patient"        , "patient"    ],
-                        ["#encounter"      , "encounter"  ],
-                        ["#auth-error"     , "auth_error" ],
-                        ["#prov-skip-login", "skip_login" ], 
-                        ["#prov-skip-auth" , "skip_auth"  ], 
-                        ["#provider"       , "provider"   ]
+                        [ "#launch-prov"     , "launch_prov"      ],
+                        [ "#patient"         , "patient"          ],
+                        [ "#encounter"       , "encounter"        ],
+                        [ "#auth-error"      , "auth_error"       ],
+                        [ "#prov-skip-login" , "skip_login"       ], 
+                        [ "#prov-skip-auth"  , "skip_auth"        ], 
+                        [ "#provider"        , "provider"         ]
                     ],
                     "launch-pt": [
-                        ["#launch-pt"    , "launch_pt" ],
-                        ["#auth-error"   , "auth_error"],
-                        ["#pt-skip-login", "skip_login"],
-                        ["#pt-skip-auth" , "skip_auth" ],
-                        ["#user-pt"      , "patient"   ]
+                        [ "#launch-pt"       , "launch_pt"        ],
+                        [ "#auth-error"      , "auth_error"       ],
+                        [ "#pt-skip-login"   , "skip_login"       ],
+                        [ "#pt-skip-auth"    , "skip_auth"        ],
+                        [ "#user-pt"         , "patient"          ]
                     ]
                 };
 
@@ -592,11 +605,10 @@
                 });
 
                 var openUrl       = baseUrl + "/fhir";
-                var standaloneUrl = baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/fhir";
+                var launchData    = Lib.base64UrlEncode(JSON.stringify(urlParams));
+                var standaloneUrl = baseUrl + "/sim/" + launchData + "/fhir";
                 var appLaunchUrl  = getLaunchUrl();
-                var ehrLaunchUrl  = appLaunchUrl + "?" + 
-                    "iss=" +  encodeURIComponent(openUrl) +
-                    "&launch=" + btoa(JSON.stringify(urlParams));
+                var ehrLaunchUrl  = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
 
                 // console.log(btoa(JSON.stringify(urlParams)))
                 // console.log(Lib.base64UrlEncode(JSON.stringify(urlParams)))
@@ -610,8 +622,8 @@
                         "&encounter=" + encodeURIComponent(urlParams.encounter || "");
                 }
 
-                $("#open-url").text(openUrl);
-                $("#open-url-preview").attr("href", openUrl + "/metadata");
+                $(".open-url").text(openUrl);
+                $(".open-url-preview").attr("href", openUrl + "/metadata");
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
                 
@@ -619,7 +631,7 @@
                 // console.log(JSON.stringify(urlParams, null, 4))
                 $("#standalone-launch-url-test").attr(
                     "href",
-                    baseUrl + "/sim/" + btoa(JSON.stringify(urlParams)) + "/auth/authorize" +
+                    baseUrl + "/sim/" + launchData + "/auth/authorize" +
                     "?response_type=code&client_id=test" +
                     "&scope=" + encodeURIComponent("patient/*.* launch launch/Patient openid offline_access profile") +
                     "&aud=" + encodeURIComponent(standaloneUrl) +

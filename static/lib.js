@@ -428,6 +428,26 @@
         };
     }
 
+    function base64UrlUnescape(str) {
+        return (str + '==='.slice((str.length + 3) % 4))
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+    }
+
+    function base64UrlEscape(str) {
+        return str.replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+    }
+
+    function base64UrlEncode(str) {
+        return base64UrlEscape(btoa(str));
+    }
+
+    function base64UrlDecode(str) {
+        return atob(base64UrlUnescape(str));
+    }
+
     // Export
     // =========================================================================
     
@@ -445,7 +465,11 @@
         setCookie             : setCookie,
         getCookie             : getCookie,
         scopeToText           : scopeToText,
-        scopeListToPermissions: scopeListToPermissions
+        scopeListToPermissions: scopeListToPermissions,
+        base64UrlUnescape     : base64UrlUnescape,
+        base64UrlEscape       : base64UrlEscape,
+        base64UrlEncode       : base64UrlEncode,
+        base64UrlDecode       : base64UrlDecode
     };
 
     // Export at window.Lib:
