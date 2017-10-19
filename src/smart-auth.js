@@ -1,6 +1,6 @@
 // TODO: HSPC SB - standalone launch to show the login dialog
 
-//@ts-nocheck
+//@ts-no-check
 const jwt        = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const router     = require("express").Router({ mergeParams: true });

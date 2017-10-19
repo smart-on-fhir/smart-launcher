@@ -15,12 +15,14 @@
   "dependencies": {
     "base64-url": "^2.0.0",
     "body-parser": "^1.14.1",
+    "colors": "^1.1.2",
     "cors": "^2.7.1",
     "express": "^4.13.3",
     "jsonwebtoken": "^5.4.0",
     "jwk-to-pem": "^1.2.6",
     "morgan": "^1.6.1",
     "replaceall": "^0.1.6",
+    "replacestream": "^4.0.3",
     "request": "^2.65.0"
   },
   "devDependencies": {

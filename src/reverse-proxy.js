@@ -4,8 +4,11 @@ const config     = require("./config");
 const fhirError  = require("./fhir-error");
 const sandboxify = require("./sandboxify");
 const patientMap = require("./patient-compartment.json");
+require("colors");
 
 module.exports = function (req, res) {
+
+    let logTime = process.env.LOG_TIMES ? Date.now() : null;
 
     let token = null;
     let sandboxes = req.params.sandbox && req.params.sandbox.split(",");
@@ -73,9 +76,10 @@ module.exports = function (req, res) {
         );
     }
 
-    //if applicable, apply patient scope to GET requests, largely for performance reasons.
-    //Full scope support can't be implemented in a proxy because it would require "or"
-    //conditions in FHIR API calls (ie ), but should do better than this!
+    // if applicable, apply patient scope to GET requests, largely for
+    // performance reasons. Full scope support can't be implemented in a proxy
+    // because it would require "or" conditions in FHIR API calls (ie ),
+    // but should do better than this!
     let scope = (token && token.scope) || req.headers["x-scope"];
     let patient = (token && token.patient) || req.headers["x-patient"];
     if (req.method == "GET" && scope && patient && scope.indexOf("user/") == -1) {
@@ -85,7 +89,7 @@ module.exports = function (req, res) {
     }
 
     //proxy the request to the real FHIR server
-    if (process.env.NODE_ENV == "development") {
+    if (!logTime && process.env.NODE_ENV == "development") {
         console.log("PROXY: " + fhirRequest.url, fhirRequest);
     }
 
@@ -139,6 +143,13 @@ module.exports = function (req, res) {
             res.type("html");
         }
         
+        if (logTime) {
+            console.log(
+                ("Reverse Proxy: ".bold + fhirRequest.url + " -> ").cyan +
+                String((Date.now() - logTime) + "ms").yellow.bold
+            );
+        }
+
         res.send(body);
     });
     

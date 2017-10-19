@@ -5,6 +5,7 @@ const logger       = require('morgan');
 const bodyParser   = require('body-parser');
 const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
+const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
 const fhirError    = require("./fhir-error");
 const fs           = require('fs');
@@ -62,11 +63,11 @@ app.get("/keys", (req, res) => {
 
 buildRoutePermutations = (lastSegment) => {
     return [
-        "/v/:fhir_release/sb/:sandbox/sim/:sim" + lastSegment, 
-        "/v/:fhir_release/sb/:sandbox" + lastSegment, 
-        "/v/:fhir_release/sim/:sim" + lastSegment, 
-        "/v/:fhir_release" + lastSegment,
-    ]
+        "/v/:fhir_release/sb/:sandbox/sim/:sim" + lastSegment,
+        "/v/:fhir_release/sb/:sandbox" + lastSegment,
+        "/v/:fhir_release/sim/:sim" + lastSegment,
+        "/v/:fhir_release" + lastSegment
+    ];
 }
 
 // picker
@@ -92,11 +93,26 @@ app.get(buildRoutePermutations("/authorize"), (req, res) => {
 // auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
-// fhir request
-app.use(buildRoutePermutations(config.fhirBaseUrl),
+// fhir request using sandboxes (tags)
+app.use(
+    [
+        `/v/:fhir_release/sb/:sandbox/sim/:sim${config.fhirBaseUrl}`,
+        `/v/:fhir_release/sb/:sandbox${config.fhirBaseUrl}`
+    ],
     bodyParser.text({ type: "*/*", limit: 1e6 }),
     handleParseError,
     reverseProxy
+);
+
+// fhir request - no sandboxes - fast streaming proxy
+app.use(
+    [
+        `/v/:fhir_release/sim/:sim${config.fhirBaseUrl}`,
+        `/v/:fhir_release${config.fhirBaseUrl}`
+    ],
+    bodyParser.text({ type: "*/*", limit: 1e6 }),
+    handleParseError,
+    simpleProxy
 );
 
 // static request
