@@ -90,6 +90,9 @@ module.exports = function (req, res) {
     if (fhirRequestOptions.headers.hasOwnProperty("host")) {
         delete fhirRequestOptions.headers.host;
     }
+    if (fhirRequestOptions.headers.hasOwnProperty("authorization")) {
+        delete fhirRequestOptions.headers.authorization;
+    }
 
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;

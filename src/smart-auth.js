@@ -211,7 +211,7 @@ router.get("/authorize", async function (req, res) {
     if (sim.launch_pt && sim.patient)
         sim.user = `Patient/${sim.patient}`;
 
-    if (sim.launch_prov && sim.provider)
+    if ((sim.launch_prov || sim.launch_ehr) && sim.provider)
         sim.user = `Practitioner/${sim.provider}`;
 
     Object.keys(sim).forEach( param => {

@@ -113,7 +113,7 @@
                     );
                 }
 
-                if (permissions.access) {
+                if (permissions.access.length) {
                     $("#access-note").html(
                         "<li>" + permissions.access.join("</li><li>") + "</li>"
                     ).closest(".panel-body").show();
