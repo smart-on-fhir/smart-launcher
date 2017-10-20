@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>SMART Sample App - Launching from EHR...</title>
+        <script src="/vendor/fhir-client.js"></script>
+        <script>
+            FHIR.oauth2.authorize({
+                "client_id": "whatever",
+                "scope": [
+                    "patient/*.*",
+                    "launch",
+                    "launch/patient",
+                    "openid",
+                    "profile",
+                    "offline_access"
+                ].join(" ")
+            });
+        </script>
+    </head>
+    <body>Loading...</body>
+</html>

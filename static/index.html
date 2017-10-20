@@ -286,7 +286,7 @@
                     <div class="form-group col-xs-12">
                         <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
                         <div class="input-group launch launch-ehr">
-                            <input id="launch-url" class="form-control" value="https://sb-apps.smarthealthit.org/apps/growth-chart/launch.html" placeholder="Launch URL">
+                            <input id="launch-url" class="form-control" placeholder="Launch URL">
                             <span class="input-group-btn">
                                 <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
                             </span>
@@ -610,12 +610,6 @@
                 var appLaunchUrl  = getLaunchUrl();
                 var ehrLaunchUrl  = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
 
-                // console.log(btoa(JSON.stringify(urlParams)))
-                // console.log(Lib.base64UrlEncode(JSON.stringify(urlParams)))
-                // console.log(JSON.stringify(urlParams).split("").map(c => c.charCodeAt(0).toString(16)).join(""))
-                // var struct = Object.values(urlParams).join("|")
-                // console.log(btoa(struct))
-
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "") +
@@ -627,19 +621,10 @@
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
                 
-                // $("#standalone-launch-url-test").attr("href", standaloneUrl + "/metadata");
                 // console.log(JSON.stringify(urlParams, null, 4))
                 $("#standalone-launch-url-test").attr(
                     "href",
-                    baseUrl + "/sim/" + launchData + "/auth/authorize" +
-                    "?response_type=code&client_id=test" +
-                    "&scope=" + encodeURIComponent("patient/*.* launch launch/Patient openid offline_access profile") +
-                    "&aud=" + encodeURIComponent(standaloneUrl) +
-                    "&redirect_uri=" + encodeURIComponent(
-                        location.origin + "/sample-apps/standalone-patient/index.html"
-                    ) + "&state=abc" +
-                    (urlParams.patient ? "&patient=" + urlParams.patient : "") +
-                    (urlParams.provider ? "&provider=" + urlParams.provider : "")
+                    "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
                 );
             }
 
@@ -665,7 +650,11 @@
                     $("#sb").val(Lib.generateUID());
                 }
                 bindEventHandlers();
+                if (!$("#launch-url").val()) {
+                    $("#launch-url").val(location.origin + "/sample-app/launch.html");
+                }
                 handleFormChange();
+                
                 validateLaunchUrl();
                 if (!Lib.getCookie("hide-baner")) {
                     showBaner();
