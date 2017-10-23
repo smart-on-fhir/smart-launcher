@@ -2,6 +2,20 @@ const jwt    = require("jsonwebtoken");
 const config = require("./config");
 const Url    = require("url");
 
+const RE_GT   = />/g;
+const RE_LT   = /</g;
+const RE_AMP  = /&/g;
+const RE_QUOT = /"/g;
+
+function htmlEncode(html) {
+    return String(html)
+        .trim()
+        .replace(RE_AMP , "&amp;")
+        .replace(RE_LT  , "&lt;")
+        .replace(RE_GT  , "&gt;")
+        .replace(RE_QUOT, "&quot;");
+}
+
 /**
  * Walks thru an object (ar array) and returns the value found at the
  * provided path. This function is very simple so it intentionally does not
@@ -66,5 +80,6 @@ module.exports = {
     redirectWithError,
     replyWithError,
     getErrorText,
-    getFirstMissingProperty
+    getFirstMissingProperty,
+    htmlEncode
 };

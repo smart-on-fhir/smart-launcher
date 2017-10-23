@@ -4,7 +4,15 @@ const config     = require("./config");
 const fhirError  = require("./fhir-error");
 const sandboxify = require("./sandboxify");
 const patientMap = require("./patient-compartment.json");
+const Lib        = require("./lib");
 require("colors");
+
+// Pre-define any RegExp as global to improve performance
+const RE_RESOURCE_SLASH_ID = new RegExp(
+    "([A-Z]\\w+)"     + // Resource type
+    "(\\/([^\\/?]+))" + // Resource ID
+    "\\/?(\\?|$)"       // Anything after (like a query string)
+);
 
 module.exports = function (req, res) {
 
@@ -120,7 +128,7 @@ module.exports = function (req, res) {
         }
 
         //pull the resource out of the bundle if we converted a /id url into a ?_id= query
-        if (req.method =="GET" && /([A-Z]\w+)(\/([^\/?]+))\/?(\?|$)/.test(req.url) && body.indexOf("Bundle") != -1) {
+        if (req.method =="GET" && RE_RESOURCE_SLASH_ID.test(req.url) && body.indexOf("Bundle") != -1) {
             body = sandboxify.unbundleResource(body);
             if (!body) {
                 res.status(404);
@@ -136,10 +144,7 @@ module.exports = function (req, res) {
             req.originalUrl.toLowerCase().indexOf("_pretty=false") == -1
         ) {
             body = (typeof body == "string" ? body : JSON.stringify(body, null, 4));
-            body = body .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/"/g, "&quot;");
-            body = `<html><body><pre>${body}</pre></body></html>`;
+            body = `<html><body><pre>${Lib.htmlEncode(body)}</pre></body></html>`;
             res.type("html");
         }
         
