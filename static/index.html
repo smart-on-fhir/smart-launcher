@@ -321,13 +321,19 @@
         <script src="/jquery.picker.js"></script>
         <script>
 
+            var STATE = $.extend({
+                enableSandboxes: CONFIG.enableSandboxes
+            }, Lib.getUrlQuery({ camelCaseKeys: true }));
+
+            STATE.enableSandboxes = Lib.bool(STATE.enableSandboxes);
+
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
                 return $(".fhir-version:visible").val() || CONFIG.fhirVersions[0].name;
             }
 
             function getSandboxName() {
-                return CONFIG.enableSandboxes ? $("#sb").val() || "public" : "public";
+                return STATE.enableSandboxes ? $("#sb").val() || "public" : "public";
             }
 
             function getLaunchType() {
@@ -336,7 +342,7 @@
 
             function getTags() {
                 var tags = [], sb = getSandboxName();
-                if (CONFIG.enableSandboxes) {
+                if (STATE.enableSandboxes) {
                     tags = $(".sb :checked").filter(":visible").map(
                         function () { return $(this).val() }
                     ).get();
@@ -357,7 +363,7 @@
             function buildForm() {
 
                 // Build the FHIR tag checkboxes
-                if (CONFIG.enableSandboxes) {
+                if (STATE.enableSandboxes) {
                     $(".sandbox-panel").show();
                     $("#fhir-version-2").closest(".col-sm-6").remove();
                     $(".fhir-tags").html(
@@ -631,22 +637,24 @@
             function handleFormChange() {
                 var launchType = getLaunchType();
                 $(".launch").hide().filter("." + launchType).show();
-                if (CONFIG.enableSandboxes) {
+                if (STATE.enableSandboxes) {
                     $(".sb").hide().filter(".sb." + getFhirVersion()).show();
                 }
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
                 $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
-                Lib.formToQs();
+                Lib.formToQs({
+                    enable_sandboxes: STATE.enableSandboxes ? 1 : undefined
+                });
             }
 
             $(function init() {
-                $("body").toggleClass("no-sandboxes", !CONFIG.enableSandboxes);
+                $("body").toggleClass("no-sandboxes", !STATE.enableSandboxes);
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
-                if (CONFIG.enableSandboxes && !$("#sb").val()) {
+                if (STATE.enableSandboxes && !$("#sb").val()) {
                     $("#sb").val(Lib.generateUID());
                 }
                 bindEventHandlers();
@@ -654,7 +662,6 @@
                     $("#launch-url").val(location.origin + "/sample-app/launch.html");
                 }
                 handleFormChange();
-                
                 validateLaunchUrl();
                 if (!Lib.getCookie("hide-baner")) {
                     showBaner();

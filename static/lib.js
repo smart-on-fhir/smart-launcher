@@ -1,6 +1,14 @@
 // @ts-check
 (function($, undefined) {
 
+    var RE_LODASH     = /_/g;
+    var RE_DASH       = /-/g;
+    var RE_ANY_DASH   = /[_\-]/;
+    var RE_TRUE       = /^(1|yes|true|on)$/i;
+    var RE_FALSE      = /^(0|no|false|off|null|undefined|NaN|)$/i;
+    var RE_YEAR       = /\d{4}$/;
+    var RE_MONTH_YEAR = /\d{4}-d{2}$/;
+
     /**
      * Walks thru an object (ar array) and returns the value found at the
      * provided path. This function is very simple so it intentionally does not
@@ -70,32 +78,38 @@
     function qsToForm() {
         var query = getUrlQuery();
         $.each(query, function(key, value) {
-            var target = $('[name="' + key + '"], #' + key.replace(/_/g, "-"));
+            var target = $('[name="' + key + '"], #' + key.replace(RE_LODASH, "-"));
             if (target.is(":checkbox,:radio")) {
-                target.prop("checked", (/^(1|true|yes)$/i).test(value));
+                target.prop("checked", RE_TRUE.test(value));
             } else {
                 target.val(value);
             }
         });
     }
 
-    function formToQs() {
-        var qs = {};
+    function formToQs(qs) {
+        qs = qs || {};
         $("input[id],select[id]").each( function() {
             var target = $(this);
-            var key = this.id.replace(/-/g, "_");
+            var key = this.id.replace(RE_DASH, "_");
             if (target.is(":checkbox")) {
                 qs[key] = target.prop("checked") ? "1" : "0";
             } else if (target.is(":radio")) {
                 if(target.prop("checked")) qs[key] = "1";
             } else {
-                qs[key] = (target.val() || "");						
+                qs[key] = (target.val() || "");
             }
         });
 
-        var sortedQs = Object.keys(qs).sort().map(function(key) {
-            return key + "=" + encodeURIComponent(qs[key]);
-        }).join("&");
+        var sortedQs = Object.keys(qs)
+            .filter(function(key) {
+                return qs[key] !== undefined;
+            })
+            .sort()
+            .map(function(key) {
+                return key + "=" + encodeURIComponent(qs[key]);
+            })
+            .join("&");
 
         var newUrl = location.href.split("?")[0] + "?" + sortedQs;
         if (history && newUrl != location.href) {
@@ -105,6 +119,10 @@
                 location.replace(newUrl);
             }
         }
+    }
+
+    function bool(x) {
+        return !RE_FALSE.test(String(x).trim());
     }
 
     /**
@@ -117,7 +135,7 @@
      * @returns {String}
      */
     function toCamelCase(str, upper) {
-        return (str.toLowerCase().split(/[_\-]/).map(function(seg, i) {
+        return (str.toLowerCase().split(RE_ANY_DASH).map(function(seg, i) {
             return (!upper && i === 0 ? seg[0] : seg[0].toUpperCase()) + seg.slice(1);
         })).join("");
     }
@@ -244,9 +262,9 @@
         if (!dob) return "";
         
         //fix year or year-month style dates 
-        if (/\d{4}$/.test(dob))
+        if (RE_YEAR.test(dob))
             dob = dob + "-01";
-        if (/\d{4}-d{2}$/.test(dob))
+        if (RE_MONTH_YEAR.test(dob))
             dob = dob + "-01"
 
         return moment(dob).fromNow(true)
@@ -469,7 +487,8 @@
         base64UrlUnescape     : base64UrlUnescape,
         base64UrlEscape       : base64UrlEscape,
         base64UrlEncode       : base64UrlEncode,
-        base64UrlDecode       : base64UrlDecode
+        base64UrlDecode       : base64UrlDecode,
+        bool                  : bool
     };
 
     // Export at window.Lib:
