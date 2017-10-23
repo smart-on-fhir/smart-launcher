@@ -51,7 +51,7 @@
                 monaco.editor.colorizeElement(container[0]);
             },
             function onPatientError(result) {
-                container.addClass("has-error").text(
+                container.text(
                     result.error.responseJSON ?
                         JSON.stringify(result.error.responseJSON, null, 4) :
                         result.error.responseText
@@ -61,7 +61,9 @@
                     result.error.status + " " +
                     result.error.statusText +
                     "<br/></b>"
-                );
+                )
+                .closest(".panel")
+                .addClass("has-error");
             }
         );
     }
@@ -119,7 +121,7 @@
                     );
                     monaco.editor.colorizeElement(pre[0]);
                 } catch (ex) {
-                    pre.addClass("has-error").text("Invalid " + type);
+                    pre.text("Invalid " + type).closest("panel").addClass("has-error");
                 }
             } else {
                 pre.text(client.tokenResponse[type]).addClass("wrap");

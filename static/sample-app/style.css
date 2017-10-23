@@ -1,3 +1,10 @@
+html {
+    display    : block;
+    height     : 100%;
+    margin     : 0;
+    padding    : 0;
+}
+
 body {
     display    : block;
     flex-flow  : column;
@@ -18,14 +25,15 @@ img {
 .page-header {
     margin         : 0 0 0px;
     background     : #336698 url("/img/smart-logo.png") 29px 6px no-repeat;
-    background-size: 36px;
-    padding        : 7px 30px 5px 72px;
+    background-size: 34px;
+    padding        : 8px 30px 4px 72px;
     border-bottom  : 1px solid #051321;
     box-shadow     : 0 1px 5px rgba(0, 0, 0, 0.2);
     color          : #FFF;
     text-shadow    : 0 1px 2px #000;
     font-weight    : 300;
     min-height     : 34px;
+    line-height    : 34px;
 }
 
 .page-header-details {
@@ -34,7 +42,6 @@ img {
     font-size  : 14px;
     text-shadow: none;
     font-weight: 400;
-    margin-top : 8px;
 }
 
 .row {
@@ -60,7 +67,10 @@ img {
     margin       : 5px 15px 15px;
     overflow     : hidden;
     border-radius: 4px;
-    box-shadow   : 0px 10px 0 0px #FFF inset, 0px 10px 0 1px #CCC inset, 0px 0px 0 1px #CCC inset, 0 3px 5px -4px rgba(0, 0, 0, 0.3);
+    box-shadow   : 0px 10px 0 0px #FFF inset,
+                   0px 10px 0 1px #CCC inset,
+                   0px 0px  0 1px #CCC inset,
+                   0 3px 5px -4px rgba(0, 0, 0, 0.3);
 }
 
 .panel h4 {
@@ -82,9 +92,9 @@ pre {
     background   : #FFF linear-gradient(#FFF, #F6F6F6);
     border-radius: 3px;
     padding      : 14px 10px 10px;
-    flex         : 1;
+    flex         : 1 1 400px;
     color        : #333;
-    margin       : -6px 2px 2px;
+    margin       : -9px 2px 2px;
     box-sizing   : border-box; 
     font-family  : Menlo, monospace;
     -webkit-overflow-scrolling: touch;
@@ -115,11 +125,17 @@ pre.wrap {
 }
 
 .has-error {
-    border-color: #dcb4b4;
-    /* background  : linear-gradient(#FFF, #F7E6E6); */
-    border: 1px solid #B63;
-    margin: -8px 0 0;
-    border-radius: 3px;
+    box-shadow: 0px 10px 0 0px #FFF inset,
+                0px 11px 0px 0px #900 inset,
+                0px 0px 0px 1px #900 inset,
+                0 3px 5px -4px rgba(0, 0, 0, 0.8);
+}
+
+.has-error h4 {
+    color: #900;
+}
+.has-error pre {
+    background:#FFF linear-gradient(#fff, #fff1f0);
 }
 
 .has-success {
