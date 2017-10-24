@@ -1,9 +1,17 @@
 const replaceAll = require("replaceall");
 
-// TODO: Add unit tests for this module
+const RE_RESOURCE_SLASH_ID = new RegExp(
+    "([A-Z][A-Za-z]+)"    + // resource type
+    "(\\/([^_][^\\/?]+))" + // resource id
+    "(\\/?(\\?(.*))?)?"     // suffix (query)
+);
 
 function buildUrlPath(...segments) {
-    return segments.map( s => String(s).replace(/^\//, "").replace(/\/$/, "") ).join("\/");
+    return segments.map(
+        s => String(s)
+            .replace(/^\//, "")
+            .replace(/\/$/, "")
+    ).join("\/");
 }
 
 function normalizeUrl(url) {
@@ -30,19 +38,43 @@ function adjustRequestBody(json, system, sandboxes) {
     return json;
 }
 
-function adjustUrl(url, isGet, sandboxes) {
-    if (!sandboxes) return url;
-    var sandboxTags = isGet ? sandboxes.join(",") : sandboxes[0];
+// function adjustUrlOld(url, isGet, sandboxes) {
+//     if (!sandboxes) return url;
+//     var sandboxTags = isGet ? sandboxes.join(",") : sandboxes[0];
 
-    url = url.replace(/\/\?/, "?");
+//     url = url.replace(/\/\?/, "?");
     
-    // move id from url to parameter (no current query string)
-    url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?$/, "$1?_id=$3");
-    // url = url.replace(/([A-Z]\w+)(\/([^\/?]+))\/?$/, "$1?_id=$3");
+//     // move id from url to parameter (no current query string)
+//     url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?$/, "$1?_id=$3");
+//     // url = url.replace(/([A-Z]\w+)(\/([^\/?]+))\/?$/, "$1?_id=$3");
     
-    // move id from url to parameter (retain existing query string)
-    url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?\?(.+)/, "$1?$4&_id=$3");
-    url += (url.indexOf("?") == -1 ? "?" : "&") + "_tag=" + sandboxTags;
+//     // move id from url to parameter (retain existing query string)
+//     url = url.replace(/([A-Z]\w+)(\/([^_][^\/?]+))\/?\?(.+)/, "$1?$4&_id=$3");
+//     url += (url.indexOf("?") == -1 ? "?" : "&") + "_tag=" + sandboxTags;
+//     return url;
+// }
+
+
+function adjustUrl(url, isGet, sandboxes = []) {
+
+    url = url.replace(RE_RESOURCE_SLASH_ID, (
+        resourceAndId,
+        resource,
+        slashAndId,
+        id,
+        suffix,
+        slashAndQuery,
+        query
+    ) => resource + "?" + (query ? query + "&" : "") + "_id=" + id);
+
+    // Also add tags if needed
+    if (sandboxes.length) {
+        // For GET requests add all the tags to act as filters.
+        // Otherwise only keep the first (the custom) tag
+        let sandboxTags = isGet ? sandboxes.join(",") : sandboxes[0];
+        url += (url.indexOf("?") == -1 ? "?" : "&") + "_tag=" + sandboxTags;
+    }
+
     return url;
 }
 
@@ -91,10 +123,8 @@ function adjustResponseUrls(bodyText, fhirUrl, requestUrl, fhirBaseUrl, requestB
 }
 
 function unbundleResource(bundle) {
-    let json;
     try {
-        json = JSON.parse(bundle);
-        return json.entry[0].resource;
+        return JSON.parse(bundle).entry[0].resource;
     } catch (e) {
         return null;
     }
