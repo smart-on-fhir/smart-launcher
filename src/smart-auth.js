@@ -33,7 +33,43 @@ function getRequestedSIM(request) {
     return sim;
 }
 
+// Show patient picker if provider launch, patient scope and no patient
+// or multiple patients provided
+function needToPickPatient(scope, sim) {
+    if (sim.patient && sim.patient.indexOf(",") == -1)
+        return false;
 
+    if (sim.launch_prov && scope.search(/\blaunch\/patient\b/i) > -1)
+        return true;
+
+    if (sim.launch_ehr && scope.search(/\bpatient\//i) > -1 && scope.search(/\blaunch\b/i) > -1)
+        return true;
+
+    return false;
+}
+
+// show login screen if provider launch and skip login is not selected,
+// there's no provider or multiple provider provided
+function needToLoginAsProvider(scope, sim) {
+    if (sim.launch_pt) {
+        return false;
+    }
+
+    if (scope.search(/\bopenid\b/) < 0 ||
+        scope.search(/\bprofile\b/) < 0) {
+        return false;
+    }
+
+    if (!sim.provider) {
+        return true;
+    }
+
+    if (sim.provider.indexOf(",") < 0) {
+        return !sim.skip_login;
+    }
+
+    return true;
+}
 
 router.get("/authorize", async function (req, res) {
 
@@ -162,32 +198,40 @@ router.get("/authorize", async function (req, res) {
     // Show login screen if patient launch and skip login is not selected,
     // there's no patient or multiple patients provided
     if (sim.launch_pt && !sim.skip_login) {
-        let url = buildRedirectUrl("/login", { patient: sim.patient, aud: "", login_type: "patient" })
-        return res.redirect(Url.format(url));
+        return res.redirect(Url.format(buildRedirectUrl("/login", {
+            patient   : sim.patient,
+            aud       : "",
+            login_type: "patient"
+        })));
     }
 
     // PROVIDER LOGIN SCREEN
     // -------------------------------------------------------------------------
-    // show login screen if provider launch and skip login is not selected,
-    // there's no provider or multiple provider provided
-    if ((sim.launch_prov && !sim.skip_login) ||
-        (sim.launch_ehr && !sim.skip_login && (!sim.provider || sim.provider.indexOf(",") > -1))) {
-        let url = buildRedirectUrl("/login", { provider: sim.provider, aud: "", login_type: "provider" })
-        return res.redirect(Url.format(url));
+    if (needToLoginAsProvider(req.query.scope, sim)) {
+        return res.redirect(Url.format(buildRedirectUrl("/login", {
+            provider: sim.provider,
+            aud: "",
+            login_type: "provider"
+        })));
     }
 
     // PATIENT PICKER
     // -------------------------------------------------------------------------
-    // Show patient picker if provider launch, patient scope and no patient
-    // or multiple patients provided
-    if ((sim.launch_prov || sim.launch_ehr) && req.query.scope.indexOf("patient") != -1 && (!sim.patient || sim.patient.indexOf(",") > -1)) {
-        return res.redirect(Url.format(buildRedirectUrl("/picker", { patient: sim.patient, aud: "" })));
+    if (needToPickPatient(req.query.scope, sim)) {
+        return res.redirect(Url.format(buildRedirectUrl("/picker", {
+            patient: sim.patient,
+            aud: ""
+        })));
     }
 
     // ENCOUNTER
     // -------------------------------------------------------------------------
     if (sim.launch_ehr && sim.patient && req.query.scope.indexOf("launch") != -1 && !sim.encounter) {
-        return res.redirect(Url.format(buildRedirectUrl("/encounter", { patient: sim.patient, select_first: sim.select_encounter != "1", aud: "" })));
+        return res.redirect(Url.format(buildRedirectUrl("/encounter", {
+            patient: sim.patient,
+            select_first: sim.select_encounter != "1",
+            aud: ""
+        })));
     }
 
     // AUTH SCREEN
@@ -297,6 +341,10 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         scope     : code.scope,
         client_id : req.body.client_id
     });
+
+    if (token.patient && (!code.scope || code.scope.indexOf('patient') < 0)) {
+        delete token.patient;
+    }
     
     if (code.auth_error == "request_invalid_token") {
         token.sim_error = "Invalid token";
@@ -306,15 +354,14 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
     if (code.user && code.scope.indexOf("profile") > -1 && code.scope.indexOf("openid") > -1) {
         token.id_token = jwt.sign({
-                profile: code.user,
-                aud: req.body.client_id,
-                iss: config.baseUrl
-            },
-            jwkAsPem,
-            {
-                algorithm: "HS256"
-            }
-        );
+            profile: code.user,
+            aud    : req.body.client_id,
+            iss    : config.baseUrl
+        },
+        jwkAsPem,
+        {
+            algorithm: "HS256"
+        });
     }
 
     token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn: "1h" });
