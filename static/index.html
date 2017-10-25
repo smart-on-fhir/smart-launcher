@@ -6,11 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
         <title>SMART App Launcher</title>
-
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
         <link href="/blue-nav.css" rel="stylesheet">
-
         <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
         <!--[if lt IE 9]>
@@ -19,39 +17,45 @@
         <![endif]-->
     </head>
     <body>
-
-        <div class="baner bg-warning">
-            <div class="container">
-                <div class="row">
-                    <div class="col-xs-12 baner-message text-warning">
-                        <i class="glyphicon glyphicon-info-sign"></i>
-                        You can bookmark this page to save your settings! You can also email or share this URL.
-                    </div>
-                </div>
-                <hr />
-                <div class="row bottom-row">
-                    <div class="col-xs-8">
-                        <div class="checkbox text-muted">
-                            <label>
-                                <input type="checkbox" class="remember-baner"/> Don't show again
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-xs-4 text-right">
-                        <button class="btn btn-primary close-baner">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="navbar navbar-custom navbar-static-top">
-            <div class="container-fluid">
+            <div class="container">
                 <div class="navbar-header">
-                    <div class="pull-left" style="margin: 10px;">
+                        
+                    <div class="pull-left logo">
                         <img src="/img/smart-bug.png" />
                     </div>
                     <a class="navbar-brand" href="#" style="white-space:nowrap;text-overflow:ellipsis;text-shadow:none">
                         SMART App Launcher
                     </a>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav navbar-right" style="margin-right: 0">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Share <span class="caret"></span></a>
+                            <div class="dropdown-menu">
+                                <div class="panel-body">
+                                    <p><b>You can bookmark this page to save your settings, or email or share this URL.</b></p>
+                                    <textarea readonly class="form-control input-sm" rows="6" id="bookmark-preview" style="word-break: break-all;"></textarea>
+                                </div>
+                                <div class="container-fluid panel-footer">
+                                    <div class="row">
+                                        <div class="col-xs-6 text-right">
+                                            <a href="javascript:bookmark()" target="_blank" class="btn btn-default" style="width:11em">Google Bookmark</a>
+                                        </div>
+                                        <div class="col-xs-6 text-left">
+                                            <button class="btn btn-default" style="width:11em" onMouseDown="copyUrl();return false;" type="button">Copy</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -72,7 +76,11 @@
                     <div class="form-group col-sm-6">
                         <label for="sb">Name</label>
                         <input id="sb" class="form-control">
-                        <p class="help-block small">Randomly generated name, reuse a previous name to share data between launch simulations</p>
+                        <p class="help-block small">
+                            Launch with this randomly generated sandbox name,
+                            or enter a previously used name to use an existing
+                            sandbox.
+                        </p>
                     </div>
                 
                     <div class="form-group col-sm-6">
@@ -90,7 +98,7 @@
                     <div class="form-group col-sm-6">
                         <a href="#" target="_blank" class="btn btn-sm btn-default pull-right open-url-preview" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
                         <label for="open-url">
-                            Open FHIR Endpoint URL
+                            Open FHIR Server Endpoint
                         </label>
                         <div class="alert alert-info" style="margin: 0">
                             <div>
@@ -111,12 +119,12 @@
                 
                     <!-- Launch Type ======================================= -->
                     <div class="form-group col-sm-6">
-                        <label for="launch-type">Launch Type</label>
+                        <label for="launch-type"class="text-primary">Launch Type</label>
                         <div class="radio" style="margin-top: 0">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-ehr" checked>
                                 Provider EHR Launch
-                                <span class="text-muted small">(user opens the app from within an EHR)</span>
+                                <span class="text-muted small">(practitioner opens the app from within an EHR)</span>
                             </label>
                             <div style="margin: 5px 0 10px">
                                 <label id="sim-ehr-label">
@@ -142,11 +150,11 @@
 
                     <!-- FHIR Version ====================================== -->
                     <div class="form-group col-sm-6">
-                        <label for="fhir-version-2">FHIR Version</label>
+                        <label for="fhir-version-2" class="text-primary">FHIR Version</label>
                         <select id="fhir-version-2" class="form-control fhir-version"></select>
                         <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
                             <a class="pull-right btn btn-info btn-xs open-url-preview" href="#" target="_blank">Test</a>
-                            <span class="text-muted"> FHIR Base URL: </b>
+                            <span class="text-muted"> Open FHIR Server Endpoint: </b>
                             <a class="form-control-static open-url text-info"></a>
                             </i>
                         </div>
@@ -155,7 +163,11 @@
 
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="patient">Patient(s)</label>
+                        <label for="patient" class="text-primary">
+                            Patient(s) 
+                            <span class="text-muted normal-weight launch launch-ehr">if your app requests <code>launch</code> and <code>patient/…</code> scopes</span>
+                            <span class="text-muted normal-weight launch launch-prov">if your app requests <code>launch/patient</code> scope</span>
+                        </label>
                         <div class="input-group">
                             <input id="patient" class="form-control" value="" placeholder="Patient ID">
                             <span class="input-group-btn">
@@ -165,27 +177,29 @@
                         <p class="help-block small">
                             Simulates the active patient in EHR when app is launched.
                             A patient picker will be displayed as part of the launch
-                            flow if no Patient ID is entered and a <code>patient</code>
-                            or <code>launch/patient</code> scope is specified in your
-                            app, or if multiple comma delimited Patient IDs are specified.
+                            flow if no Patient ID is entered or if multiple comma delimited
+                            Patient IDs are specified.
                         </p>
                     </div>
 
                     <!-- Provider ========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="user">Provider(s)</label>
+                        <label for="user" class="text-primary">
+                            Provider(s) <span class="text-muted normal-weight">if
+                            your app requests <code>openid</code> and <code>profile</code> scopes</span>
+                        </label>
                         <input id="provider" class="form-control" placeholder="Provider ID">
                         <p class="help-block small">
-                            Simulates user who is launching the app. Only required when
-                            <code>profile</code> and <code>openid</code> scopes are
-                            specified. If you select multiple providers you will have
-                            to pick one of them on the login page.
+                            Simulates user who is launching the app. If you select multiple
+                            providers you will have to pick one of them on the login page.
                         </p>
                     </div>
                     
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-pt">
-                        <label for="user">Patient(s)</label>
+                        <label for="user" class="text-primary">
+                            Patient(s)
+                        </label>
                         <div class="input-group">
                             <input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
                             <span class="input-group-btn">
@@ -193,11 +207,11 @@
                             </span>
                         </div>
                         <p class="help-block small">
-                            Simulates the user who is launching the app. A patient picker
+                            Simulates the user who is launching the app. Patient login page
                             will be displayed as part of the launch flow if no Patient ID
-                            is entered and a <code>patient</code> or <code>launch/patient</code>
-                            scope is specified in your app, or if multiple comma delimited
-                            Patient IDs are specified.
+                            is entered or multiple comma delimited Patient IDs are specified
+                            and <code>patient</code> or <code>launch/patient</code> scope is
+                            specified in your app.
                         </p>
                     </div>
 
@@ -206,8 +220,8 @@
                         <hr class="solid fg-warning"/>
                         <div class="row">
                             <div class="col-sm-6">
-                                <label class="launch launch-ehr">
-                                    Active Encounter in EHR <span class="text-muted normal-weight">(if the app requests a <code>launch</code> scope)</span>
+                                <label class="launch launch-ehr text-primary">
+                                    Active Encounter in EHR <span class="text-muted normal-weight">if the app requests a <code>launch</code> scope</span>
                                 </label>
                                 <div class="radio launch launch-ehr" style="margin-top: 0">
                                     <label>
@@ -217,28 +231,40 @@
                                         <input type="radio" name="select-encounter"> Use the patient's most recent encounter if available
                                     </label>
                                 </div>
-                                <label class="launch launch-prov launch-pt">
+                                <label class="launch launch-prov launch-pt text-primary">
                                     Auth Flow
                                 </label>
                                 <div class="launch launch-prov">
                                     <div class="checkbox" style="margin-top: 0">
-                                        <label><input type="checkbox" id="prov-skip-login" checked>Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span></label>
+                                        <label>
+                                            <input type="checkbox" id="prov-skip-login" checked>
+                                            Skip provider login screen <span class="text-muted normal-weight small">(will launch as if the Provider Id above had logged in)</span>
+                                        </label>
                                     </div>
                                     <div class="checkbox">
-                                        <label><input type="checkbox" id="prov-skip-auth" checked>Skip app authorization screen</label>
+                                        <label>
+                                            <input type="checkbox" id="prov-skip-auth" checked>
+                                            Skip app authorization screen
+                                        </label>
                                     </div>
                                 </div>
                                 <div class="launch launch-pt">
                                     <div class="checkbox" style="margin-top: 0">
-                                        <label><input type="checkbox" id="pt-skip-login">Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span></label>
+                                        <label>
+                                            <input type="checkbox" id="pt-skip-login">
+                                            Skip patient login screen <span class="text-muted normal-weight small">(will launch as if the Patient Id above had logged in)</span>
+                                        </label>
                                     </div>
                                     <div class="checkbox">
-                                        <label><input type="checkbox" id="pt-skip-auth" checked>Skip app authorization screen</label>
+                                        <label>
+                                            <input type="checkbox" id="pt-skip-auth" checked>
+                                            Skip app authorization screen
+                                        </label>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <label for="sb">Simulate Authentication Error for Testing</label>
+                                <label for="sb" class="text-primary">Simulate Authentication Error for Testing</label>
                                 <select id="auth-error" class="form-control">
                                     <option value="">None</option>
                                     <option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
@@ -259,12 +285,12 @@
             <div class="panel panel-success alert-success">
                 <div class="panel-heading">
                     <b class="text-success">
-                        <i class="glyphicon glyphicon-new-window"></i> Launch
+                        <!-- <i class="glyphicon glyphicon-new-window"></i>  -->Launch
                     </b>
                 </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
-                    <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0"></h3>
-                    <ul style="margin: 0 0 0 10px" class="text-muted">
+                    <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0;color: rgba(205, 198, 158, 0.84);text-shadow: 0px 1px 1px rgb(255, 255, 255), 0px 0px 0px rgb(0, 0, 0);"></h3>
+                    <ul style="margin: 0; list-style: none" class="text-muted">
                         <li>
                             <span class="label label-default">client_id</span>
                             <small>The app's <code>client_id</code> is not validated on the SMART test server,
@@ -292,7 +318,7 @@
                             </span>
                         </div>
                         <p class="help-block small launch launch-ehr">
-                            Web address that will initialize the SMART session (typically the full url of your launch.html file)
+                            Full url of of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
                         <div class="launch launch-pt launch-prov">
                             <label class="">FHIR Server Url</label>
@@ -327,6 +353,7 @@
 
             STATE.enableSandboxes = Lib.bool(STATE.enableSandboxes);
 
+
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
                 return $(".fhir-version:visible").val() || CONFIG.fhirVersions[0].name;
@@ -359,6 +386,13 @@
             }
 
             // -----------------------------------------------------------------
+
+            function copyUrl() {
+                var el = document.getElementById("bookmark-preview");
+                el.focus();
+                el.select();
+                document.execCommand('copy');
+            }
 
             function buildForm() {
 
@@ -402,10 +436,6 @@
             }
 
             function bindEventHandlers() {
-
-                $("input.remember-baner").on("change", function(e) {
-                    e.stopPropagation();
-                });
 
                 $("#launch-url").on("change input", validateLaunchUrl);
 
@@ -502,7 +532,8 @@
                     }).then(sel => {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
-                            buildUrls();
+                            // buildUrls();
+                            handleFormChange()
                         }
                     });
                 });
@@ -522,8 +553,9 @@
                     },
                     multiple: true,
                     onChange: function() {
-                        buildUrls();
-                        Lib.formToQs();
+                        // buildUrls();
+                        // Lib.formToQs();
+                        handleFormChange()
                     }
                 });
 
@@ -531,31 +563,6 @@
                     $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
                     $("#patient, #user-pt").val("");
                 });
-
-                $(".close-baner").on("click", hideBaner);
-            }
-
-            function showBaner() {
-                $(".baner").css({
-                    height: $(".baner")[0].scrollHeight,
-                    opacity: 1
-                });
-                setTimeout(function() {
-                    $(".baner").css({ height: "auto" })
-                }, 400);
-            }
-
-            function hideBaner() {
-                if ($("input.remember-baner").prop("checked")) {
-                    Lib.setCookie("hide-baner", "1", 730);
-                }
-                $(".baner").css("height", $(".baner")[0].scrollHeight);
-                setTimeout(function() {
-                    $(".baner").css({
-                        height : 0,
-                        opacity: 0
-                    });
-                }, 20);
             }
 
             function getBaseUrl() {
@@ -566,6 +573,52 @@
                     baseUrl += "/sb/" + sandboxes.join(",");
                 }
                 return baseUrl;
+            }
+
+            function bookmark() {
+                let type, fhirVersion, patient, user;
+
+                switch(getFhirVersion()) {
+                    case "r2": fhirVersion = "DSTU2"; break;
+                    case "r3": fhirVersion = "STU3"; break;
+                }
+
+                switch(getLaunchType()) {
+                    case "launch-ehr" :
+                        type = "Provider EHR Launch";
+                        patient = $("#patient").val() || "none";
+                        user = $("#provider").val() || "none";
+                    break;
+                    case "launch-prov":
+                        type = "Provider Standalone Launch";
+                        patient = $("#patient").val() || "none";
+                        user = $("#provider").val() || "none";
+                    break;
+                    case "launch-pt":
+                        type = "Patient Standalone Launch";
+                        user = $("#user-pt").val() || "none";
+                    break;
+                }
+
+                let message = type + " on " + fhirVersion;
+
+                if (user)
+                    message += " with user: " + user;
+
+                if (patient)
+                    message += " and patient: " + patient;
+
+
+                window.open(
+                    "http://www.google.com/bookmarks/mark" + 
+                    "?op=edit" +
+                    "&output=po‌​pup" +
+                    "&bkmk=" + encodeURIComponent(location.href) +
+                    "&title=SMART%20Launcher" +
+                    "&labels=SMART%20Launcher" +
+                    "&annotation=" + encodeURIComponent(message),
+                    "_blank"
+                )
             }
 
             function buildUrls() {
@@ -643,9 +696,19 @@
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
                 $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
+
+                var providers  = $("#provider").val().split(/\s*,\s*/);
+                var patients   = $("#user-pt" ).val().split(/\s*,\s*/);
+                var prDisabled = !providers[0] || providers.length !== 1;
+                var ptDisabled = !patients [0] || patients .length !== 1;
+                $("#prov-skip-login").prop("disabled", prDisabled).parent().toggleClass("disabled", prDisabled);
+                $("#pt-skip-login"  ).prop("disabled", ptDisabled).parent().toggleClass("disabled", ptDisabled);
+
                 Lib.formToQs({
                     enable_sandboxes: STATE.enableSandboxes ? 1 : undefined
                 });
+
+                $("#bookmark-preview").val(location.href);
             }
 
             $(function init() {
@@ -663,9 +726,6 @@
                 }
                 handleFormChange();
                 validateLaunchUrl();
-                if (!Lib.getCookie("hide-baner")) {
-                    showBaner();
-                }
             });
 
         </script>
