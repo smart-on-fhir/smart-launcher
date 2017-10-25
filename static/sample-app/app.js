@@ -21,10 +21,13 @@
         },
         encounter: {
             hidden: "auto"
-        }
+        },
+        scope: "patient/*.* launch/Patient openid offline_access profile"
     };
     
-    var state = Lib.getUrlQuery(); // console.log("State: ", state)
+    var state = $.extend({
+        scope: CFG.scope
+    }, Lib.getUrlQuery()); // console.log("State: ", state)
 
 
     function decodeToken(token) {
@@ -151,7 +154,7 @@
                 FHIR.oauth2.authorize({
                     client: {
                         client_id: "whatever",
-                        scope: "patient/*.* launch/Patient openid offline_access profile",
+                        scope: state.scope
                     },
                     server: state.aud
                 });
