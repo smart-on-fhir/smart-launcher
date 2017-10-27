@@ -37,7 +37,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 0">
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Share <span class="caret"></span></a>
+                            <button class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Share <span class="caret"></span></button>
                             <div class="dropdown-menu">
                                 <div class="panel-body">
                                     <p><b>You can bookmark this page to save your settings, or email or share this URL.</b></p>
@@ -119,7 +119,7 @@
                 
                     <!-- Launch Type ======================================= -->
                     <div class="form-group col-sm-6">
-                        <label for="launch-type"class="text-primary">Launch Type</label>
+                        <label for="launch-type">Launch Type</label>
                         <div class="radio" style="margin-top: 0">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-ehr" checked>
@@ -150,7 +150,7 @@
 
                     <!-- FHIR Version ====================================== -->
                     <div class="form-group col-sm-6">
-                        <label for="fhir-version-2" class="text-primary">FHIR Version</label>
+                        <label for="fhir-version-2">FHIR Version</label>
                         <select id="fhir-version-2" class="form-control fhir-version"></select>
                         <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
                             <a class="pull-right btn btn-info btn-xs open-url-preview" href="#" target="_blank">Test</a>
@@ -163,10 +163,10 @@
 
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="patient" class="text-primary">
-                            Patient(s) 
-                            <span class="text-muted normal-weight launch launch-ehr">if your app requests <code>launch</code> and <code>patient/…</code> scopes</span>
-                            <span class="text-muted normal-weight launch launch-prov">if your app requests <code>launch/patient</code> scope</span>
+                        <label for="patient" class="text-right" style="display:block;">
+                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> and <code>patient/…</code> scopes</span>
+                            <span class="text-muted normal-weight launch launch-prov"><code>launch/patient</code> scope</span>
+                            <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
                             <input id="patient" class="form-control" value="" placeholder="Patient ID">
@@ -176,28 +176,29 @@
                         </div>
                         <p class="help-block small">
                             Simulates the active patient in EHR when app is launched.
-                            A patient picker will be displayed as part of the launch
-                            flow if no Patient ID is entered or if multiple comma delimited
-                            Patient IDs are specified.
+                            If no Patient ID is entered or if multiple comma delimited
+                            IDs are specified, a patient picker will be displayed
+                            as part of the launch flow.
                         </p>
                     </div>
 
                     <!-- Provider ========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
-                        <label for="user" class="text-primary">
-                            Provider(s) <span class="text-muted normal-weight">if
-                            your app requests <code>openid</code> and <code>profile</code> scopes</span>
+                        <label for="user" class="text-right" style="display:block;">
+                            <span class="text-muted normal-weight"><code>openid</code> and <code>profile</code> scopes</span>
+                            <span class="pull-left">Provider(s) </span>
                         </label>
                         <input id="provider" class="form-control" placeholder="Provider ID">
                         <p class="help-block small">
-                            Simulates user who is launching the app. If you select multiple
-                            providers you will have to pick one of them on the login page.
+                            Simulates user who is launching the app. If if multiple
+                            comma delimited Practitioner IDs are specified, a login
+                            screen will be displayed as part of the launch flow.
                         </p>
                     </div>
                     
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-pt">
-                        <label for="user" class="text-primary">
+                        <label for="user">
                             Patient(s)
                         </label>
                         <div class="input-group">
@@ -220,7 +221,7 @@
                         <hr class="solid fg-warning"/>
                         <div class="row">
                             <div class="col-sm-6">
-                                <label class="launch launch-ehr text-primary">
+                                <label class="launch launch-ehr">
                                     Active Encounter in EHR <span class="text-muted normal-weight">if the app requests a <code>launch</code> scope</span>
                                 </label>
                                 <div class="radio launch launch-ehr" style="margin-top: 0">
@@ -231,7 +232,7 @@
                                         <input type="radio" name="select-encounter"> Use the patient's most recent encounter if available
                                     </label>
                                 </div>
-                                <label class="launch launch-prov launch-pt text-primary">
+                                <label class="launch launch-prov launch-pt">
                                     Auth Flow
                                 </label>
                                 <div class="launch launch-prov">
@@ -264,7 +265,7 @@
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <label for="sb" class="text-primary">Simulate Authentication Error for Testing</label>
+                                <label for="sb">Simulate Authentication Error for Testing</label>
                                 <select id="auth-error" class="form-control">
                                     <option value="">None</option>
                                     <option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
@@ -272,6 +273,7 @@
                                     <option value="auth_invalid_scope">Authorize - Invalid Scope</option>
                                     <option value="auth_invalid_client_secret">Token - invalid client secret (for confidential apps)</option>
                                     <option value="token_invalid_token">Token - Invalid Token</option>
+                                    <option value="token_expired_refresh_token">Token - Expired Refresh Token</option>
                                     <option value="request_invalid_token">Request - Invalid Token</option>	
                                     <option value="request_expired_token">Request - Expired Token</option>	
                                 </select>
@@ -344,6 +346,7 @@
         <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
         <script src="/config.js"></script>
         <script src="/lib.js"></script>
+        <script src="/codec.js"></script>
         <script src="/jquery.picker.js"></script>
         <script>
 
@@ -664,7 +667,7 @@
                 });
 
                 var openUrl       = baseUrl + "/fhir";
-                var launchData    = Lib.base64UrlEncode(JSON.stringify(urlParams));
+                var launchData    = Lib.base64UrlEncode(JSON.stringify(codec.encode(urlParams)));
                 var standaloneUrl = baseUrl + "/sim/" + launchData + "/fhir";
                 var appLaunchUrl  = getLaunchUrl();
                 var ehrLaunchUrl  = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
