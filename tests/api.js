@@ -1,3 +1,4 @@
+
 const Request  = require('request');
 const request  = require('supertest');
 const app      = require("../src/index.js");
@@ -6,6 +7,10 @@ const jwt      = require("jsonwebtoken");
 const Url      = require("url");
 const jwkToPem = require("jwk-to-pem");
 
+
+const ENABLE_FHIR_VERSION_2 = true;
+const ENABLE_FHIR_VERSION_3 = false;
+const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
 
 ////////////////////////////////////////////////////////////////////////////////
 function expectStatusCode(res, code) {
@@ -89,7 +94,7 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
     let out = [];
     
-    if (!fhirVersion || fhirVersion == 3) {
+    if (ENABLE_FHIR_VERSION_3 && (!fhirVersion || fhirVersion == 3)) {
         out.push(
             `/v/r3/sb/abc/sim/whatever/${suffix}`, 
             `/v/r3/sb/abc/${suffix}`,
@@ -98,7 +103,7 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
         );
     }
 
-    if (!fhirVersion || fhirVersion == 2) {
+    if (ENABLE_FHIR_VERSION_2 && (!fhirVersion || fhirVersion == 2)) {
         out.push(
             `/v/r2/sb/abc/sim/whatever/${suffix}`, 
             `/v/r2/sb/abc/${suffix}`,
@@ -148,6 +153,7 @@ describe('index', function() {
 });
 
 describe('Proxy', function() {
+    this.timeout(10000);
     buildRoutePermutations("fhir/metadata").forEach(path => {
         it(path + ' responds with html in browsers', done => {
             request(app)
@@ -177,7 +183,7 @@ describe('Proxy', function() {
 
     it ("If auth token is sent - validates it", done => {
         request(app)
-        .get("/v/r3/fhir/metadata")
+        .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/metadata`)
         .set("authorization", "Bearer whatever")
         .expect('Content-Type', /text/)
         .expect("Invalid token")
@@ -192,7 +198,7 @@ describe('Proxy', function() {
 
     it ("Adjust urls in the fhir response", done => {
         request(app)
-        .get("/v/r3/fhir/Patient")
+        .get("/v/" + PREFERRED_FHIR_VERSION + "/fhir/Patient")
         .expect(res => {
             if (res.text.indexOf(config.fhirServerR3) > -1) {
                 throw new Error("Not all URLs replaced");
@@ -205,31 +211,35 @@ describe('Proxy', function() {
     it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query");
     it ("Pretty print if called from a browser");
 
-    it ("Replies with application/fhir+json for STU3", done => {
-        request(app)
-        .get("/v/r3/fhir/Patient")
-        .expect("content-Type", /^application\/fhir\+json/i)
-        .end(done);
-    });
+    if (ENABLE_FHIR_VERSION_3) {
+        it ("Replies with application/fhir+json for STU3", done => {
+            request(app)
+            .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`)
+            .expect("content-Type", /^application\/fhir\+json/i)
+            .end(done);
+        });
+    }
 
-    it ("Replies with application/json+fhir for DSTU2", done => {
-        request(app)
-        .get("/v/r2/fhir/Patient")
-        .expect("content-Type", /^application\/json\+fhir/i)
-        .expect(/\n.+/, done);
-    });
+    if (ENABLE_FHIR_VERSION_2) {
+        it ("Replies with application/json+fhir for DSTU2", done => {
+            request(app)
+            .get("/v/r2/fhir/Patient")
+            .expect("content-Type", /^application\/json\+fhir/i)
+            .expect(/\n.+/, done);
+        });
+    }
 
     it ("Replies with formatted JSON for bundles", done => {
-        request(app).get("/v/r3/fhir/Patient").expect(/\n.+/, done);
+        request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`).expect(/\n.+/, done);
     });
 
     it ("Replies with formatted JSON for single resources", done => {
-        request(app).get("/v/r3/fhir/Observation/smart-5328-height").expect(/\n.+/, done);
+        request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Observation/smart-5328-height`).expect(/\n.+/, done);
     });
 
     it ("Handles pagination", done => {
         request(app)
-        .get("/v/r3/fhir/Patient")
+        .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`)
         .expect(res => {
             if (!Array.isArray(res.body.link)) {
                 throw new Error("No links found");
@@ -306,7 +316,7 @@ describe('Auth', function() {
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
                 request(app)
@@ -326,7 +336,7 @@ describe('Auth', function() {
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid scope error", done => {
                 request(app)
@@ -350,7 +360,7 @@ describe('Auth', function() {
     {
         let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
         let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/r3/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
         paths.forEach(path => {
             it (path.split("?")[0] + " can simulate invalid client_id error", done => {
                 request(app)
@@ -496,11 +506,14 @@ describe('Auth', function() {
                 launch_pt : 1,
                 skip_login: 1,
                 skip_auth : 1,
-                patient   : "abc"
+                patient   : "abc",
+                encounter : "bcd"
             })).toString("base64");
             it(`${path}auth/authorize - generates a code`, done => {
                 request(app)
-                .get(`${path}auth/authorize?response_type=code&launch=${launch}&patient=abc&client_id=x&redirect_uri=http://x.y&scope=profile%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
+                .get(`${path}auth/authorize?response_type=code&launch=${launch}` +
+                `&patient=abc&client_id=x&redirect_uri=${encodeURIComponent("http://x.y")}` +
+                `&scope=profile%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
                 .expect(302)
                 .expect(function(res) {
                     if (!res.headers.location) {
@@ -509,7 +522,7 @@ describe('Auth', function() {
                     let url = Url.parse(res.headers.location, true);
                     code = url.query.code;
                     if (!code) {
-                        console.log(res.headers.location)
+                        console.log(res.headers)
                         throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
                     }
                     // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
