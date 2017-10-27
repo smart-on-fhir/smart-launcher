@@ -6,12 +6,13 @@
         <title>SMART Sample App - Launching from EHR...</title>
         <script src="/vendor/fhir-client.js"></script>
         <script>
+            debugger;
             FHIR.oauth2.authorize({
                 "client_id": "whatever",
                 "scope": [
                     "patient/*.*",
+                    "user/*.*",
                     "launch",
-                    "launch/patient",
                     "openid",
                     "profile",
                     "offline_access"

@@ -18,6 +18,47 @@
                 <div></div>
             </div>
         </div>
+        <div class="row">
+            <div class="panel standalone-launch-options hidden">
+                <h4>Standalone Launch Parameters</h4>
+                <table>
+                    <tbody>
+                        <tr>
+                            <th style="text-align:right">aud:</th>
+                            <td colspan="3">
+                                <input type="text" name="aud" id="aud" value="https://sb-fhir-stu3.smarthealthit.org/smartstu3/data">
+                            </td>
+                            <td rowspan="2" style="border-right:1px solid #DDD"></td>
+                            <td rowspan="2" style="border-left:1px solid #FFF"></td>
+                            <td rowspan="2">
+                                <a href="#" class="launch">Launch!</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="text-align:right">scope:</th>
+                            <td>
+                                <label><input name="scope" type="checkbox" value="openid"> openid </label><br/>
+                                <label><input name="scope" type="checkbox" value="profile"> profile </label><br/>
+                                <label><input name="scope" type="checkbox" value="offline_access"> offline_access </label><br/>
+                                <label><input name="scope" type="checkbox" value="online_access"> online_access </label><br/>
+                            </td>
+                            <td>
+                                <label><input name="scope" type="checkbox" value="patient/*.read"> patient/*.read </label><br/>
+                                <label><input name="scope" type="checkbox" value="patient/*.write"> patient/*.write </label><br/>
+                                <label><input name="scope" type="checkbox" value="user/*.*"> user/*.* </label><br/>
+                                <label><input name="scope" type="checkbox" value="patient/*.*"> patient/*.* </label><br/>
+                            </td>
+                            <td>
+                                <label><input name="scope" type="checkbox" value="launch/encounter"> launch/encounter </label><br/>
+                                <label><input name="scope" type="checkbox" value="launch/patient"> launch/patient </label><br/>
+                                <label><input name="scope" type="checkbox" value="smart/orchestrate_launch"> smart/orchestrate_launch </label><br/>
+                                <input name="custom_scope" type="text" placeholder="Other space-separated scopes" size="32"><br/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <div class="row content hidden">
             <div class="panel">
                 <h4>Access Token Response</h4>

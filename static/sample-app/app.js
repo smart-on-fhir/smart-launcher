@@ -22,13 +22,38 @@
         encounter: {
             hidden: "auto"
         },
-        scope: "patient/*.* launch/Patient openid offline_access profile"
+        scope: "patient/*.* user/*.* launch/patient launch/encounter openid offline_access profile"
     };
     
     var state = $.extend({
         scope: CFG.scope
     }, Lib.getUrlQuery()); // console.log("State: ", state)
 
+
+    function buildStandaloneLaunchUrl() {
+        var aud   = encodeURIComponent($.trim($("#aud").val()));
+        var scope = $(":checkbox[name=scope]:checked").get().map(function(cb) {
+            return cb.getAttribute("value")
+        });
+        
+        var custom = $.trim($('[name="custom_scope"]').val());
+        if (custom) {
+            custom.split(/\s+/).forEach(function(s) {
+                if (scope.indexOf(s) == -1) {
+                    scope.push(s);
+                }
+            })
+        }
+
+        scope = encodeURIComponent(scope.filter(Boolean).join(" "));
+
+        if (aud && scope) {
+            var url = location.href.split("?").shift();
+            $(".standalone-launch-options").hide();
+            url += "?aud=" + aud + "&scope=" + scope;
+            location.assign(url);
+        }
+    }
 
     function decodeToken(token) {
         return String(token || "").split(".").map(function(data) {
@@ -80,19 +105,21 @@
     }
 
     function loadUser(client) {
+        var tokens = String(client.userId || "").split("/");
+        $(".page-header-details").text(
+            "Loaded by " + tokens[0] + (
+                client.tokenResponse.scope.search(/(^|\s)launch($|\s)/) > -1 ?
+                " in EHR" :
+                ""
+            ) + (
+                top === self ? "" : " frame"
+            )
+        );
+        
         if (CFG.user.hidden !== true) {
-            var tokens = String(client.userId || "").split("/");
-            if (tokens.length == 2) {
+            
+            if (tokens.length == 2 && client.tokenResponse.scope.search(/(^|\s)user\//) > -1) {
                 loadResource(client, tokens[0], tokens[1], $(".user"))
-                $(".page-header-details").text(
-                    "Loaded by " + tokens[0] + (
-                        client.tokenResponse.scope.search(/(^|\s)launch($|\s)/) > -1 ?
-                        " in EHR" :
-                        ""
-                    ) + (
-                        top === self ? "" : " frame"
-                    )
-                );
             } else {
                 if (CFG.user.hidden === false) {
                     $(".user").text("No user in context")
@@ -141,6 +168,11 @@
 
     $(function() {
 
+        $("a.launch").on("click", function(e) {
+            e.preventDefault();
+            buildStandaloneLaunchUrl();
+        });
+
         if (state.error || state.error_description) {
             $(".auth-errors").find("> div > div").html(
                 [state.error, state.error_description].filter(Boolean).join("<br/>")
@@ -151,22 +183,43 @@
 
             // Standalone launches start here (EHR launches start in launch.html)
             if (state.aud) {
-                FHIR.oauth2.authorize({
-                    client: {
-                        client_id: "whatever",
-                        scope: state.scope
-                    },
-                    server: state.aud
-                });
+                sessionStorage.standaloneLaunch = state.aud;
+                if (state.scope) {
+                    FHIR.oauth2.authorize({
+                        client: {
+                            client_id: "my_web_app",
+                            scope: state.scope
+                        },
+                        server: state.aud
+                    });
+                }
             }
 
             // We should be here after successful authorization
             else {
+                if (sessionStorage.standaloneLaunch) {
+                    $("#aud").val(sessionStorage.standaloneLaunch);
+                    $(".standalone-launch-options").show();
+                }
                 $(".content").css("display", "flex");
                 require.config({ paths: { 'vs': '/vendor/monaco-editor/min/vs' }});
                 FHIR.oauth2.ready(
                     function(client) {
                         console.log("SMART Ready: ", client);
+                        
+                        var scopes = client.tokenResponse.scope.split(" "), custom = [];
+                        $(':checkbox[name="scope"]').prop("checked", false);
+                        scopes.forEach(function(s) {
+                            var cb = $(':checkbox[name="scope"][value="' + s + '"]');
+                            if (cb.length) {
+                                cb.prop("checked", true);
+                            }
+                            else {
+                                custom.push(s);
+                            }
+                        });
+                        $('[name="custom_scope"]').val(custom.join(" "));
+                        
 
                         require(['vs/editor/editor.main'], function() {
                             renderToken(client, "id_token")
@@ -178,7 +231,7 @@
                             monaco.editor.colorizeElement($(".token-response")[0]);
 
                             // patient -----------------------------------------
-                            if (CFG.patient.hidden !== true) {
+                            if (CFG.patient.hidden !== true && client.tokenResponse.scope.indexOf("patient/") > -1) {
                                 if (client.patient) {
                                     loadPatient(client).fail(function() {
                                         if (CFG.patient.hidden == "auto") {
@@ -197,7 +250,12 @@
                             }
 
                             // encounter ---------------------------------------
-                            if (CFG.encounter.hidden !== true) {
+                            if (CFG.encounter.hidden !== true && (
+                                scopes.indexOf("patient/Encounter.read") > -1 ||
+                                scopes.indexOf("patient/Encounter.*") > -1 || 
+                                scopes.indexOf("patient/*.read") > -1 ||
+                                scopes.indexOf("patient/*.*") > -1
+                            )) {
                                 if (client.tokenResponse.encounter) {
                                     loadEncounter(client, client.tokenResponse.encounter)
                                     .fail(function() {

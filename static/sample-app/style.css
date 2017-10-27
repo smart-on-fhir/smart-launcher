@@ -79,20 +79,21 @@ img {
     background : #FFF;
     font-size  : 16px;
     align-self : flex-start;
-    color      : #369;
+    color      : #328c88;
     position   : relative;
     z-index    : 2;
-    line-height: 21px;
+    line-height: 20px;
+    display    : inline-block;
 }
 
 pre {
     max-width    : 100%;
-    max-height   : 400px;
+    max-height   : 300px;
     overflow     : auto;
     background   : #FFF linear-gradient(#FFF, #F6F6F6);
     border-radius: 3px;
     padding      : 14px 10px 10px;
-    flex         : 1 1 400px;
+    flex         : 1 1 300px;
     color        : #333;
     margin       : -9px 2px 2px;
     box-sizing   : border-box; 
@@ -144,4 +145,53 @@ pre.wrap {
 
 .hidden {
     display: none;
+}
+
+.standalone-launch-options {
+    margin: 15px 30px;
+    padding: 0 15px 15px;
+    background: linear-gradient(#FFF 15px, #f6f6f6);
+}
+
+.standalone-launch-options table {
+    margin   : -10px auto 0;
+    width    : 100%;
+    min-width: 680px;
+    max-width: 1400px;
+    border-spacing: 0;
+}
+.standalone-launch-options hr {
+    border: 0px none;
+    height: 1px;
+    background: #c6d4d3;
+}
+
+.standalone-launch-options > h4 {
+    margin-bottom: 15px;
+    color: #328c88;
+}
+
+.standalone-launch-options td,
+.standalone-launch-options th {
+    padding: 5px;
+    vertical-align: text-bottom;
+}
+
+.standalone-launch-options input[type="text"] {
+    width: 100%;
+    border-radius: 3px;
+    border: 1px solid #CCC;
+    padding: 5px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.standalone-launch-options a.launch {
+    display: inline-block;
+    padding: 1ex 2em;
+    border-radius: 3px;
+    color: #FFF;
+    background: #328c88;
+    text-decoration: none;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
 }
