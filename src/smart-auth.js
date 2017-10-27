@@ -1,6 +1,4 @@
-// TODO: HSPC SB - standalone launch to show the login dialog
-
-//@ts-no-check
+// @ts-no-check
 const jwt        = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const router     = require("express").Router({ mergeParams: true });
@@ -10,16 +8,26 @@ const Url        = require("url");
 const Lib        = require("./lib");
 const jwkToPem   = require("jwk-to-pem");
 const base64url  = require("base64-url");
+const Codec      = require("../static/codec.js");
 
 const jwkAsPem = jwkToPem(config.oidcKeypair);
 
 module.exports = router;
 
+/**
+ * Extracts and returns the sim portion of the URL. If it is missing or invalid,
+ * an empty object is returned. NOTE: the "sim" is the "launch" query parameter
+ * for EHR launches or an URL segment for standalone launches
+ * @param {Object} request
+ * @returns {Object}
+ */
 function getRequestedSIM(request) {
     let sim = {};
     if (request.query.launch || request.params.sim) {
         try {
-            sim = JSON.parse(base64url.decode(request.query.launch || request.params.sim));
+            sim = Codec.decode(JSON.parse(base64url.decode(
+                request.query.launch || request.params.sim
+            )));
         }
         catch(ex) {
             sim = null;
@@ -33,91 +41,235 @@ function getRequestedSIM(request) {
     return sim;
 }
 
-// Show patient picker if provider launch, patient scope and no patient
-// or multiple patients provided
+/**
+ * Decides if a patient picker needs to be displayed 
+ * @param {ScopeSet} scope
+ * @param {Object} sim
+ * @returns {Boolean}
+ */
 function needToPickPatient(scope, sim) {
-    if (sim.patient && sim.patient.indexOf(",") == -1)
+
+    // If already have one patient selected
+    if (sim.patient && sim.patient.indexOf(",") == -1) {
         return false;
+    }
 
-    if (sim.launch_prov && scope.search(/\blaunch\/patient\b/i) > -1)
+    // 0 or multiple patients selected + provider launch + launch/patient scope
+    if (sim.launch_prov && scope.has("launch/patient")) {
         return true;
+    }
 
-    if (sim.launch_ehr && scope.search(/\bpatient\//i) > -1 && scope.search(/\blaunch\b/i) > -1)
+    // 0 or multiple patients selected + EHR launch + patient/... scope
+    if (sim.launch_ehr && scope.matches(/\bpatient\//) && scope.matches(/\blaunch\b/)) {
         return true;
+    }
 
     return false;
 }
 
-// show login screen if provider launch and skip login is not selected,
-// there's no provider or multiple provider provided
+/**
+ * Decides if the authorization page needs to be displayed 
+ * @param {Object} sim
+ * @returns {Boolean}
+ */
+function needToAuthorize(sim) {
+    if (sim.skip_auth) {
+        return false;
+    } 
+    return sim.launch_prov || sim.launch_pt;
+}
+
+/**
+ * Decides if an encounter picker needs to be displayed 
+ * @param {ScopeSet} scope
+ * @param {Object} sim
+ * @returns {Boolean}
+ */
+function needToPickEncounter(scope, sim) {
+
+    // Already selected
+    if (sim.encounter) {
+        return false;
+    }
+
+    // Not possible without a patient
+    if (!sim.patient) {
+        return false;
+    }
+
+    // N/A to standalone launches unless configured otherwise
+    if (!sim.launch_ehr && !config.includeEncounterContextInStandaloneLaunch) {
+        return false;
+    }
+
+    // Only if launch or launch/encounter scope is requested
+    return scope.has("launch") || scope.has("launch/encounter");
+}
+
+/**
+ * Decides if a provider login screen needs to be displayed 
+ * @param {ScopeSet} scope
+ * @param {Object} sim 
+ * @returns {Boolean}
+ */
 function needToLoginAsProvider(scope, sim) {
+
+    // In patient-standalone launch the patient is the user
     if (sim.launch_pt) {
         return false;
     }
 
-    if (scope.search(/\bopenid\b/) < 0 ||
-        scope.search(/\bprofile\b/) < 0) {
+    // Require both "openid" and "profile" scopes
+    if (!scope.has("openid") || !scope.has("profile")) {
         return false;
     }
 
+    // EHR or Provider launch + openid and profile scopes + no provider selected
     if (!sim.provider) {
         return true;
     }
 
+    // If single provider is selected show login if skip_login is not set
     if (sim.provider.indexOf(",") < 0) {
-        return !sim.skip_login;
+        return sim.launch_ehr ? false : !sim.skip_login;
     }
 
     return true;
 }
 
+/**
+ * Decides if a patient login screen needs to be displayed 
+ * @param {Object} sim
+ * @returns {Boolean}
+ */
+function needToLoginAsPatient(sim) {
+    // If patient-standalone launch and skip_login is off
+    return sim.launch_pt && !sim.skip_login;
+}
+
+/**
+ * Creates and returns the signet JWT code that contains some authorization
+ * details.
+ * @param {Object} req 
+ * @param {Object} sim 
+ * @param {ScopeSet} scope 
+ * @returns {String}
+ */
+function createAuthCode(req, sim, scope) {
+    let code = {
+        context: {
+            need_patient_banner: !sim.sim_ehr,
+            smart_style_url    : config.baseUrl + "/smart-style.json",
+        },
+        client_id: req.query.client_id,
+        scope    : req.query.scope
+    };
+
+    // auth_error
+    if (sim.auth_error) {
+        code.auth_error = sim.auth_error;
+    }
+
+    // patient
+    if (sim.patient && sim.patient != "-1") {
+        if (scope.has("launch") || scope.has("launch/patient")) {
+            code.context.patient = sim.patient;
+        }
+    }
+
+    // encounter
+    if (sim.encounter && sim.encounter != "-1") {
+        if (scope.has("launch") || scope.has("launch/encounter")) {
+            code.context.encounter = sim.encounter;
+        }
+    }
+
+    // user
+    if (scope.has("openid") && scope.has("profile")) {
+        
+        // patient as user
+        if (sim.launch_pt) {
+            if (sim.patient && sim.patient != "-1") {
+                code.user = `Patient/${sim.patient}`;
+            }
+        }
+
+        // provider as user
+        else {
+            if (sim.provider && sim.provider != "-1") {
+                code.user = `Practitioner/${sim.provider}`;
+            }
+        }
+    }
+
+    return jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
+}
+
+/**
+ * This class tries to make it easier and cleaner to work with scopes (mostly by
+ * using the two major methods - "has" and "matches").
+ */
+class ScopeSet
+{
+    constructor(str = "") {
+        this._scopesString = String(str).trim();
+        this._scopes = this._scopesString.split(/\s+/).filter(Boolean);
+    }
+
+    has(scope) {
+        return this._scopes.indexOf(scope) > -1;
+    }
+
+    matches(scopeRegExp) {
+        return this._scopesString.search(scopeRegExp) > -1;
+    }
+
+    add(scope) {
+        if (this.has(scope)) {
+            return false;
+        }
+
+        this._scopes.push(scope);
+        this._scopesString = this._scopes.join(" ");
+        return true;
+    }
+
+    remove(scope) {
+        let index = this._scopes.indexOf(scope);
+        if (index < 0) {
+            return false;
+        }
+        this._scopes.splice(index, 1);
+        this._scopesString = this._scopes.join(" ");
+        return true;
+    }
+
+    toString() {
+        return this._scopesString;
+    }
+
+    toJSON() {
+        return this._scopes;
+    }
+}
+
+
 router.get("/authorize", async function (req, res) {
-
-    /*
-        Possible parameters:
-
-
-        SMART ------------------------------------------------------------------
-        response_type
-        client_id
-        scope
-        aud
-        redirect_uri
-        state
-
-        Custom: sim/launch -----------------------------------------------------
-        auth_error
-        patient
-        provider
-        encounter
-        launch_prov
-        launch_pt
-        launch_ehr
-        skip_login
-        skip_auth
-
-        Custom: flow -----------------------------------------------------------
-        login_success
-        auth_success
-        patient
-        provider
-        encounter
-
-    */
 
     let sim = getRequestedSIM(req);
 
-    function buildRedirectUrl(to, query = {}) {
+    function redirect(to, query = {}) {
         let redirectUrl = Url.parse(req.originalUrl, true);
         redirectUrl.query = Object.assign(redirectUrl.query, query, {
-            aud_validated: sim.aud_validated
+            aud_validated: sim.aud_validated,
+            aud          : ""
         });
         redirectUrl.search = null
         redirectUrl.pathname = redirectUrl.pathname.replace(
             config.authBaseUrl + "/authorize",
             to
         );
-        return redirectUrl; //Url.format(redirectUrl);
+        return res.redirect(Url.format(redirectUrl));
     }
 
     // handle response from picker, login or auth screen
@@ -151,13 +303,13 @@ router.get("/authorize", async function (req, res) {
 
     let RedirectURL;
     try {
-        RedirectURL = Url.parse(req.query.redirect_uri, true);
+        RedirectURL = Url.parse(decodeURIComponent(req.query.redirect_uri), true);
     } catch (ex) {
         return Lib.replyWithError(res, "bad_redirect_uri", 400, ex.message);
     }
 
-    // Relative redirect_uri like "whatever" will eventually result in wrong URLs like
-    // "/auth/whatever". We must only support full http URLs. 
+    // Relative redirect_uri like "whatever" will eventually result in wrong
+    // URLs like "/auth/whatever". We must only support full http URLs. 
     if (!RedirectURL.protocol) {
         return Lib.replyWithError(res, "no_redirect_uri_protocol", 400, req.query.redirect_uri);
     }
@@ -192,98 +344,48 @@ router.get("/authorize", async function (req, res) {
     if (req.query.auth_success == "0") {
         return Lib.redirectWithError(req, res, "unauthorized");
     }
-    
+
+    const scopes = new ScopeSet(decodeURIComponent(req.query.scope));
+
     // PATIENT LOGIN SCREEN
-    // -------------------------------------------------------------------------
-    // Show login screen if patient launch and skip login is not selected,
-    // there's no patient or multiple patients provided
-    if (sim.launch_pt && !sim.skip_login) {
-        return res.redirect(Url.format(buildRedirectUrl("/login", {
-            patient   : sim.patient,
-            aud       : "",
-            login_type: "patient"
-        })));
+    if (needToLoginAsPatient(sim)) {
+        return redirect("/login", { patient: sim.patient, login_type: "patient" });
     }
 
     // PROVIDER LOGIN SCREEN
-    // -------------------------------------------------------------------------
-    if (needToLoginAsProvider(req.query.scope, sim)) {
-        return res.redirect(Url.format(buildRedirectUrl("/login", {
-            provider: sim.provider,
-            aud: "",
-            login_type: "provider"
-        })));
+    if (needToLoginAsProvider(scopes, sim)) {
+        return redirect("/login", { provider: sim.provider, login_type: "provider" });
     }
 
     // PATIENT PICKER
-    // -------------------------------------------------------------------------
-    if (needToPickPatient(req.query.scope, sim)) {
-        return res.redirect(Url.format(buildRedirectUrl("/picker", {
-            patient: sim.patient,
-            aud: ""
-        })));
+    if (needToPickPatient(scopes, sim)) {
+        return redirect("/picker", { patient: sim.patient });
     }
 
     // ENCOUNTER
-    // -------------------------------------------------------------------------
-    if (sim.launch_ehr && sim.patient && req.query.scope.indexOf("launch") != -1 && !sim.encounter) {
-        return res.redirect(Url.format(buildRedirectUrl("/encounter", {
-            patient: sim.patient,
-            select_first: sim.select_encounter != "1",
-            aud: ""
-        })));
+    if (needToPickEncounter(scopes, sim)) {
+        return redirect("/encounter", { patient: sim.patient, select_first: sim.select_encounter != "1" });
     }
 
     // AUTH SCREEN
-    // -------------------------------------------------------------------------
-    // Show authorize screen if standalone launch and skip auth is not specified
-    else if (!sim.skip_auth && (sim.launch_prov || sim.launch_pt)) {
-        return res.redirect(Url.format(buildRedirectUrl("/authorize", { patient: sim.patient, aud: "" })));
+    if (needToAuthorize(sim)) {
+        return redirect("/authorize", { patient: sim.patient });
     }
 
-    // Build and sign the "code" param
-    // -------------------------------------------------------------------------
-    let code = {
-        context: {
-            need_patient_banner: sim.sim_ehr ? false : true,
-            smart_style_url: config.baseUrl + "/smart-style.json",
-        },
-        client_id: req.query.client_id,
-        scope: req.query.scope,
-    };
-
-    if (sim.launch_pt && sim.patient)
-        sim.user = `Patient/${sim.patient}`;
-
-    if ((sim.launch_prov || sim.launch_ehr) && sim.provider)
-        sim.user = `Practitioner/${sim.provider}`;
-
-    Object.keys(sim).forEach( param => {
-        if (param == "patient" || param == "encounter") {
-            code.context[param] = sim[param] == "-1" ? undefined : sim[param];
-        } else {
-            code[param] = sim[param];
-        }
-    });
-
-    let signedCode = jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
-
-    RedirectURL.query.code  = signedCode;
+    // LAUNCH!
+    RedirectURL.query.code  = createAuthCode(req, sim, scopes);
     RedirectURL.query.state = req.query.state;
-
-    // Launch!
-    // -------------------------------------------------------------------------
     res.redirect(Url.format(RedirectURL));
 });
 
+
 router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
+
+    let grantType = req.body.grant_type, codeRaw, code, scopes;
     
     if (req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
         return Lib.replyWithError(res, "form_content_type_required", 401);
     }
-
-    var grantType = req.body.grant_type;
-    var codeRaw, code;
 
     if (grantType === 'authorization_code') {
         codeRaw = req.body.code;
@@ -327,11 +429,14 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         }
     }
 
+    scopes = new ScopeSet(decodeURIComponent(code.scope));
+
     if (code.auth_error == "token_invalid_token") {
         return Lib.replyWithError(res, "sim_invalid_token", 401);
     }
 
-    if (code.scope && code.scope.indexOf('offline_access') >= 0) {
+    // TODO: online_access?
+    if (scopes.has('offline_access')) {
         code.context['refresh_token'] = Lib.generateRefreshToken(code);
     }
 
@@ -342,17 +447,13 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         client_id : req.body.client_id
     });
 
-    if (token.patient && (!code.scope || code.scope.indexOf('patient') < 0)) {
-        delete token.patient;
-    }
-    
     if (code.auth_error == "request_invalid_token") {
         token.sim_error = "Invalid token";
     } else if (code.auth_error == "request_expired_token") {
         token.sim_error = "Token expired";
     }
 
-    if (code.user && code.scope.indexOf("profile") > -1 && code.scope.indexOf("openid") > -1) {
+    if (code.user && scopes.has("profile") && scopes.has("openid")) {
         token.id_token = jwt.sign({
             profile: code.user,
             aud    : req.body.client_id,
