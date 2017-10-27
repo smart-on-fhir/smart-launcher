@@ -435,8 +435,11 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         return Lib.replyWithError(res, "sim_invalid_token", 401);
     }
 
-    // TODO: online_access?
-    if (scopes.has('offline_access')) {
+    if (grantType == 'refresh_token' && code.auth_error == "token_expired_refresh_token") {
+        return Lib.replyWithError(res, "sim_expired_refresh_token", 401);
+    }
+
+    if (scopes.has('offline_access') || scopes.has('online_access')) {
         code.context['refresh_token'] = Lib.generateRefreshToken(code);
     }
 

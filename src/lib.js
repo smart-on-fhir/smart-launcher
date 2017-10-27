@@ -44,7 +44,7 @@ function printf(s) {
 
 function generateRefreshToken(code) {
     let token = {};
-    ["context", "client_id", "scope", "user", "iat", "exp"].forEach(key => {
+    ["context", "client_id", "scope", "user", "iat", "exp", "auth_error"].forEach(key => {
         if (code.hasOwnProperty(key)) {
             token[key] = code[key];
         }

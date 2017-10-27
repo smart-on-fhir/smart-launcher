@@ -1,5 +1,5 @@
 module.exports = {
-  fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open",
+  fhirServerR2: process.env.FHIR_SERVER_R2 || "http://localhost:8080/baseDstu2",//"https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open",
   fhirServerR3: process.env.FHIR_SERVER_R3 || "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open",
   baseUrl: process.env.BASE_URL || "https://localhost:8443",
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
@@ -35,6 +35,7 @@ module.exports = {
     "sim_invalid_scope"              : "Simulated invalid scope error",
     "sim_invalid_client_secret"      : "Simulated invalid client secret error",
     "sim_invalid_token"              : "Simulated invalid token error",
+    "sim_expired_refresh_token"      : "Simulated expired refresh token error",
     "invalid_token"                  : "Invalid token: %s",
     "empty_auth_header"              : "The authorization header '%s' cannot be empty",
     "bad_auth_header"                : "Bad authorization header '%s': %s"

@@ -1,11 +1,13 @@
 
-const Request  = require('request');
-const request  = require('supertest');
-const app      = require("../src/index.js");
-const config   = require("../src/config");
-const jwt      = require("jsonwebtoken");
-const Url      = require("url");
-const jwkToPem = require("jwk-to-pem");
+const Request   = require('request');
+const request   = require('supertest');
+const app       = require("../src/index.js");
+const config    = require("../src/config");
+const jwt       = require("jsonwebtoken");
+const Url       = require("url");
+const jwkToPem  = require("jwk-to-pem");
+const Codec     = require("../static/codec.js");
+const base64url = require("base64-url");
 
 
 const ENABLE_FHIR_VERSION_2 = true;
@@ -87,6 +89,113 @@ function lookupOidcKeys(done) {
         })
     });
 }
+
+function encodeSim(object = {}) {
+    return new Buffer(
+        JSON.stringify(Codec.encode(object))
+    ).toString("base64");
+}
+
+function getAuthCode(options) {
+    return new Promise((resolve, reject) => {
+        Request({
+            url      : `${options.baseUrl}auth/authorize`,
+            strictSSL: false,
+            followRedirect: false,
+            qs: {
+                response_type: "code",
+                patient      : options.patient || "x",
+                client_id    : options.client_id || "x",
+                redirect_uri : options.redirect_uri || "http://x.y",
+                scope        : options.scope || "x",
+                state        : options.state || "x",
+                launch       : encodeSim(options.launch),
+                aud          : `${options.baseUrl}fhir`
+            }
+        }, (error, res, body) => {
+            if (error) {
+                return reject(error)
+            }
+
+            try {
+                expectStatusCode(res, 302);
+
+                if (!res.headers.location) {
+                    throw new Error(`auth/authorize did not redirect to the redirect_uri`)
+                }
+                let url = Url.parse(res.headers.location, true);
+                let code = url.query.code;
+                if (!code) {
+                    console.log(res.headers)
+                    throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
+                }
+                // console.log("code: ", JSON.parse(base64url.decode(code.split(".")[1])));
+                resolve(code);
+            } catch(ex) {
+                reject(ex);
+            }
+        });
+    });
+}
+
+function getAuthToken(options) {
+    return new Promise((resolve, reject) => {
+        Request({
+            url      : `${options.baseUrl}auth/token`,
+            method   : "POST",
+            strictSSL: false,
+            followRedirect: false,
+            json: true,
+            form: {
+                grant_type: "authorization_code",
+                code      : options.code
+            }
+        }, (error, res, body) => {
+            if (error) {
+                return reject(error)
+            }
+
+            try {
+                // expectStatusCode(res, 200);
+                resolve(body);
+            } catch(ex) {
+                reject(ex);
+            }
+        });
+    });
+}
+
+function refreshSession(options) {
+    return new Promise((resolve, reject) => {
+        // console.log(options)
+        Request({
+            url      : `${options.baseUrl}auth/token`,
+            method   : "POST",
+            strictSSL: false,
+            followRedirect: false,
+            json: true,
+            form: {
+                grant_type   : "refresh_token",
+                refresh_token: options.refreshToken
+            }//,
+            // headers: {
+            //     Authorization: "Bearer " + options.accessToken
+            // }
+        }, (error, res, body) => {
+            if (error) {
+                return reject(error)
+            }
+            resolve(body);
+        });
+    });
+}
+
+function authorize(options) {
+    return getAuthCode(options)
+        .then(code => getAuthToken({ code, baseUrl: options.baseUrl }));
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -276,69 +385,118 @@ describe('Proxy', function() {
 });
 
 describe('Auth', function() {
+    describe('authorize', function() {
 
-    // auth/authorize Checks for required params
-    buildRoutePermutations("auth/authorize").forEach(path => {
-        let query = [];
-        [
-            "response_type",
-            "client_id",
-            "redirect_uri",
-            "scope",
-            "state",
-            "aud"
-        ].forEach(name => {
-            it(`${path} requires "${name}" param`, done => {
-                request(app)
-                .get(path + "?" + query.join("&"))
-                .expect(400)
-                .expect(`Missing ${name} parameter`)
-                .end(() => {
-                    query.push(name + "=" + (name == "redirect_uri" ? "http%3A%2F%2Fx" : "x"));
-                    done();
+        // auth/authorize Checks for required params
+        buildRoutePermutations("auth/authorize").forEach(path => {
+            let query = [];
+            [
+                "response_type",
+                "client_id",
+                "redirect_uri",
+                "scope",
+                "state",
+                "aud"
+            ].forEach(name => {
+                it(`${path} requires "${name}" param`, done => {
+                    request(app)
+                    .get(path + "?" + query.join("&"))
+                    .expect(400)
+                    .expect(`Missing ${name} parameter`)
+                    .end(() => {
+                        query.push(name + "=" + (name == "redirect_uri" ? "http%3A%2F%2Fx" : "x"));
+                        done();
+                    });
                 });
             });
         });
-    });
 
-    // auth/authorize validates the redirect_uri parameter
-    buildRoutePermutations("auth/authorize").forEach(path => {
-        it(`${path} - validates the redirect_uri parameter`, done => {
-            request(app)
-            .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
-            .expect(/^Invalid redirect_uri parameter/)
-            .expect(400)
-            .end(done);
-        });
-    });
-
-    // can simulate invalid redirect_uri error
-    {
-        let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-        paths.forEach(path => {
-            it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
+        // auth/authorize validates the redirect_uri parameter
+        buildRoutePermutations("auth/authorize").forEach(path => {
+            it(`${path} - validates the redirect_uri parameter`, done => {
                 request(app)
-                .get(path)
-                .expect(302)
-                .expect(function(res) {
-                    if (!res.headers.location || res.headers.location.indexOf("error=sim_invalid_redirect_uri") == -1) {
-                        throw new Error(`No error passed to the redirect ${res.headers.location}`)
-                    }
-                })
+                .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
+                .expect(/^Invalid redirect_uri parameter/)
+                .expect(400)
                 .end(done);
             });
         });
-    }
 
-    // can simulate invalid scope error
-    {
-        let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-        paths.forEach(path => {
-            it (path.split("?")[0] + " can simulate invalid scope error", done => {
+        // can simulate invalid redirect_uri error
+        {
+            let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
+            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+            paths.forEach(path => {
+                it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
+                    request(app)
+                    .get(path)
+                    .expect(302)
+                    .expect(function(res) {
+                        if (!res.headers.location || res.headers.location.indexOf("error=sim_invalid_redirect_uri") == -1) {
+                            throw new Error(`No error passed to the redirect ${res.headers.location}`)
+                        }
+                    })
+                    .end(done);
+                });
+            });
+        }
+
+        // can simulate invalid scope error
+        {
+            let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
+            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+            paths.forEach(path => {
+                it (path.split("?")[0] + " can simulate invalid scope error", done => {
+                    request(app)
+                    .get(path)
+                    .expect(302)
+                    .expect(function(res) {
+                        if (!res.headers.location) {
+                            throw new Error(`No redirect`)
+                        }
+                        let url = Url.parse(res.headers.location, true);
+                        if (url.query.error != "sim_invalid_scope") {
+                            throw new Error(`Wrong redirect ${res.headers.location}`)
+                        }
+                    })
+                    .end(done);
+                });
+            });
+        }
+
+        // can simulate invalid client_id error
+        {
+            let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
+            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
+            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
+            paths.forEach(path => {
+                it (path.split("?")[0] + " can simulate invalid client_id error", done => {
+                    request(app)
+                    .get(path)
+                    .expect(302)
+                    .expect(function(res) {
+                        if (!res.headers.location) {
+                            throw new Error(`No redirect`)
+                        }
+                        let url = Url.parse(res.headers.location, true);
+                        if (url.query.error != "sim_invalid_client_id") {
+                            throw new Error(`Wrong redirect ${res.headers.location}`)
+                        }
+                    })
+                    .end(done);
+                });
+            });
+        }
+
+        // rejects invalid audience value
+        buildRoutePermutations(
+            "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=whatever" +
+            encodeURIComponent(config.fhirServerR2),
+            2
+        ).forEach(path => {
+            it (path.split("?")[0] + " rejects invalid audience value", done => {
                 request(app)
                 .get(path)
                 .expect(302)
@@ -347,90 +505,43 @@ describe('Auth', function() {
                         throw new Error(`No redirect`)
                     }
                     let url = Url.parse(res.headers.location, true);
-                    if (url.query.error != "sim_invalid_scope") {
+                    if (url.query.error != "bad_audience") {
                         throw new Error(`Wrong redirect ${res.headers.location}`)
                     }
                 })
                 .end(done);
             });
         });
-    }
 
-    // can simulate invalid client_id error
-    {
-        let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
-        let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-        paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-        paths.forEach(path => {
-            it (path.split("?")[0] + " can simulate invalid client_id error", done => {
+        // can show encounter picker
+        buildRoutePermutations(
+            "auth/authorize" +
+            "?client_id=x" +
+            "&response_type=code" +
+            "&scope=patient%2F*.read%20launch" +
+            "&redirect_uri=https%3A%2F%2Fsb-apps.smarthealthit.org%2Fapps%2Fgrowth-chart%2F" +
+            "&state=x" +
+            "&login_success=1" +
+            "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
+        ).forEach(path => {
+            let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
+            let launch = new Buffer(JSON.stringify({
+                launch_ehr      : 1,
+                select_encounter: 1
+            })).toString("base64");
+            let fullPath = path + "&aud=" + aud + "&launch=" + launch;
+
+            it (path.split("?")[0] + " can show encounter picker", done => {
                 request(app)
-                .get(path)
+                .get(fullPath)
                 .expect(302)
                 .expect(function(res) {
-                    if (!res.headers.location) {
-                        throw new Error(`No redirect`)
-                    }
-                    let url = Url.parse(res.headers.location, true);
-                    if (url.query.error != "sim_invalid_client_id") {
+                    if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
                         throw new Error(`Wrong redirect ${res.headers.location}`)
                     }
                 })
                 .end(done);
             });
-        });
-    }
-
-    // rejects invalid audience value
-    buildRoutePermutations(
-        "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=whatever" +
-        encodeURIComponent(config.fhirServerR2),
-        2
-    ).forEach(path => {
-        it (path.split("?")[0] + " rejects invalid audience value", done => {
-            request(app)
-            .get(path)
-            .expect(302)
-            .expect(function(res) {
-                if (!res.headers.location) {
-                    throw new Error(`No redirect`)
-                }
-                let url = Url.parse(res.headers.location, true);
-                if (url.query.error != "bad_audience") {
-                    throw new Error(`Wrong redirect ${res.headers.location}`)
-                }
-            })
-            .end(done);
-        });
-    });
-
-    // can show encounter picker
-    buildRoutePermutations(
-        "auth/authorize" +
-        "?client_id=x" +
-        "&response_type=code" +
-        "&scope=patient%2F*.read%20launch" +
-        "&redirect_uri=https%3A%2F%2Fsb-apps.smarthealthit.org%2Fapps%2Fgrowth-chart%2F" +
-        "&state=x" +
-        "&login_success=1" +
-        "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
-    ).forEach(path => {
-        let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
-        let launch = new Buffer(JSON.stringify({
-            launch_ehr      : 1,
-            select_encounter: 1
-        })).toString("base64");
-        let fullPath = path + "&aud=" + aud + "&launch=" + launch;
-
-        it (path.split("?")[0] + " can show encounter picker", done => {
-            request(app)
-            .get(fullPath)
-            .expect(302)
-            .expect(function(res) {
-                if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
-                    throw new Error(`Wrong redirect ${res.headers.location}`)
-                }
-            })
-            .end(done);
         });
     });
 
@@ -502,13 +613,13 @@ describe('Auth', function() {
         buildRoutePermutations().forEach(path => {
             let code, idToken, key, keysLocation;
             let aud = config.baseUrl + path + "fhir";
-            let launch = new Buffer(JSON.stringify({
+            let launch = new Buffer(JSON.stringify(Codec.encode({
                 launch_pt : 1,
                 skip_login: 1,
                 skip_auth : 1,
                 patient   : "abc",
                 encounter : "bcd"
-            })).toString("base64");
+            }))).toString("base64");
             it(`${path}auth/authorize - generates a code`, done => {
                 request(app)
                 .get(`${path}auth/authorize?response_type=code&launch=${launch}` +
@@ -562,6 +673,38 @@ describe('Auth', function() {
                         done(ex)
                     }
                 });
+            });
+        });
+    });
+
+    describe('token', function() {
+        buildRoutePermutations().forEach(path => {
+            it(`${path}auth/token can simulate sim_expired_refresh_token`, done => {
+                authorize({
+                    scope  : "offline_access",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                        auth_error: "token_expired_refresh_token"
+                    }
+                })
+                .then(tokenResponse => {
+                    return refreshSession({
+                        baseUrl: config.baseUrl + path,
+                        accessToken: tokenResponse.access_token,
+                        refreshToken: tokenResponse.refresh_token
+                    });
+                })
+                .then(result => {
+                    if (result != config.errors.sim_expired_refresh_token) {
+                        return done(new Error("No sim_expired_refresh_token error returned"));
+                    }
+                    done();
+                }, done);
             });
         });
     });
