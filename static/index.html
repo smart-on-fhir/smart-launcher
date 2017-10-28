@@ -198,8 +198,9 @@
                     
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-pt">
-                        <label for="user">
-                            Patient(s)
+                        <label for="user" class="text-right" style="display:block;">
+                            <span class="text-muted normal-weight"><code>launch/patient</code> scope</span>
+                            <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
                             <input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
@@ -210,9 +211,7 @@
                         <p class="help-block small">
                             Simulates the user who is launching the app. Patient login page
                             will be displayed as part of the launch flow if no Patient ID
-                            is entered or multiple comma delimited Patient IDs are specified
-                            and <code>patient</code> or <code>launch/patient</code> scope is
-                            specified in your app.
+                            is entered or multiple comma delimited Patient IDs are specified.
                         </p>
                     </div>
 
@@ -286,9 +285,7 @@
 
             <div class="panel panel-success alert-success">
                 <div class="panel-heading">
-                    <b class="text-success">
-                        <!-- <i class="glyphicon glyphicon-new-window"></i>  -->Launch
-                    </b>
+                    <b class="text-success">Launch</b>
                 </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
                     <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0;color: rgba(205, 198, 158, 0.84);text-shadow: 0px 1px 1px rgb(255, 255, 255), 0px 0px 0px rgb(0, 0, 0);"></h3>
@@ -332,7 +329,7 @@
                         </div>
                         <div class="text-center launch launch-pt launch-prov">
                             <hr/>
-                            <a class="btn btn-success" id="standalone-launch-url-test" target="_blank" href="#">Launch Demo App</a>
+                            <a class="btn btn-default" id="standalone-launch-url-test" target="_blank" href="#">Launch Sample App</a>
                             <br/>
                         </div>
                     </div>
