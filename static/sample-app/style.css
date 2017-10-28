@@ -195,3 +195,18 @@ pre.wrap {
     text-decoration: none;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
 }
+
+.standalone-launch-options a.refresh {
+    /* display: inline-block; */
+    padding: 1ex 2em;
+    border-radius: 3px;
+    color: #328c88;
+    border: 1px solid #328c88;
+    text-decoration: none;
+    margin: 10px 0;
+    background: rgba(51, 140, 136, 0.23);/
+}
+.standalone-launch-options a.refresh:hover {
+    background: #EEE;
+    text-shadow: 0 1px 0 #FFF;
+}

@@ -32,6 +32,17 @@
 
     function buildStandaloneLaunchUrl() {
         var aud   = encodeURIComponent($.trim($("#aud").val()));
+        var scope = getScopesFromForm();
+
+        if (aud && scope) {
+            var url = location.href.split("?").shift();
+            $(".standalone-launch-options").hide();
+            url += "?aud=" + aud + "&scope=" + scope;
+            location.assign(url);
+        }
+    }
+
+    function getScopesFromForm() {
         var scope = $(":checkbox[name=scope]:checked").get().map(function(cb) {
             return cb.getAttribute("value")
         });
@@ -45,14 +56,7 @@
             })
         }
 
-        scope = encodeURIComponent(scope.filter(Boolean).join(" "));
-
-        if (aud && scope) {
-            var url = location.href.split("?").shift();
-            $(".standalone-launch-options").hide();
-            url += "?aud=" + aud + "&scope=" + scope;
-            location.assign(url);
-        }
+        return encodeURIComponent(scope.filter(Boolean).join(" "));
     }
 
     function decodeToken(token) {
@@ -204,7 +208,7 @@
                 $(".content").css("display", "flex");
                 require.config({ paths: { 'vs': '/vendor/monaco-editor/min/vs' }});
                 FHIR.oauth2.ready(
-                    function(client) {
+                    function onAuthReady(client) {
                         console.log("SMART Ready: ", client);
                         
                         var scopes = client.tokenResponse.scope.split(" "), custom = [];
@@ -224,6 +228,29 @@
                         require(['vs/editor/editor.main'], function() {
                             renderToken(client, "id_token")
                             renderToken(client, "refresh_token")
+
+                            if (client.tokenResponse.refresh_token) {
+                                $("a.refresh").css("display", "inline-block").off().on("click", function(e) {
+                                    e.preventDefault();
+                                    $(".auth-errors").hide();
+                                    $.ajax({
+                                        url   : client.server.serviceUrl.replace(/fhir$/, "auth/token"),
+                                        method: "POST",
+                                        data: {
+                                            grant_type   : "refresh_token",
+                                            refresh_token: client.tokenResponse.refresh_token,
+                                            client_id    : client.tokenResponse.client_id,
+                                            scope        : getScopesFromForm() || client.tokenResponse.scope
+                                        }
+                                    }).then(function(tokenResponse) {
+                                        $.extend(true, client.tokenResponse, tokenResponse);
+                                        onAuthReady(client)
+                                    }, function(xhr) {
+                                        // console.log(arguments)
+                                        $(".auth-errors").find("> div > div").html(xhr.responseText).end().show();
+                                    });
+                                });
+                            }
 
                             $(".token-response").addClass("has-success").text(
                                 JSON.stringify(client.tokenResponse, null, 4)
