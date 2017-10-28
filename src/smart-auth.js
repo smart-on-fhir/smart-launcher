@@ -143,8 +143,15 @@ function needToLoginAsProvider(scope, sim) {
  * @returns {Boolean}
  */
 function needToLoginAsPatient(sim) {
-    // If patient-standalone launch and skip_login is off
-    return sim.launch_pt && !sim.skip_login;
+    if (!sim.launch_pt) {
+        return false;
+    }
+
+    if (!sim.patient || sim.patient.indexOf(",") > -1) {
+        return true;
+    }
+
+    return !sim.skip_login;
 }
 
 /**
