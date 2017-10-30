@@ -10,6 +10,7 @@ const config       = require("./config");
 const fhirError    = require("./fhir-error");
 const fs           = require('fs');
 const https        = require('https');
+const http         = require("http");
 const sandboxify   = require("./sandboxify");
 const lib          = require('./lib');
 const privateKey   = fs.readFileSync('./privatekey.pem', 'utf8');
@@ -121,6 +122,12 @@ app.use(express.static("static"));
 module.exports = app;
 
 if (!module.parent) {
-    https.createServer(credentials, app).listen(config.port);
-    console.log(`Proxy server running on https://localhost:${config.port}`);
+    if (config.useSSL) {
+        https.createServer(credentials, app).listen(config.port);
+        console.log(`Proxy server running on https://localhost:${config.port}`);
+    } else {
+        app.listen(config.port, function () {
+            console.log(`Example app listening on port ${config.port}!`)
+        });
+    }
 }
