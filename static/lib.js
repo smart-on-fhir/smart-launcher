@@ -19,7 +19,9 @@
      * @returns {*} Whatever is found in the path or undefined
      */
     function getPath(obj, path) {
-        return path.split(".").reduce((out, key) => out ? out[key] : undefined, obj)
+        return path.split(".").reduce(function(out, key) {
+            return out ? out[key] : undefined;
+        }, obj);
     }
 
     /**
@@ -189,7 +191,7 @@
         }
 
         // Open the popup
-        let popup  = window.open(path, "picker", [
+        var popup  = window.open(path, "picker", [
             "height=" + cfg.height,
             "width=" + cfg.width,
             "menubar=0",
@@ -200,7 +202,7 @@
         ].join(","));
 
         // The function that handles incoming messages
-        const onMessage = function onMessage(e) {
+        var onMessage = function onMessage(e) {
 
             // only if the message is coming from the patient picker
             if (e.origin === cfg.origin) {
@@ -469,7 +471,7 @@
     // Export
     // =========================================================================
     
-    const Lib = {
+    var Lib = {
         getPath               : getPath,
         getUrlQuery           : getUrlQuery,
         compileUrlQuery       : compileUrlQuery,

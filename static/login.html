@@ -156,7 +156,7 @@
                 var userId = $(".user:visible").val();
                 var user   = $(".user:visible option:selected").data("entry");
                 var qs     = Lib.getUrlQuery();
-                var url    = location.origin +
+                var url    = (location.origin || (location.protocol + "//" + location.host)) +
                     location.pathname.replace("login", state.authUrlSegment);
 
                 if (user) {

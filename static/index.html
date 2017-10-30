@@ -46,7 +46,7 @@
                                 <div class="container-fluid panel-footer">
                                     <div class="row">
                                         <div class="col-xs-6 text-right">
-                                            <a href="javascript:bookmark()" target="_blank" class="btn btn-default" style="width:11em">Google Bookmark</a>
+                                            <a id="bookmark" href="#" target="_blank" class="btn btn-default" style="width:11em">Google Bookmark</a>
                                         </div>
                                         <div class="col-xs-6 text-left">
                                             <button class="btn btn-default" style="width:11em" onMouseDown="copyUrl();return false;" type="button">Copy</button>
@@ -154,9 +154,8 @@
                         <select id="fhir-version-2" class="form-control fhir-version"></select>
                         <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
                             <a class="pull-right btn btn-info btn-xs open-url-preview" href="#" target="_blank">Test</a>
-                            <span class="text-muted"> Open FHIR Server Endpoint: </b>
+                            <span class="text-muted"> Open FHIR Server Endpoint: </span>
                             <a class="form-control-static open-url text-info"></a>
-                            </i>
                         </div>
                     </div>
                     <br clear="all" class="launch launch-ehr launch-prov hidden-xs show-if-no-sandboxes"/>
@@ -486,7 +485,7 @@
                             },
                             hideTagSelector: true
                         }
-                    }).then(sel => {
+                    }).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
                             buildUrls();
@@ -529,7 +528,7 @@
                             },
                             hideTagSelector: true
                         }
-                    }).then(sel => {
+                    }).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
                             // buildUrls();
@@ -563,6 +562,11 @@
                     $("#provider").val("").closest(".dropdown").find(".dropdown-menu").empty();
                     $("#patient, #user-pt").val("");
                 });
+
+                $("#bookmark").click(function(e) {
+                    e.preventDefault();
+                    bookmark();
+                })
             }
 
             function getBaseUrl() {
@@ -576,7 +580,7 @@
             }
 
             function bookmark() {
-                let type, fhirVersion, patient, user;
+                var type, fhirVersion, patient, user;
 
                 switch(getFhirVersion()) {
                     case "r2": fhirVersion = "DSTU2"; break;
@@ -600,7 +604,7 @@
                     break;
                 }
 
-                let message = type + " on " + fhirVersion;
+                var message = type + " on " + fhirVersion;
 
                 if (user)
                     message += " with user: " + user;
@@ -722,7 +726,10 @@
                 }
                 bindEventHandlers();
                 if (!$("#launch-url").val()) {
-                    $("#launch-url").val(location.origin + "/sample-app/launch.html");
+                    $("#launch-url").val(
+                        (location.origin || (location.protocol + "//" + location.host)) +
+                        "/sample-app/launch.html"
+                    );
                 }
                 handleFormChange();
                 validateLaunchUrl();
