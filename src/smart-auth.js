@@ -261,7 +261,7 @@ class ScopeSet
 }
 
 
-router.get("/authorize", async function (req, res) {
+router.get("/authorize", function (req, res) {
 
     let sim = getRequestedSIM(req);
 
