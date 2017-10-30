@@ -156,7 +156,7 @@ pre.wrap {
 .standalone-launch-options table {
     margin   : -10px auto 0;
     width    : 100%;
-    min-width: 680px;
+    min-width: 700px;
     max-width: 1400px;
     border-spacing: 0;
 }
@@ -188,23 +188,28 @@ pre.wrap {
 
 .standalone-launch-options a.launch {
     display: inline-block;
-    padding: 1ex 2em;
+    padding: 1ex 1em;
     border-radius: 3px;
     color: #FFF;
     background: #328c88;
+    border: 1px solid #328c88;
     text-decoration: none;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+    min-width: 6em;
+    text-align: center;
 }
 
 .standalone-launch-options a.refresh {
     /* display: inline-block; */
-    padding: 1ex 2em;
+    padding: 1ex 1em;
     border-radius: 3px;
     color: #328c88;
     border: 1px solid #328c88;
     text-decoration: none;
     margin: 10px 0;
-    background: rgba(51, 140, 136, 0.23);/
+    background: rgba(51, 140, 136, 0.23);
+    min-width: 6em;
+    text-align: center;
 }
 .standalone-launch-options a.refresh:hover {
     background: #EEE;
