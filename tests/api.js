@@ -356,6 +356,7 @@ describe('Proxy', function() {
     it ("Apply patient scope to GET requests");
 
     it ("Adjust urls in the fhir response", done => {
+        console.log(app)
         request(app)
         .get("/v/" + PREFERRED_FHIR_VERSION + "/fhir/Patient")
         .expect(res => {

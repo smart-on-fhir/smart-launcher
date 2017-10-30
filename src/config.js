@@ -2,7 +2,7 @@ const useSSL = process.env.USE_SSL != "false";
 const port   = process.env.PORT || 8443;
 
 module.exports = {
-  fhirServerR2: process.env.FHIR_SERVER_R2 || "http://localhost:8080/baseDstu2",//"https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open",
+  fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open", // http://localhost:8080/baseDstu2
   fhirServerR3: process.env.FHIR_SERVER_R3 || "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open",
   baseUrl: process.env.BASE_URL || `http${useSSL ? "s" : ""}://localhost:${port}`,
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
