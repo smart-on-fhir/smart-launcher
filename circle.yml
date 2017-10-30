@@ -1,0 +1,7 @@
+machine:
+  node:
+    version: 7.9.0
+
+dependencies:
+  override:
+    - NPM_CONFIG_PRODUCTION=false NODE_ENV=production npm install
