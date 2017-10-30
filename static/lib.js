@@ -330,8 +330,14 @@
         var out = {
             read  : "",
             write : "",
-            access: ""
+            access: "",
+            other : ""
         };
+
+        if (scope == "smart/orchestrate_launch") {
+            out.other = "Allow this application to launch other SMART applications.";
+            return out;
+        }
 
         if (scope == "profile") {
             out.read = "Your profile information";
@@ -343,23 +349,23 @@
             return out;
         }
 
-        if (scope == "launch/Patient") { 
+        if (scope == "launch/patient") { 
             out.read = "The current patient selection";
             return out;
         }
 
-        if (scope == "launch/Encounter") {
+        if (scope == "launch/encounter") {
             out.read = "The current encounter selection";
             return out;
         }
 
         if (scope == "online_access") {
-            out.access = "The app will be able to access data until it is online.";
+            out.access = "The application will be able to access data while you are online (online access).";
             return out;
         }
         
         if (scope == "offline_access") {
-            out.access = "The app will be able to access data until it is revoked manually.";
+            out.access = "The application will be able to access data until you revoke permission (offline access).";
             return out;
         }
 
@@ -397,7 +403,7 @@
     }
 
     function scopeListToPermissions(scopes, isPatient) {
-        var read = [], write = [], access = [];
+        var read = [], write = [], access = [], other = [];
         var _scopes = $.trim(String(scopes || "")).split(/\s+/);
         
         if (_scopes.indexOf("offline_access") > -1 &&
@@ -439,12 +445,16 @@
             if (permissions.access) {
                 access.push(permissions.access);
             }
+            if (permissions.other) {
+                other.push(permissions.other);
+            }
         });
 
         return {
             read  : arrayToUnique(read),
             write : arrayToUnique(write),
-            access: arrayToUnique(access)
+            access: arrayToUnique(access),
+            other : arrayToUnique(other)
         };
     }
 

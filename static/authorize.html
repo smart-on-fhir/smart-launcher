@@ -73,6 +73,8 @@
                             <ul class="read" style="display: none;"></ul>
                             <h4 class="write" style="display: none;"><b class="label label-warning">write</b> This application is requesting permission to write:</h4>
                             <ul class="write" style="display: none;"></ul>
+                            <h4 class="other" style="display: none;"><b class="label label-info">other</b> This application is requesting permission to:</h4>
+                            <ul class="other" style="display: none;"></ul>
                         </div>
                         <div class="panel-footer text-center">
                             <button class="btn btn-danger" id="deny" style="min-width:8em">Deny</button> &nbsp;
@@ -100,17 +102,31 @@
                 var permissions = Lib.scopeListToPermissions(state.scope, state.login_type != "provider")
 
                 var check = '<i class="glyphicon glyphicon-ok-sign text-success"/> ';
+                var readLength  = permissions.read.length;
+                var writeLength = permissions.write.length;
+                var otherLength = permissions.other.length;
 
-                if (permissions.read.length) {
-                    $(".read").show().filter("ul").append(
-                        "<li>" + check + permissions.read.join("</li><li>" + check) + "</li>"
-                    );
-                }
+                if (readLength || writeLength || otherLength) {
 
-                if (permissions.write.length) {
-                    $(".write").show().filter("ul").append(
-                        "<li>" + check + permissions.write.join("</li><li>" + check) + "</li>"
-                    );
+                    if (readLength) {
+                        $(".read").show().filter("ul").append(
+                            "<li>" + check + permissions.read.join("</li><li>" + check) + "</li>"
+                        );
+                    }
+
+                    if (writeLength) {
+                        $(".write").show().filter("ul").append(
+                            "<li>" + check + permissions.write.join("</li><li>" + check) + "</li>"
+                        );
+                    }
+
+                    if (otherLength) {
+                        $(".other").show().filter("ul").append(
+                            "<li>" + check + permissions.other.join("</li><li>" + check) + "</li>"
+                        );
+                    }
+                } else {
+                    $(".panel-body").html('<p><big>Do you want to launch this application?</big></p>');
                 }
 
                 if (permissions.access.length) {

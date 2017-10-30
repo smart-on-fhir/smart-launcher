@@ -40,7 +40,10 @@
                             <button class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Share <span class="caret"></span></button>
                             <div class="dropdown-menu">
                                 <div class="panel-body">
-                                    <p><b>You can bookmark this page to save your settings, or email or share this URL.</b></p>
+                                    <p>
+                                        <b>All of the options of this page are stored in the URL.<br/>
+                                        You can copy it to share your settings, or bookmark this page to save them.</b>
+                                    </p>
                                     <textarea readonly class="form-control input-sm" rows="6" id="bookmark-preview" style="word-break: break-all;"></textarea>
                                 </div>
                                 <div class="container-fluid panel-footer">
@@ -163,7 +166,7 @@
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
                         <label for="patient" class="text-right" style="display:block;">
-                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> and <code>patient/…</code> scopes</span>
+                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> scope</span>
                             <span class="text-muted normal-weight launch launch-prov"><code>launch/patient</code> scope</span>
                             <span class="pull-left">Patient(s) </span>
                         </label>
@@ -189,7 +192,7 @@
                         </label>
                         <input id="provider" class="form-control" placeholder="Provider ID">
                         <p class="help-block small">
-                            Simulates user who is launching the app. If if multiple
+                            Simulates user who is launching the app. If multiple
                             comma delimited Practitioner IDs are specified, a login
                             screen will be displayed as part of the launch flow.
                         </p>
@@ -322,14 +325,10 @@
                             <label class="">FHIR Server Url</label>
                             <textarea id="standalone-launch-url" class="form-control" readonly></textarea>
                             <p class="help-block small">
+                                <a class="btn btn-info btn-xs pull-right" id="standalone-launch-url-test" target="_blank" href="#">Test</a>
                                 Your app should use the URL above as base URL (and <code>aud</code> parameter) and authenticate as
                                 described <a target="_blank" href="http://docs.smarthealthit.org/authorization/#standalone-launch-sequence">here</a>.
                             </p>
-                        </div>
-                        <div class="text-center launch launch-pt launch-prov">
-                            <hr/>
-                            <a class="btn btn-default" id="standalone-launch-url-test" target="_blank" href="#">Launch Sample App</a>
-                            <br/>
                         </div>
                     </div>
                 </div>

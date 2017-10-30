@@ -10,16 +10,55 @@ const Codec     = require("../static/codec.js");
 const base64url = require("base64-url");
 
 
-const ENABLE_FHIR_VERSION_2 = true;
-const ENABLE_FHIR_VERSION_3 = false;
+const ENABLE_FHIR_VERSION_2  = true;
+const ENABLE_FHIR_VERSION_3  = false;
 const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
 
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Promisified version of request. Rejects with an Error or resolves with the
+ * response (use response.body to access the parsed body).
+ * @param {Object} options The request options
+ * @return {Promise<Object>}
+ */
+function requestPromise(options) {
+    return new Promise((resolve, reject) => {
+        Request(
+            Object.assign({}, options, { strictSSL: false }),
+            (error, res, body) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(res);
+            }
+        );
+    });
+}
+
+/**
+ * Throws an error if the response does not have the specified status code.
+ * @param {Object} res Response
+ * @param {Number} code The expected status code
+ * @returns {void}
+ * @throws {Error}
+ */
 function expectStatusCode(res, code) {
     if (res.statusCode !== code) {
         throw new Error(`Expecting status code of ${code} but received ${res.statusCode}`);
     }
 }
+
+/**
+ * Throws an error if the response does not have the specified header.
+ * The header name is required and the value is optional.
+ * @param {Object} res The response
+ * @param {String} name The name of the header
+ * @param {String|RegExp} [value] The header value (checks for presence only if
+ * this is missing)
+ * @returns {void}
+ * @throws {Error}
+ */
 function expectResponseHeader(res, name, value = null) {
     let header = String(res.headers[name.toLowerCase()] || "");
     if (!header) {
@@ -32,7 +71,7 @@ function expectResponseHeader(res, name, value = null) {
             }
         }
         else if (header !== value) {
-            throw new Error(`Expecting ${name} response header to ewual ${value} but found ${header}`);
+            throw new Error(`Expecting ${name} response header to equal ${value} but found ${header}`);
         }
     }
 }
@@ -90,12 +129,40 @@ function lookupOidcKeys(done) {
     });
 }
 
+/**
+ * Encodes the object with our proprietary codec to make it smaller. The
+ * serializes as JSON and returns a base64 version of it.
+ * @param {Object} object The object to encode
+ * @returns {String}
+ */
 function encodeSim(object = {}) {
     return new Buffer(
         JSON.stringify(Codec.encode(object))
     ).toString("base64");
 }
 
+/**
+ * Makes the initial authorization request and expects the server to redirect
+ * back to redirect_uri with the given state and a code.
+ * @param {Object} options
+ * @param {String} options.patient 0 or more comma-separated patient IDs.
+ * Defaults to "x" because we ignore it.
+ * @param {String} options.client_id The client_id of the app. Defaults to "x"
+ * because we ignore it.
+ * @param {String} options.redirect_uri The uri to redirect to. Defaults to
+ * "http://x.y" because we ignore it but still require it to be valid URL.
+ * @param {String} options.scope
+ * @param {String} options.state
+ * @param {String} options.aud
+ * @param {Object} options.launch
+ * @param {Number} options.launch.launch_pt 1 or 0
+ * @param {Number} options.launch.skip_login 1 or 0
+ * @param {Number} options.launch.skip_auth 1 or 0
+ * @param {String} options.launch.patient
+ * @param {String} options.launch.encounter
+ * @param {String} options.launch.auth_error
+ * @returns {Promise<String>} Returns a promise resolved with the code
+ */
 function getAuthCode(options) {
     return new Promise((resolve, reject) => {
         Request({
@@ -104,7 +171,7 @@ function getAuthCode(options) {
             followRedirect: false,
             qs: {
                 response_type: "code",
-                patient      : options.patient || "x",
+                patient      : options.patient   || "x",
                 client_id    : options.client_id || "x",
                 redirect_uri : options.redirect_uri || "http://x.y",
                 scope        : options.scope || "x",
@@ -156,7 +223,7 @@ function getAuthToken(options) {
             }
 
             try {
-                // expectStatusCode(res, 200);
+                expectStatusCode(res, 200);
                 resolve(body);
             } catch(ex) {
                 reject(ex);
@@ -165,39 +232,32 @@ function getAuthToken(options) {
     });
 }
 
+/**
+ * Posts a refresh token to the token endpoint and resolves with the "new"
+ * token response.
+ * @param {Object} options
+ * @param {String} options.baseUrl
+ * @param {String} options.refreshToken
+ * @returns {Promise<Object>}
+ */
 function refreshSession(options) {
-    return new Promise((resolve, reject) => {
-        // console.log(options)
-        Request({
-            url      : `${options.baseUrl}auth/token`,
-            method   : "POST",
-            strictSSL: false,
-            followRedirect: false,
-            json: true,
-            form: {
-                grant_type   : "refresh_token",
-                refresh_token: options.refreshToken
-            }//,
-            // headers: {
-            //     Authorization: "Bearer " + options.accessToken
-            // }
-        }, (error, res, body) => {
-            if (error) {
-                return reject(error)
-            }
-            resolve(body);
-        });
-    });
+    return requestPromise({
+        url           : `${options.baseUrl}auth/token`,
+        method        : "POST",
+        followRedirect: false,
+        json          : true,
+        form: {
+            grant_type   : "refresh_token",
+            refresh_token: options.refreshToken
+        }
+    }).then(res => res.body);
 }
 
 function authorize(options) {
-    return getAuthCode(options)
-        .then(code => getAuthToken({ code, baseUrl: options.baseUrl }));
+    return getAuthCode(options).then(
+        code => getAuthToken({ code, baseUrl: options.baseUrl })
+    );
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
@@ -224,18 +284,8 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     return out;
 }
 
-function testAuthAuthorize(params) {
-    var defaultParams = {
-        "response_type": "code",
-        "client_id"    : "my_web_app",
-        "redirect_uri" : "https://redirect",
-        "scope"        : "patient/*.read launch",
-        "state"        : "x",
-        "aud"          : "x"
-    };
-    var paths2 = buildRoutePermutations("auth/authorize", 2);
-    var paths3 = buildRoutePermutations("auth/authorize", 3);
-}
+////////////////////////////////////////////////////////////////////////////////
+
 
 describe('index', function() {
     it('responds with html', function(done) {
@@ -244,7 +294,7 @@ describe('index', function() {
         .expect('Content-Type', /html/)
         .expect(200, done);
     });
-});
+    });
 
 ["picker", "login", "authorize"].forEach(endPoint => {
     describe(endPoint, function() {
@@ -317,7 +367,44 @@ describe('Proxy', function() {
     });
 
     it ("Inject the SMART information in metadata responses");
-    it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query");
+
+    it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query", done => {
+        let patientID;
+
+        // We cannot know any IDs but we need to use one for this test, thus
+        // query all the patients with _count=1 to find the first one and use
+        // it's ID.
+        requestPromise({
+            uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`,
+            json: true,
+            qs: {
+                _count: 1
+            }
+        })
+
+        // Use the first patient ID
+        .then(res => res.body.entry[0].resource.id)
+
+        // Now do another request with that ID
+        .then(id => {
+            patientID = id;
+            return requestPromise({
+                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient/${id}`,
+                json: true
+            });
+        }) 
+
+        // Get the second id. This should fail if we had a search set
+        .then(res => res.body.resourceType == "Patient" && res.body.id == patientID)
+
+        // log?
+        .then(patient => console.log(patient))
+
+        // complete
+        .then(() => done(), done);
+        // request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient/`).expect(/\n.+/, done);
+    });
+
     it ("Pretty print if called from a browser");
 
     if (ENABLE_FHIR_VERSION_3) {
@@ -613,14 +700,19 @@ describe('Auth', function() {
         buildRoutePermutations().forEach(path => {
             let code, idToken, key, keysLocation;
             let aud = config.baseUrl + path + "fhir";
-            let launch = new Buffer(JSON.stringify(Codec.encode({
+            let launch = encodeSim({
                 launch_pt : 1,
                 skip_login: 1,
                 skip_auth : 1,
                 patient   : "abc",
                 encounter : "bcd"
-            }))).toString("base64");
+            });
             it(`${path}auth/authorize - generates a code`, done => {
+                // getAuthCode({
+                //     client_id: "x",
+                //     patient: "x"
+                // });
+
                 request(app)
                 .get(`${path}auth/authorize?response_type=code&launch=${launch}` +
                 `&patient=abc&client_id=x&redirect_uri=${encodeURIComponent("http://x.y")}` +
@@ -641,23 +733,14 @@ describe('Auth', function() {
                 .end(done);
             });
 
-            it(`${path}auth/token - exchanges the code for token`, done => {
-                request(app)
-                .post(`${path}auth/token`)
-                .type("form")
-                .send({
-                    grant_type: "authorization_code",
-                    code
-                })
-                .expect('Content-Type', /^application\/json/)
-                .expect(function(res) {
-                    if (!res.body || !res.body.id_token) {
-                        // console.log(res.body)
-                        throw new Error(`auth/token did not return id_token`)
+            it(`${path}auth/token - provides id_token`, done => {
+                getAuthToken({ code, baseUrl: config.baseUrl + path }).then(body => {
+                    if (!body || !body.id_token) {
+                        return done(new Error(`auth/token did not return id_token`));
                     }
-                    idToken = res.body.id_token
-                })
-                .end(done);
+                    idToken = body.id_token;
+                    done();
+                }, done);
             });
 
             it(`the access token can be verified`, done => {
