@@ -25,7 +25,7 @@
                         <img src="/img/smart-bug.png" />
                     </div>
                     <a class="navbar-brand" href="#" style="white-space:nowrap;text-overflow:ellipsis;text-shadow:none">
-                        SMART App Launcher
+                        SMART App Launcher <b style="color:#efa948;text-shadow:0 0 1px #000, 0 1px 0 #000">alpha</b>
                     </a>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
                         <span class="sr-only">Toggle navigation</span>
@@ -37,7 +37,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 0">
                         <li class="dropdown">
-                            <button class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Share <span class="caret"></span></button>
+                            <button class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Save <span class="caret"></span></button>
                             <div class="dropdown-menu">
                                 <div class="panel-body">
                                     <p>
@@ -217,7 +217,7 @@
                         </p>
                     </div>
 
-                    <div class="form-group col-xs-12">
+                    <div class="form-group col-xs-12" style="margin-bottom: 0">
                         <label class="text-warning">Advanced</label>
                         <hr class="solid fg-warning"/>
                         <div class="row">
@@ -227,10 +227,10 @@
                                 </label>
                                 <div class="radio launch launch-ehr" style="margin-top: 0">
                                     <label>
-                                        <input type="radio" name="select-encounter" id="select-encounter" checked> Show encounter selector
+                                        <input type="radio" name="select-encounter" id="select-encounter"> Show encounter selector
                                     </label><br/>
                                     <label>
-                                        <input type="radio" name="select-encounter"> Use the patient's most recent encounter if available
+                                        <input type="radio" name="select-encounter" checked> Use the patient's most recent encounter if available
                                     </label>
                                 </div>
                                 <label class="launch launch-prov launch-pt">
@@ -310,7 +310,7 @@
                     </ul>
                 </div>
                 <div class="panel-body navbar-default" style="border-radius: 0 0 4px 4px">
-                    <div class="form-group col-xs-12">
+                    <div class="form-group col-xs-12" style="margin-bottom: 0">
                         <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
                         <div class="input-group launch launch-ehr">
                             <input id="launch-url" class="form-control" placeholder="Launch URL">
@@ -335,7 +335,14 @@
             </div>
         </div>
 
-        <br/>
+        <div class="container">
+            <hr/>
+            <p class="text-muted text-center">
+                The SMART launcher is an early stage project. Please report any issues you encounter to
+                <a href="mailto:launch@smarthealthit.org">launch@smarthealthit.org</a>
+                <br/>
+            </p>
+        </div>
 
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
