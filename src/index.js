@@ -16,6 +16,7 @@ const lib          = require('./lib');
 const privateKey   = fs.readFileSync('./privatekey.pem', 'utf8');
 const certificate  = fs.readFileSync('./cert.pem', 'utf8');
 const credentials  = {key: privateKey, cert: certificate};
+const Url          = require("url");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -46,6 +47,28 @@ app.use(cors());
 if (process.env.NODE_ENV == "development") {
     app.use(logger('combined'));
 }
+
+app.use((req, res, next) => {
+    console.log(req.headers)
+    // if (`http://${req.headers.host}` !== config.baseUrl) {
+    //     return res.redirect(config.baseUrl + req.url);
+    // }
+    next();
+    // if (req.originalUrl.indexOf(config.baseUrl) !== 0) {
+    //     let url1 = Url.parse(req.url)
+    //     let url2 = config.baseUrl + url1.pathname;
+    //     if (url1.search) {
+    //         url2 += url1.search 
+    //     }
+    //     if (url1.hash) {
+    //         url2 += url1.hash 
+    //     }
+    //     res.redirect(url2);
+    // }
+    // else {
+    //     next();
+    // }
+});
 
 //reject xml
 app.use(handleXmlRequest);
