@@ -49,28 +49,12 @@ if (process.env.NODE_ENV == "development") {
 }
 
 app.use((req, res, next) => {
-    // let ip       = req.headers["x-forwarded-for"];
-    let protocol = req.headers["x-forwarded-proto"];
-    // let port     = req.headers["x-forwarded-port"];
-    
-    if (protocol && `${protocol}://${req.headers.host}` !== config.baseUrl) { 
+    let proto = req.headers["x-forwarded-proto"];
+    let host  = req.headers.host;
+    if (proto && (`${proto}://${host}` !== config.baseUrl)) { 
         return res.redirect(301, config.baseUrl + req.url);
     }
     next();
-    // if (req.originalUrl.indexOf(config.baseUrl) !== 0) {
-    //     let url1 = Url.parse(req.url)
-    //     let url2 = config.baseUrl + url1.pathname;
-    //     if (url1.search) {
-    //         url2 += url1.search 
-    //     }
-    //     if (url1.hash) {
-    //         url2 += url1.hash 
-    //     }
-    //     res.redirect(url2);
-    // }
-    // else {
-    //     next();
-    // }
 });
 
 //reject xml
