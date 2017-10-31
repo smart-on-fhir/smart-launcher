@@ -122,12 +122,12 @@ app.use(express.static("static"));
 module.exports = app;
 
 if (!module.parent) {
-    if (config.useSSL) {
-        https.createServer(credentials, app).listen(config.port);
-        console.log(`Proxy server running on https://localhost:${config.port}`);
-    } else {
+    // if (config.useSSL) {
+    //     https.createServer(credentials, app).listen(config.port);
+    //     console.log(`Proxy server running on https://localhost:${config.port}`);
+    // } else {
         app.listen(config.port, function () {
             console.log(`Example app listening on port ${config.port}!`)
         });
-    }
+    //}
 }

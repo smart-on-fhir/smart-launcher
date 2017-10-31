@@ -6,9 +6,9 @@
   "scripts": {
     "watch": "./node_modules/.bin/nodemon ./src/index.js",
     "start": "node ./src/index.js",
-    "test": "./node_modules/.bin/mocha tests",
-    "test:watch": "./node_modules/.bin/mocha -w tests",
-    "test:e2e": "node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch"
+    "test": "NODE_ENV=test ./node_modules/.bin/mocha tests",
+    "test:watch": "NODE_ENV=test ./node_modules/.bin/mocha -w tests",
+    "test:e2e": "NODE_ENV=test node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch"
   },
   "author": "Dan Gottlieb",
   "license": "ISC",

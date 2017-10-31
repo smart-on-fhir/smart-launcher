@@ -164,7 +164,7 @@
         var dfd = new $.Deferred();
         var cfg = $.extend({
             // The origin of the patient browser app
-            origin: "https://patient-browser.smarthealthit.org",
+            origin: location.protocol + "//patient-browser.smarthealthit.org",
             // What config file to load
             // config: "stu3-open-sandbox",
             // Popup height    

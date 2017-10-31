@@ -14,6 +14,8 @@ const ENABLE_FHIR_VERSION_2  = true;
 const ENABLE_FHIR_VERSION_3  = false;
 const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -284,16 +286,19 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     return out;
 }
 
-// function serverAddress(app, path){
-//     var addr = app.address();
-//     if (!addr) this._server = app.listen(0);
-//     var port = app.address().port;
-//     var protocol = app instanceof https.Server ? 'https' : 'http';
-//     return protocol + '://127.0.0.1:' + port + path;
-// };
-
-// console.log("=====>\n", app.server.address())
 ////////////////////////////////////////////////////////////////////////////////
+
+before(() => {
+    if (!app.listening) {
+        app.listen(config.port);
+    }
+});
+
+after(() => {
+    if (app.listening) {
+        app.close();
+    }
+});
 
 
 describe('index', function() {
