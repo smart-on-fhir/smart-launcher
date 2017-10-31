@@ -284,6 +284,15 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     return out;
 }
 
+// function serverAddress(app, path){
+//     var addr = app.address();
+//     if (!addr) this._server = app.listen(0);
+//     var port = app.address().port;
+//     var protocol = app instanceof https.Server ? 'https' : 'http';
+//     return protocol + '://127.0.0.1:' + port + path;
+// };
+
+// console.log("=====>\n", app.server.address())
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -356,7 +365,6 @@ describe('Proxy', function() {
     it ("Apply patient scope to GET requests");
 
     it ("Adjust urls in the fhir response", done => {
-        console.log(app)
         request(app)
         .get("/v/" + PREFERRED_FHIR_VERSION + "/fhir/Patient")
         .expect(res => {
