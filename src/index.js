@@ -1,3 +1,4 @@
+const http         = require("http");
 const express      = require("express");
 const cors         = require("cors");
 const path         = require("path");
@@ -8,15 +9,8 @@ const reverseProxy = require("./reverse-proxy");
 const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
 const fhirError    = require("./fhir-error");
-const fs           = require('fs');
-const https        = require('https');
-const http         = require("http");
 const sandboxify   = require("./sandboxify");
 const lib          = require('./lib');
-const privateKey   = fs.readFileSync('./privatekey.pem', 'utf8');
-const certificate  = fs.readFileSync('./cert.pem', 'utf8');
-const credentials  = {key: privateKey, cert: certificate};
-const Url          = require("url");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -132,12 +126,7 @@ app.use(express.static("static"));
 module.exports = app;
 
 if (!module.parent) {
-    // if (config.useSSL) {
-    //     https.createServer(credentials, app).listen(config.port);
-    //     console.log(`Proxy server running on https://localhost:${config.port}`);
-    // } else {
-        app.listen(config.port, function () {
-            console.log(`Example app listening on port ${config.port}!`)
-        });
-    //}
+    app.listen(config.port, function () {
+        console.log(`Example app listening on port ${config.port}!`)
+    });
 }

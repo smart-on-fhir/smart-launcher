@@ -11,7 +11,7 @@ const base64url = require("base64-url");
 
 
 const ENABLE_FHIR_VERSION_2  = true;
-const ENABLE_FHIR_VERSION_3  = false;
+const ENABLE_FHIR_VERSION_3  = true;
 const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
 
 
