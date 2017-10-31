@@ -1,5 +1,5 @@
 const HOST = process.env.HOST || "localhost";
-const PORT = process.env.PORT || process.env.NODE_ENV == "test" ? 8444 : 8443;
+const PORT = process.env.PORT || (process.env.NODE_ENV == "test" ? 8444 : 8443);
 
 module.exports = {
   fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open", // http://localhost:8080/baseDstu2
