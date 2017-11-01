@@ -210,6 +210,8 @@
                 FHIR.oauth2.ready(
                     function onAuthReady(client) {
                         console.log("SMART Ready: ", client);
+
+                        $(".page-header").toggleClass("no-logo", client.tokenResponse.need_patient_banner === false);
                         
                         var scopes = client.tokenResponse.scope.split(" "), custom = [];
                         $(':checkbox[name="scope"]').prop("checked", false);

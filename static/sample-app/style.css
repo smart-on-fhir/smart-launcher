@@ -36,6 +36,11 @@ img {
     line-height    : 34px;
 }
 
+.page-header.no-logo {
+    background-image: none;
+    padding-left: 30px;
+}
+
 .page-header-details {
     float      : right;
     color      : rgba(255, 255, 255, 0.5);
