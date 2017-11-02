@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-        <title>SMART EHR</title>
+        <title>SMART Encounter Picker</title>
         <link rel="shortcut icon" href="/img/favicon.png" type="image/png" />
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
         <link href="/blue-nav.css" rel="stylesheet">
@@ -139,11 +139,9 @@
         </div> <!-- container -->
 
         <script src="/vendor/jquery-1.12.3.min.js"></script>
-        <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+        <!-- <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script> -->
         <script src="/vendor/moment.min.js"></script>
-        <script src="/vendor/underscore-1.8.3.min.js"></script>
         <script src="/lib.js"></script>
-        <!-- <script src="/picker.js"></script> -->
         <script>
             jQuery(function($) {
                 var state = $.extend({
@@ -367,7 +365,7 @@
 
                 function _renderRecords() {
                     var tpl = $("#record-row-template").html();
-                    var rows = _.map(state.data.entry, function(entry) {
+                    var rows = state.data.entry.map(function(entry) {
                         return _buildRecordRow(
                             entry.resource,
                             tpl,

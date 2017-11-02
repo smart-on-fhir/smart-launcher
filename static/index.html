@@ -206,7 +206,7 @@
                             <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
-                            <input id="user-pt" class="form-control" value="smart-967332" placeholder="Patient ID">
+                            <input id="user-pt" class="form-control" placeholder="Patient ID">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
@@ -693,12 +693,20 @@
                 $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
 
-                var providers  = $("#provider").val().split(/\s*,\s*/);
-                var patients   = $("#user-pt" ).val().split(/\s*,\s*/);
+                var providers  = $("#provider").val().split(/\s*,\s*/).filter(Boolean);
+                var patients   = $("#user-pt" ).val().split(/\s*,\s*/).filter(Boolean);
                 var prDisabled = !providers[0] || providers.length !== 1;
                 var ptDisabled = !patients [0] || patients .length !== 1;
                 $("#prov-skip-login").prop("disabled", prDisabled).parent().toggleClass("disabled", prDisabled);
                 $("#pt-skip-login"  ).prop("disabled", ptDisabled).parent().toggleClass("disabled", ptDisabled);
+
+                // if (!providers.length) {
+                //     $("#prov-skip-login").prop("checked", false);
+                // }
+
+                // if (!patients.length) {
+                //     $("#pt-skip-login").prop("checked", false);
+                // }
 
                 Lib.formToQs({
                     enable_sandboxes: STATE.enableSandboxes ? 1 : undefined
