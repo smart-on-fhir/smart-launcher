@@ -14,7 +14,7 @@
                             '<span class="text-muted pull-right">' +
                                 '<b>ID: </b>' + o.resource.id +
                             '</span>' +
-                            '<input type="' + (props.multiple ? "checkbox" : "radio") + '"' +
+                            '<input type="checkbox" value="' + o.resource.id + '"' +
                             (values.indexOf(o.resource.id) > -1 ? " checked" : "") +
                             ' /> <b>&nbsp;' +
                             Lib.humanName(o.resource) + '</b>' +
@@ -22,16 +22,7 @@
                     '</li>'
                 );
             }
-            return (
-                '<li>' +
-                    '<a href="javascript: void 0" data-id="' + o.resource.id + '">' +
-                        '<input type="' + (props.multiple ? "checkbox" : "radio") + '"' +
-                        (values.indexOf(o.resource.id) > -1 ? " checked" : "") +
-                        ' />&nbsp;<span class="text-muted"> Encounter ID: </span>' +
-                        o.resource.id +
-                    '</a>' + 
-                '</li>'
-            );
+            return "";
         }).join("")
     }
 
@@ -40,6 +31,13 @@
         this.options = $.extend({}, options);
         this.init(input, options);
     }
+
+    Picker.prototype.onTextChange = function() {
+        var ids = $.trim(this._input.val()).split(/\s*,\s*/);
+        this._menu.find(":checkbox").each(function(i, cb) {
+            cb.checked = ids.indexOf(this.value) > -1;
+        });
+    };
 
     Picker.prototype.init = function(input, options) {
         var input = this._input = $(input);
@@ -63,6 +61,7 @@
         input.on("blur", this.onBlur.bind(this));
         menu.on("mousedown", "a[data-id]", this.onOptionMouseDown.bind(this));
         menu.on("click", "a[data-id]", this.onOptionClick.bind(this));
+        input.on("input change", this.onTextChange.bind(this));
     };
 
     Picker.prototype.setValue = function(value) {
@@ -83,9 +82,8 @@
         }).then(function(data) {
             inst.data = data;
             menu.html(renderMenu({
-                data    : data,
-                value   : value,
-                multiple: options.multiple
+                data : data,
+                value: value
             }));
         });
     };
@@ -106,44 +104,30 @@
     };
 
     Picker.prototype.onOptionMouseDown = function(e) {        
-        var inst = this;
+        var inst   = this;
         var oldVal = this._input.val();
         var newVal = $(e.target).closest("a[data-id]").data("id");
+        var values = String(oldVal || "").trim().split(/\s*,\s*/);
+        var idx    = values.indexOf(newVal);
 
-        if (this.options.multiple) {
-            e.preventDefault();
-        }
+        e.preventDefault();
 
-        if (this.options.multiple) {
-            var values = String(oldVal || "").trim().split(/\s*,\s*/);
-            var idx = values.indexOf(newVal);
-            if (idx == -1) {
-                values.push(newVal);
-            }
-            else {
-                values.splice(idx, 1);
-            }
-            newVal = values.filter(Boolean).join(",");
-            this.setValue(newVal);
-            inst._menu.html(renderMenu({
-                data    : inst.data,
-                value   : newVal,
-                multiple: inst.options.multiple
-            }));
-            typeof this.options.onChange == "function" && this.options.onChange(
-                newVal,
-                oldVal    
-            );
+        if (idx == -1) {
+            values.push(newVal);
         }
         else {
-            if (oldVal !== newVal) {
-                this.setValue(newVal);
-                typeof this.options.onChange == "function" && this.options.onChange(
-                    newVal,
-                    oldVal    
-                );
-            }
+            values.splice(idx, 1);
         }
+        newVal = values.filter(Boolean).join(",");
+        this.setValue(newVal);
+        inst._menu.html(renderMenu({
+            data : inst.data,
+            value: newVal
+        }));
+        typeof this.options.onChange == "function" && this.options.onChange(
+            newVal,
+            oldVal    
+        );
     };
 
     // Picker plugin -----------------------------------------------------------
