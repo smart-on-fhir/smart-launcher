@@ -544,24 +544,12 @@
                     });
                 });
 
-                $("#encounter").picker({
-                    url: getBaseUrl() + "/fhir/Encounter",
-                    multiple: true,
-                    onChange: function() {
-                        buildUrls();
-                        Lib.formToQs();
-                    }
-                });
-
                 $("#provider").picker({
                     url: function() {
                         return getBaseUrl() + "/fhir/Practitioner";
                     },
-                    multiple: true,
                     onChange: function() {
-                        // buildUrls();
-                        // Lib.formToQs();
-                        handleFormChange()
+                        handleFormChange();
                     }
                 });
 
@@ -640,7 +628,6 @@
                     "launch-ehr": [
                         [ "#launch-ehr"      , "launch_ehr"       ],
                         [ "#patient"         , "patient"          ],
-                        [ "#encounter"       , "encounter"        ],
                         [ "#auth-error"      , "auth_error"       ],
                         [ "#provider"        , "provider"         ],
                         [ "#sim-ehr"         , "sim_ehr"          ],
@@ -649,7 +636,6 @@
                     "launch-prov": [
                         [ "#launch-prov"     , "launch_prov"      ],
                         [ "#patient"         , "patient"          ],
-                        [ "#encounter"       , "encounter"        ],
                         [ "#auth-error"      , "auth_error"       ],
                         [ "#prov-skip-login" , "skip_login"       ], 
                         [ "#prov-skip-auth"  , "skip_auth"        ], 
@@ -682,8 +668,7 @@
 
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
-                        "&user=" + encodeURIComponent(urlParams.provider || "") +
-                        "&encounter=" + encodeURIComponent(urlParams.encounter || "");
+                        "&user=" + encodeURIComponent(urlParams.provider || "");
                 }
 
                 $(".open-url").text(openUrl);
