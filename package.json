@@ -30,6 +30,7 @@
     "nightwatch": "^0.9.16",
     "nodemon": "^1.7.1",
     "selenium-download": "^2.0.10",
-    "supertest": "^1.2.0"
+    "supertest": "^1.2.0",
+    "typescript": "^2.6.1"
   }
 }

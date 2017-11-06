@@ -6,7 +6,7 @@ html {
 }
 
 body {
-    display    : block;
+    display    : flex;
     flex-flow  : column;
     flex       : 1 1 0px;
     height     : 100%;
@@ -66,9 +66,11 @@ img {
 }
 
 .panel {
-    display      : flex;
+    /* display      : flex; */
+    display      : none;
     flex-flow    : column;
-    flex         : 1 1 500px;
+    flex         : 1 1 440px;
+    /* max-height   : 300px; */
     margin       : 5px 15px 15px;
     overflow     : hidden;
     border-radius: 4px;
@@ -93,12 +95,13 @@ img {
 
 pre {
     max-width    : 100%;
-    max-height   : 300px;
+    /* height       : 100%; */
+    /* max-height   : 300px; */
     overflow     : auto;
     background   : #FFF linear-gradient(#FFF, #F6F6F6);
     border-radius: 3px;
     padding      : 14px 10px 10px;
-    flex         : 1 1 300px;
+    flex         : 1 1 200px;
     color        : #333;
     margin       : -9px 2px 2px;
     box-sizing   : border-box; 
