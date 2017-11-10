@@ -390,20 +390,74 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
     let grantType = req.body.grant_type, codeRaw, code, scopes;
     
-    if (req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
+    if (!req.headers["content-type"] || req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
         return Lib.replyWithError(res, "form_content_type_required", 401);
     }
 
-    if (grantType === 'authorization_code') {
-        codeRaw = req.body.code;
-    } else if (grantType === 'refresh_token') {
-        codeRaw = req.body.refresh_token;
-    }
+    if (grantType === 'client_credentials') {
 
-    try {
-        code = jwt.verify(codeRaw, config.jwtSecret);
-    } catch (e) {
-        return Lib.replyWithError(res, "invalid_token", 401, e.message);
+        if (!req.body.client_assertion_type) {
+            return Lib.replyWithError(res, "missing_client_assertion_type", 401);
+        }
+
+        if (req.body.client_assertion_type != "urn:ietf:params:oauth:client-assertion-type:jwt-bearer") {
+            return Lib.replyWithError(res, "invalid_client_assertion_type", 401);
+        }
+
+        let token1 = String(req.body.client_assertion).split(".")[1];
+        token1 = new Buffer(token1, "base64").toString("utf8");
+        token1 = JSON.parse(token1);
+        
+        let token2 = String(token1.sub).split(".")[1];
+        token2 = new Buffer(token2, "base64").toString("utf8");
+        token2 = JSON.parse(token2);
+
+        if (token2.auth_error == "token_expired_registration_token") {
+            return Lib.replyWithError(res, "token_expired_registration_token", 401);
+        }
+
+        // Validate token1.aud (must equal this url)
+        let tokenUrl = config.baseUrl + req.originalUrl;
+        if (tokenUrl !== token1.aud) {
+            return Lib.replyWithError(res, "invalid_aud", 401, tokenUrl);
+        }
+
+        // Validate token1.iss (must equal whatever the user entered at
+        // registration time, i.e. token2.iss)
+        if (token1.iss !== token2.iss) {
+            return Lib.replyWithError(res, "invalid_token_iss", 401, token1.iss, token2.iss);
+        }
+
+        // simulated invalid_jti error
+        if (token2.auth_error == "invalid_jti") {
+            return Lib.replyWithError(res, "invalid_jti", 401);
+        }
+
+        try {
+            jwt.verify(req.body.client_assertion, base64url.decode(token2.pub_key), { algorithm: "RS256" });
+        } catch (e) {
+            return Lib.replyWithError(res, "invalid_token", 401, e.message);
+        }
+
+        code = token2;
+    }
+    else {
+
+        // The most common case - an app is authorizing
+        if (grantType === 'authorization_code') {
+            codeRaw = req.body.code;
+        }
+
+        // An app posts a refresh token to renew it's session
+        else if (grantType === 'refresh_token') {
+            codeRaw = req.body.refresh_token;
+        }
+
+        try {
+            code = jwt.verify(codeRaw, config.jwtSecret);
+        } catch (e) {
+            return Lib.replyWithError(res, "invalid_token", 401, e.message);
+        }
     }
 
     // Request from confidential client
@@ -452,7 +506,11 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
     var token = Object.assign({}, code.context, {
         token_type: "bearer",
-        expires_in: 3600,
+        expires_in: code.dur ?
+            code.dur * 60 :
+            grantType === 'client_credentials' ?
+                15 * 60 :
+                60 * 60,
         scope     : code.scope,
         client_id : req.body.client_id
     });
@@ -475,6 +533,55 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         });
     }
 
-    token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn: "1h" });
+    token.access_token = jwt.sign(token, config.jwtSecret, {
+        expiresIn: code.dur ? code.dur + " minutes" : "1h"
+    });
     res.json(token);
+});
+
+/**
+ * This should handle the Dynamic Client Registration protocol (also used by the
+ * back-end services).
+ */
+router.post("/register-backend-client", bodyParser.urlencoded({ extended: false }), function(req, res) {
+
+    // Require "application/x-www-form-urlencoded" POSTs
+    if (!req.headers["content-type"] || req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
+        return Lib.replyWithError(res, "form_content_type_required", 401);
+    }
+
+    // parse and validate the "iss" parameter
+    let iss = String(req.body.iss || "").trim();
+    if (!iss) {
+        return Lib.replyWithError(res, "missing_parameter", 400, "iss");
+    }
+
+    // parse and validate the "pub_key" parameter
+    let publicKey = String(req.body.pub_key || "").trim();
+    if (!publicKey) {
+        return Lib.replyWithError(res, "missing_parameter", 400, "pub_key");
+    }
+
+    // parse and validate the "dur" parameter
+    let dur = parseInt(req.body.dur || "15", 10);
+    if (isNaN(dur) || !isFinite(dur) || dur < 0) {
+        return Lib.replyWithError(res, "invalid_parameter", 400, "dur");
+    }
+
+    let jwtToken = {
+        pub_key: publicKey,
+        iss
+    };
+
+    if (dur) {
+        jwtToken.dur = dur
+    }
+
+    if (req.body.auth_error) {
+        jwtToken.auth_error = req.body.auth_error;
+    }
+
+    res.json(jwt.sign(jwtToken, config.jwtSecret, {
+        expiresIn: dur + " minutes"
+    }));
 });

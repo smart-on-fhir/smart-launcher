@@ -23,7 +23,8 @@
     "morgan": "^1.6.1",
     "replaceall": "^0.1.6",
     "replacestream": "^4.0.3",
-    "request": "^2.65.0"
+    "request": "^2.65.0",
+    "ursa": "^0.9.4"
   },
   "devDependencies": {
     "mocha": "^2.5.3",

@@ -1,16 +1,12 @@
-const http         = require("http");
 const express      = require("express");
 const cors         = require("cors");
-const path         = require("path");
-const logger       = require('morgan');
 const bodyParser   = require('body-parser');
 const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
 const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
 const fhirError    = require("./fhir-error");
-const sandboxify   = require("./sandboxify");
-const lib          = require('./lib');
+const generator    = require("./generator");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -39,7 +35,7 @@ const app = express();
 app.use(cors());
 
 if (process.env.NODE_ENV == "development") {
-    app.use(logger('combined'));
+    app.use(require('morgan')('combined'));
 }
 
 app.use((req, res, next) => {
@@ -120,13 +116,15 @@ app.use(
     simpleProxy
 );
 
+app.use("/generator", generator); 
+
 // static request
 app.use(express.static("static"));
 
 module.exports = app;
 
 if (!module.parent) {
-    app.listen(config.port, function () {
+    app.listen(config.port, () => {
         console.log(`Example app listening on port ${config.port}!`)
     });
 }

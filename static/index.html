@@ -18,6 +18,50 @@
         <![endif]-->
     </head>
     <body>
+        <div class="modal fade" tabindex="-1" role="dialog" id="rsa-dialog">
+            <div class="modal-dialog open" role="document">
+                <div class="modal-content">
+                    <div class="modal-header navbar-default">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title">RSA Keys Generator</h5>
+                    </div>
+                    <div class="modal-body navbar-default">
+                        <!-- <div class="form-group">
+                            <label>Encoding</label>
+                            <div class="checkbox">
+                                <label><input type="radio" name="enc" value="hex"> HEX</label> &nbsp;
+                                <label><input type="radio" name="enc" value="base64" checked> Base 64</label> &nbsp;
+                                <label><input type="radio" name="enc" value="utf8"> UTF8</label> &nbsp;
+                                <label><input type="radio" name="enc" value="binary"> Binary</label>
+                            </div>
+                        </div> -->
+                        <br />
+                        <div class="form-group">
+                            <label class="text-right" style="display: block">    
+                                <a class="small normal-weight btn btn-success btn-xs use-keys">Use This Key</a>
+                                &nbsp;
+                                <a class="small normal-weight btn btn-info btn-xs">Copy</a>
+                                <span class="pull-left">Public Key</span>
+                            </label>
+                            <textarea rows="4" id="gen-public-key" class="form-control input-sm" readonly></textarea>
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label class="text-right" style="display: block">    
+                                <a class="small normal-weight btn btn-info btn-xs">Copy</a>
+                                <span class="pull-left">Private Key</span>
+                            </label>
+                            <textarea rows="8" id="gen-privatre-key" class="form-control input-sm" readonly></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer panel-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="gen-rsa-refresh">Refresh</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+                
         <div class="navbar navbar-custom navbar-static-top">
             <div class="container">
                 <div class="navbar-header">
@@ -113,6 +157,8 @@
                 </div>
             </div>
 
+            <br />
+
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <b class="text-primary">
@@ -148,6 +194,13 @@
                                 <input type="radio" name="launch-type" id="launch-pt">
                                 Patient Standalone Launch 
                                 <span class="text-muted small">(patient opens the app directly and connects to FHIR)</span>
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="launch-type" id="launch-bs">
+                                Backend Service
+                                <span class="text-muted small">(once started the service can re-authenticate without interactions)</span>
                             </label>
                         </div>
                     </div>
@@ -219,6 +272,26 @@
                         </p>
                     </div>
 
+                    <!-- Public Key ======================================== -->
+                    <br clear="all" class="launch launch-bs"/>
+                    <div class="form-group col-sm-6 launch launch-bs">
+                        <label for="public-key" style="display: block">
+                            <button class="btn btn-info btn-xs pull-right" data-toggle="modal" data-target="#rsa-dialog">Generate Keys</button>
+                            Public Key
+                        </label>
+                        <textarea id="public-key" rows="3" class="form-control input-sm" placeholder="RSA-256 Public Key"></textarea>
+                        <p class="help-block small">Your app must share it's public key with us at registration</p>
+                    </div>
+
+                    <!-- ISS =============================================== -->
+                    <div class="form-group col-sm-6 launch launch-bs">
+                        <label for="iss">Service URL</label>
+                        <input type="text" id="iss" class="form-control" placeholder="Service URL">
+                        <p class="help-block small">
+                            This is the signed jwt that you received after completing the client registration process.
+                        </p>
+                    </div>
+
                     <div class="form-group col-xs-12" style="margin-bottom: 0">
                         <label class="text-warning">Advanced</label>
                         <hr class="solid fg-warning"/>
@@ -266,6 +339,16 @@
                                         </label>
                                     </div>
                                 </div>
+                                <label class="launch launch-bs">Access Token Lifetime</label>
+                                <select class="form-control launch launch-bs" id="token-lifetime">
+                                    <option value="">Not Specified (use server defaults)</option>
+                                    <option value="1">1 minute</option>
+                                    <option value="5">5 minutes</option>
+                                    <option value="10">10 minutes</option>
+                                    <option value="15">15 minutes</option>
+                                    <option value="30">30 minutes</option>
+                                    <option value="60">1 hour</option>
+                                </select>
                             </div>
                             <div class="col-sm-6">
                                 <label for="sb">Simulate Authentication Error for Testing</label>
@@ -277,8 +360,10 @@
                                     <option value="auth_invalid_client_secret">Token - invalid client secret (for confidential apps)</option>
                                     <option value="token_invalid_token">Token - Invalid Token</option>
                                     <option value="token_expired_refresh_token">Token - Expired Refresh Token</option>
+                                    <option value="token_expired_registration_token">Token - Expired Registration Token</option>
+                                    <option value="invalid_jti">Token - Invalid jti value (for backend services)</option>
                                     <option value="request_invalid_token">Request - Invalid Token</option>	
-                                    <option value="request_expired_token">Request - Expired Token</option>	
+                                    <option value="request_expired_token">Request - Expired Token</option>
                                 </select>
                                 <br/>
                             </div>
@@ -287,20 +372,23 @@
                 </div>
             </div>
 
+            <br/>
+
             <div class="panel panel-success alert-success">
                 <div class="panel-heading">
-                    <b class="text-success">Launch</b>
+                    <b class="text-success launch launch-pt launch-ehr launch-prov">Launch</b>
+                    <b class="text-success launch launch-bs">Your Configuration</b>
                 </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
                     <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0;color: rgba(205, 198, 158, 0.84);text-shadow: 0px 1px 1px rgb(255, 255, 255), 0px 0px 0px rgb(0, 0, 0);"></h3>
                     <ul style="margin: 0; list-style: none" class="text-muted">
-                        <li>
+                        <li class="launch launch-pt launch-ehr launch-prov">
                             <span class="label label-default">client_id</span>
                             <small>The app's <code>client_id</code> is not validated on the SMART test server,
                             so any text string will work. You can use the error simulator to
                             simulate the server response to an invalid <code>client_id</code>.</small>
                         </li>
-                        <li>
+                        <li class="launch launch-pt launch-ehr launch-prov">
                             <span class="label label-default">client_secret</span>
                             <small>The app's <code>client_secret</code> is not validated on the SMART test server,
                             so any secret will work. If provided, the <code>Authorization</code> header must conform
@@ -308,6 +396,18 @@
                             >Example</a>). You can also use the error simulator to simulate the server response to an invalid
                             <code>client_secret</code>.
                             </small>
+                        </li>
+                        <li class="launch launch-bs">
+                            <span class="label label-default">Client ID</span>
+                            <small>This is the <code>client_id</code> that we have generated for you...</small>
+                        </li>
+                        <li class="launch launch-bs">
+                            <span class="label label-default">FHIR Server Url</span>
+                            <small>This is the FHIR server that your service should use...</small>
+                        </li>
+                        <li class="launch launch-bs">
+                            <span class="label label-default">Authentication Url</span>
+                            <small>This is where your app should authorize to receive an access token. Later, when that token expires the app should re-authenticate to the same token endpoint and get a new access token.</small>
                         </li>
                     </ul>
                 </div>
@@ -324,15 +424,45 @@
                             Full url of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
                         <div class="launch launch-pt launch-prov">
-                            <label class="">FHIR Server Url</label>
+                            <label>FHIR Server Url</label>
                             <textarea id="standalone-launch-url" class="form-control" readonly></textarea>
-                            <p class="help-block small">
-                                <a class="btn btn-info btn-xs pull-right" id="standalone-launch-url-test" target="_blank" href="#">Test</a>
+                            <p class="help-block small launch launch-pt launch-prov">
+                                <a class="btn btn-info btn-xs pull-right" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App</a>
                                 Your app should use the URL above as base URL (and <code>aud</code> parameter) and authenticate as
                                 described <a target="_blank" href="http://docs.smarthealthit.org/authorization/#standalone-launch-sequence">here</a>.
                             </p>
                         </div>
                     </div>
+
+                    <div class="form-group col-sm-12 launch launch-bs">
+                        <label>Client ID</label>
+                        <textarea class="form-control input sm" rows="4" id="client-id" readonly></textarea>
+                    </div>
+
+                    <div class="form-group col-sm-6 launch launch-bs">
+                        <label>FHIR Server Url</label>
+                        <input type="text" class="form-control" id="fhir-server-url" readonly>
+                    </div>
+
+                    <div class="form-group col-sm-6 launch launch-bs">
+                        <label>Authentication Url (Token Url)</label>
+                        <input type="text" class="form-control" id="token-url" readonly>
+                    </div>
+
+                    <div class="form-group col-xs-12 launch launch-bs">
+                        <hr />
+                    </div>
+
+                    <div class="form-group col-xs-4 text-center launch launch-bs">
+                        <a href="#">View/Download as JSON <i class="glyphicon glyphicon-new-window"></i></a>
+                    </div>
+                    <div class="form-group col-xs-4 text-center launch launch-bs">
+                        <a href="#">View NodeJS Example <i class="glyphicon glyphicon-new-window"></i></a>
+                    </div>
+                    <div class="form-group col-xs-4 text-center launch launch-bs">
+                        <a href="http://docs.smarthealthit.org/authorization/backend-services/" target="_blank">Backend Services Docs <i class="glyphicon glyphicon-new-window"></i></a>
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -346,6 +476,7 @@
             </p>
         </div>
 
+        <br />
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
         <script src="/config.js"></script>
@@ -446,7 +577,11 @@
 
                 $("#launch-url").on("change input", validateLaunchUrl);
 
-                $(document).on("input change", "input,select", function() {
+                $(document).on("input", "input,textarea", function() {
+                    handleFormChange();
+                });
+
+                $(document).on("change", "input,select,textarea", function() {
                     handleFormChange();
                 });
 
@@ -454,7 +589,7 @@
                     window.open( $("#picker-url").text() );
                 });
 
-                $("#standalone-launch-url").on("focus", function() {
+                $("#standalone-launch-url, [readonly]").on("focus", function() {
                     $(this).select();
                 });
 
@@ -562,7 +697,31 @@
                 $("#bookmark").click(function(e) {
                     e.preventDefault();
                     bookmark();
-                })
+                });
+
+                function generateKeys() {
+                    $.ajax({
+                        url: "/generator/rsa",
+                        data: {
+                            enc: "base64"//$(":radio[name=enc]:checked").val()
+                        }
+                    }).then(function(json) {
+                        $("#gen-privatre-key").val(json.privateKey);
+                        $("#gen-public-key").val(json.publicKey);
+                    });
+                }
+
+                // $(":radio[name=enc]").on("change", generateKeys);
+                $("#gen-rsa-refresh").on("click", generateKeys);
+                $("#rsa-dialog").on("show.bs.modal", function() {
+                    if (!$("#gen-privatre-key").val()) {
+                        generateKeys();
+                    }
+                });
+
+                $(".use-keys").on("click", function() {
+                    $("#public-key").val($("#gen-public-key").val()).trigger("change");
+                });
             }
 
             function getBaseUrl() {
@@ -674,14 +833,42 @@
 
                 $(".open-url").text(openUrl);
                 $(".open-url-preview").attr("href", openUrl + "/metadata");
+                $("#fhir-server-url").val(openUrl);
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
+                $("#token-url").val(baseUrl + "/auth/token")
                 
                 // console.log(JSON.stringify(urlParams, null, 4))
                 $("#standalone-launch-url-test").attr(
                     "href",
                     "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
                 );
+
+                if (launchType == "launch-bs") {
+                    var iss = $("#iss").val();
+                    var pub_key = $("#public-key").val();
+                    if (iss && pub_key) {
+                        var tokenLifetime = +$("#token-lifetime").val();
+                        var authError = $("#auth-error").val();
+                        var params = {
+                            iss    : iss,
+                            pub_key: pub_key
+                        };
+                        if (tokenLifetime) {
+                            params.dur = tokenLifetime;
+                        }
+                        if (authError) {
+                            params.auth_error = authError;
+                        }
+                        $.ajax({
+                            url: baseUrl + "/auth/register-backend-client",
+                            method: "POST",
+                            data: params
+                        }).then(function(client_id) {
+                            $("#client-id").val(client_id)
+                        });
+                    }
+                }
             }
 
             function handleFormChange() {
