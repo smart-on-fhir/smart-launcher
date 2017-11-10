@@ -29,7 +29,7 @@ module.exports = function (req, res) {
                 config.jwtSecret
             );
         } catch (e) {
-            return res.status(401).send("Invalid token");
+            return res.status(401).send(`${e.name || "Error"}: ${e.message || "Invalid token"}`);
         }
 
         // Simulate invalid token error

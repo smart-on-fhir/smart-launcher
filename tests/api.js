@@ -359,7 +359,7 @@ describe('Proxy', function() {
         .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/metadata`)
         .set("authorization", "Bearer whatever")
         .expect('Content-Type', /text/)
-        .expect("Invalid token")
+        .expect("JsonWebTokenError: jwt malformed")
         .expect(401, done);
     });
 
