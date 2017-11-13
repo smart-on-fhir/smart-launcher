@@ -308,7 +308,7 @@ class App {
 
         if (aud && scope) {
             var url = location.href.split("?").shift();
-            $(".standalone-launch-options").hide();
+            $(".standalone-launch-options").parent().hide();
             url += "?aud=" + aud + "&scope=" + scope;
             location.assign(url);
         }
@@ -364,7 +364,7 @@ class App {
                 }
             });
             $('[name="custom_scope"]').val(custom.join(" "));
-            $(".standalone-launch-options").show();
+            $(".standalone-launch-options").show().parent().show();
         }
     }
 
