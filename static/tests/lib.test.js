@@ -44,7 +44,8 @@ describe('Lib', function() {
             expect(Lib.scopeToText("profile")).to.deep.equal({
                 read: "Your profile information",
                 write: "",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -52,7 +53,8 @@ describe('Lib', function() {
             expect(Lib.scopeToText("x")).to.deep.equal({
                 read : "",
                 write: "",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -60,7 +62,8 @@ describe('Lib', function() {
             expect(Lib.scopeToText("patient/*.read")).to.deep.equal({
                 read: "All data on the current patient",
                 write: "",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -88,7 +91,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: "Observation data on the current patient",
                 write: "Observation data on the current patient",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -98,7 +102,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: 'Your information of type "Observation"',
                 write: 'Your information of type "Observation"',
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -108,7 +113,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: "All data on the current patient",
                 write: "All data on the current patient",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -118,7 +124,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: 'Your medical information',
                 write: 'Your medical information',
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -152,7 +159,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: 'Observation data you have access to in the EHR system',
                 write: 'Observation data you have access to in the EHR system',
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -162,7 +170,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read : 'Your information of type "Observation"',
                 write: 'Your information of type "Observation"',
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -172,7 +181,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read : "All data you have access to in the EHR system",
                 write: "All data you have access to in the EHR system",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -182,7 +192,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read : 'Your medical information',
                 write: 'Your medical information',
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -192,7 +203,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: "Demographic data you have access to in the EHR system",
                 write: "",
-                access: ""
+                access: "",
+                other: ""
             });
         });
 
@@ -202,7 +214,8 @@ describe('Lib', function() {
             ).to.deep.equal({
                 read: 'Your information of type "Demographic"',
                 write: "",
-                access: ""
+                access: "",
+                other: ""
             });
         });
     });
@@ -213,7 +226,8 @@ describe('Lib', function() {
             expect(Lib.scopeListToPermissions("")).to.deep.equal({
                 read  : [],
                 write : [],
-                access: []
+                access: [],
+                other : []
             })
         });
 
@@ -221,7 +235,8 @@ describe('Lib', function() {
             expect(Lib.scopeListToPermissions("profile")).to.deep.equal({
                 read  : ["Your profile information"],
                 write : [],
-                access: []
+                access: [],
+                other : []
             })
         });
 
@@ -229,7 +244,8 @@ describe('Lib', function() {
             expect(Lib.scopeListToPermissions("profile user/*.*", true)).to.deep.equal({
                 read  : ["Your profile information", "Your medical information"],
                 write : ["Your medical information"],
-                access: []
+                access: [],
+                other : []
             })
         });
     });
