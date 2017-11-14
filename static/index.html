@@ -18,6 +18,7 @@
         <![endif]-->
     </head>
     <body>
+        <!-- Private Key Dialog ============================================ -->
         <div class="modal" tabindex="-1" role="dialog" id="rsa-dialog">
             <div class="modal-dialog open" role="document">
                 <div class="modal-content">
@@ -33,19 +34,14 @@
                         </label>
                         <textarea rows="16" id="gen-private-key" class="form-control input-sm" readonly></textarea>
                     </div>
-                    <!-- <div class="modal-footer panel-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button> -->
-                        <!-- <a class="btn btn-primary use-keys" data-dismiss="modal">Use This Key</a>
-                        <button type="button" class="btn btn-warning pull-left" id="gen-rsa-refresh">Refresh</button> -->
-                    <!-- </div> -->
                 </div>
             </div>
         </div>
-                
+        
+        <!-- Navbar ======================================================== -->
         <div class="navbar navbar-custom navbar-static-top">
             <div class="container">
                 <div class="navbar-header">
-                        
                     <div class="pull-left logo">
                         <img src="/img/smart-bug.png" />
                     </div>
@@ -88,6 +84,7 @@
             </div>
         </div>
 
+        <!-- Loader ======================================================== -->
         <div class="container" id="loading">
             <div class="row">
                 <div class="col-xs-12" style="text-align: center;margin-top:50px;">
@@ -95,7 +92,11 @@
                 </div>
             </div>
         </div>
+
+        <!-- Main Contents ================================================= -->
         <div class="container" id="content" style="display:none;">
+
+            <!-- Sandboxes ================================================= -->
             <div class="panel panel-info alert-info sandbox-panel" style="display:none">
                 <div class="panel-heading">
                     <b class="text-primary">My Sandbox</b>
@@ -424,6 +425,7 @@
             </div>
         </div>
 
+        <!-- Footer ======================================================== -->
         <div class="container">
             <hr/>
             <p class="text-muted text-center">
@@ -437,16 +439,13 @@
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
         <script src="/config.js"></script>
+        <script src="/env.js"></script>
         <script src="/lib.js"></script>
         <script src="/codec.js"></script>
         <script src="/jquery.picker.js"></script>
         <script>
 
-            var STATE = $.extend({
-                enableSandboxes: CONFIG.enableSandboxes
-            }, Lib.getUrlQuery({ camelCaseKeys: true }));
-
-            STATE.enableSandboxes = Lib.bool(STATE.enableSandboxes);
+            var STATE = Lib.getUrlQuery({ camelCaseKeys: true });
 
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
@@ -454,7 +453,7 @@
             }
 
             function getSandboxName() {
-                return STATE.enableSandboxes ? $("#sb").val() || "public" : "public";
+                return ENV.ENABLE_SANDBOXES ? $("#sb").val() || "public" : "public";
             }
 
             function getLaunchType() {
@@ -463,7 +462,7 @@
 
             function getTags() {
                 var tags = [], sb = getSandboxName();
-                if (STATE.enableSandboxes) {
+                if (ENV.ENABLE_SANDBOXES) {
                     tags = $(".sb :checked").filter(":visible").map(
                         function () { return $(this).val() }
                     ).get();
@@ -497,7 +496,7 @@
             function buildForm() {
 
                 // Build the FHIR tag checkboxes
-                if (STATE.enableSandboxes) {
+                if (ENV.ENABLE_SANDBOXES) {
                     $(".sandbox-panel").show();
                     $("#fhir-version-2").closest(".col-sm-6").remove();
                     $(".fhir-tags").html(
@@ -867,7 +866,7 @@
             function handleFormChange() {
                 var launchType = getLaunchType();
                 $(".launch").hide().filter("." + launchType).show();
-                if (STATE.enableSandboxes) {
+                if (ENV.ENABLE_SANDBOXES) {
                     $(".sb").hide().filter(".sb." + getFhirVersion()).show();
                 }
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
@@ -889,9 +888,7 @@
                 //     $("#pt-skip-login").prop("checked", false);
                 // }
 
-                Lib.formToQs({
-                    enable_sandboxes: STATE.enableSandboxes ? 1 : undefined
-                });
+                Lib.formToQs();
 
                 $("#bookmark-preview").val(location.href);
 
@@ -908,13 +905,26 @@
                 });
             }
 
+            function setupGoogleAnalytics() {
+                if (!ENV.GOOGLE_ANALYTICS_ID) {
+                    return;
+                }
+                $('<script async src="https://www.googletagmanager.com/gtag/js?id=UA-109693963-1"/>').appendTo("body");
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function(){
+                    dataLayer.push(arguments);
+                }
+                gtag('js', new Date()); 
+                gtag('config', ENV.GOOGLE_ANALYTICS_ID);
+            }
+
             $(function init() {
-                $("body").toggleClass("no-sandboxes", !STATE.enableSandboxes);
+                $("body").toggleClass("no-sandboxes", !ENV.ENABLE_SANDBOXES);
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
-                if (STATE.enableSandboxes && !$("#sb").val()) {
+                if (ENV.ENABLE_SANDBOXES && !$("#sb").val()) {
                     $("#sb").val(Lib.generateUID());
                 }
                 bindEventHandlers();
@@ -926,6 +936,7 @@
                 }
                 handleFormChange();
                 validateLaunchUrl();
+                setupGoogleAnalytics();
             });
 
         </script>

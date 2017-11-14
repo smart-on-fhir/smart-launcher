@@ -116,7 +116,25 @@ app.use(
     simpleProxy
 );
 
-app.use("/generator", generator); 
+app.use("/generator", generator);
+
+app.use("/env.js", (req, res) => {
+    const out = {};
+
+    [
+        "NODE_ENV",
+        "LOG_TIMES",
+        "ENABLE_SANDBOXES",
+        "ENABLE_BACKEND_SERVICES",
+        "GOOGLE_ANALYTICS_ID"
+    ].forEach(key => {
+        if (process.env.hasOwnProperty(key)) {
+            out[key] = process.env[key];
+        }
+    });
+
+    res.type("javascript").send(`var ENV = ${JSON.stringify(out, null, 4)};`);
+});
 
 // static request
 app.use(express.static("static"));
