@@ -91,7 +91,7 @@
 
     function formToQs(qs) {
         qs = qs || {};
-        $("input[id],select[id]").each( function() {
+        $("input[id]:not(:disabled,[readonly]),select[id]:not(:disabled,[readonly]), textarea[id]:not(:disabled,[readonly])").each( function() {
             var target = $(this);
             var key = this.id.replace(RE_DASH, "_");
             if (target.is(":checkbox")) {
