@@ -28,7 +28,7 @@
                     </div>
                     <div class="modal-body navbar-default">
                         <label class="text-right" style="display: block">    
-                            <b class="small normal-weight btn btn-info btn-xs" onClick="copyElement('#gen-private-key')">Copy</b>
+                            <b class="small normal-weight btn btn-info btn-xs" data-dismiss="modal" onClick="copyElement('#gen-private-key')">Copy</b>
                             <p class="pull-left text-left">Copy this private key and use it in
                             your app to sign the token claims<br/>(authentication JWT).</p>
                         </label>
@@ -330,19 +330,7 @@
                             </div>
                             <div class="col-sm-6">
                                 <label for="sb">Simulate Authentication Error for Testing</label>
-                                <select id="auth-error" class="form-control">
-                                    <option value="">None</option>
-                                    <option value="auth_invalid_client_id">Authorize - Invalid Client Id</option>
-                                    <option value="auth_invalid_redirect_uri">Authorize - Invalid Redirect Url</option>
-                                    <option value="auth_invalid_scope">Authorize - Invalid Scope</option>
-                                    <option value="auth_invalid_client_secret">Token - invalid client secret (for confidential apps)</option>
-                                    <option value="token_invalid_token">Token - Invalid Token</option>
-                                    <option value="token_expired_refresh_token">Token - Expired Refresh Token</option>
-                                    <option value="token_expired_registration_token">Token - Expired Registration Token</option>
-                                    <option value="invalid_jti">Token - Invalid jti value (for backend services)</option>
-                                    <option value="request_invalid_token">Request - Invalid Token</option>	
-                                    <option value="request_expired_token">Request - Expired Token</option>
-                                </select>
+                                <select id="auth-error" class="form-control"></select>
                                 <br/>
                             </div>
                         </div>
@@ -364,7 +352,7 @@
                         <li class="launch launch-pt launch-ehr launch-prov">
                             <span class="label label-default">client_id</span>
                             <small>The app's <code>client_id</code> is not validated on the SMART test server,
-                            so any text string will work. You can use the error simulator to
+                            so any text string will work. You can use the error dropdown above to
                             simulate the server response to an invalid <code>client_id</code>.</small>
                         </li>
                         <li class="launch launch-pt launch-ehr launch-prov">
@@ -372,7 +360,7 @@
                             <small>The app's <code>client_secret</code> is not validated on the SMART test server,
                             so any secret will work. If provided, the <code>Authorization</code> header must conform
                             to the standart format (<a target="_blank" href="http://docs.smarthealthit.org/authorization/basic-auth-example/"
-                            >Example</a>). You can also use the error simulator to simulate the server response to an invalid
+                            >Example</a>). You can also use the error dropdown above to simulate the server response to an invalid
                             <code>client_secret</code>.
                             </small>
                         </li>

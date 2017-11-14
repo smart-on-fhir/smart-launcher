@@ -64,7 +64,7 @@ var CONFIG = {
         },
         {
             name : "auth_invalid_client_secret",
-            label: "Token - invalid client secret (for confidential clients)",
+            label: "Token - Invalid Client Secret (for confidential clients)",
             for  : ["launch-ehr", "launch-prov", "launch-pt"]
         },
         {
@@ -84,7 +84,7 @@ var CONFIG = {
         },
         {
             name : "invalid_jti",
-            label: "Token - Invalid jti value (for backend services)",
+            label: "Token - Invalid 'jti' Value (for backend services)",
             for  : ["launch-bs"]
         },
         {
