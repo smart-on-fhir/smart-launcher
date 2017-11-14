@@ -581,7 +581,7 @@ router.post("/register-backend-client", bodyParser.urlencoded({ extended: false 
         jwtToken.auth_error = req.body.auth_error;
     }
 
-    res.json(jwt.sign(jwtToken, config.jwtSecret, {
+    res.type("text").send(jwt.sign(jwtToken, config.jwtSecret, {
         expiresIn: dur + " minutes"
     }));
 });

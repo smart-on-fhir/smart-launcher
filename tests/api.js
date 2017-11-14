@@ -42,13 +42,14 @@ function requestPromise(options) {
  * Throws an error if the response does not have the specified status code.
  * @param {Object} res Response
  * @param {Number} code The expected status code
- * @returns {void}
+ * @returns {Object} Returns the response object to simplify promise chains
  * @throws {Error}
  */
 function expectStatusCode(res, code) {
     if (res.statusCode !== code) {
         throw new Error(`Expecting status code of ${code} but received ${res.statusCode}`);
     }
+    return res;
 }
 
 /**
@@ -58,7 +59,7 @@ function expectStatusCode(res, code) {
  * @param {String} name The name of the header
  * @param {String|RegExp} [value] The header value (checks for presence only if
  * this is missing)
- * @returns {void}
+ * @returns {Object} Returns the response object to simplify promise chains
  * @throws {Error}
  */
 function expectResponseHeader(res, name, value = null) {
@@ -69,13 +70,14 @@ function expectResponseHeader(res, name, value = null) {
     if (value) {
         if (value instanceof RegExp) {
             if (!value.test(header)) {
-                throw new Error(`The ${name} response header did not match the specified RegExp`);
+                throw new Error(`The ${name} response header "${header}" did not match the specified RegExp`);
             }
         }
         else if (header !== value) {
             throw new Error(`Expecting ${name} response header to equal ${value} but found ${header}`);
         }
     }
+    return res;
 }
 
 function lookupOidcKeys(done) {
@@ -804,5 +806,171 @@ describe('Auth', function() {
                 }, done);
             });
         });
+    });
+});
+
+describe('Generator', () => {
+    describe('RSA Generator', () => {
+        it ("can generate random RSA-256 key pairs", done => {
+            let privateKey, publicKey;
+
+            function ketKeyPair() {
+                return requestPromise({
+                    uri: `${config.baseUrl}/generator/rsa`,
+                    json: true,
+                    qs: {
+                        enc: "base64"
+                    }
+                })
+                .then(res => expectStatusCode(res, 200))
+                .then(res => expectResponseHeader(res, 'Content-Type', /\bjson\b/i))
+                .then(res => {
+                    let { privateKey, publicKey } = res.body;
+                    if (!privateKey) {
+                        return Promise.reject(
+                            new Error("The generator did not create a private key")
+                        );
+                    }
+                    if (!publicKey) {
+                        return Promise.reject(
+                            Error("The generator did not create a public key")
+                        );
+                    }
+                    return { privateKey, publicKey };
+                });
+            }
+
+            ketKeyPair()
+            .then(keys => {
+                privateKey = keys.privateKey;
+                publicKey  = keys.publicKey;
+                return ketKeyPair();
+            })
+            .then(keys => {
+                if (keys.privateKey == privateKey) {
+                    throw new Error("privateKey does not change between requests");
+                }
+                if (keys.publicKey == publicKey) {
+                    throw new Error("publicKey does not change between requests");
+                }
+                done();
+            })
+            .catch(done);
+        });
+    });
+});
+
+describe('Backend Services', () => {
+
+
+    describe('Client Registration', () => {
+
+        it ("requires form-urlencoded POST", done => {
+            return requestPromise({
+                method: "POST",
+                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`
+            })
+            .then(res => expectStatusCode(res, 401))
+            .then(res => {
+                if (res.body != "Invalid request content-type header (must be 'application/x-www-form-urlencoded')") {
+                    throw new Error("Did not return the proper error message");
+                }
+                return res;
+            })
+            .then(res => done(), done)
+        });
+
+        it ("requires 'iss' parameter", done => {
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {}
+            })
+            .then(res => expectStatusCode(res, 400))
+            .then(res => {
+                if (res.body != "Missing iss parameter") {
+                    throw new Error("Did not return the proper error message");
+                }
+                return res;
+            })
+            .then(res => done(), done)
+        });
+
+        it ("requires 'pub_key' parameter", done => {
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {
+                    iss: "whatever"
+                }
+            })
+            .then(res => expectStatusCode(res, 400))
+            .then(res => {
+                if (res.body != "Missing pub_key parameter") {
+                    throw new Error("Did not return the proper error message");
+                }
+                return res;
+            })
+            .then(res => done(), done)
+        });
+
+        it ("validates the 'dur' parameter", done => {
+            return Promise.all(
+                [
+                    "x",
+                    Infinity,
+                    -Infinity,
+                    -2
+                ].map(dur => {
+                    return requestPromise({
+                        method: "POST",
+                        uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                        form  : {
+                            iss: "whatever",
+                            pub_key: "abc",
+                            dur
+                        }
+                    })
+                    .then(res => expectStatusCode(res, 400))
+                    .then(res => {
+                        if (res.body != "Invalid dur parameter") {
+                            throw new Error("Did not return the proper error message");
+                        }
+                        return res;
+                    });
+                })
+            )
+            .then(res => done(), done)
+        });
+
+        it ("basic usage", done => {
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {
+                    iss    : "whatever",
+                    pub_key: "something"
+                }
+            })
+            .then(res => expectStatusCode(res, 200))
+            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
+            .then(res => {
+                if (res.body.split(".").length != 3) {
+                    throw new Error("Did not return proper client id");
+                }
+                return res;
+            })
+            .then(res => done(), done)
+        });
+
+         it ("accepts custom duration");
+         it ("accepts custom simulated errors");
+    });
+
+    describe('Authorization Claim', () => {
+        it ("TODO...");
+    });
+    describe('Fhir Requests', () => {
+        it ("TODO...");
     });
 });
