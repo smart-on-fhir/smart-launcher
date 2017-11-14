@@ -140,23 +140,25 @@ class App {
      * Loads a resource by type/id using the fhir client
      */
     private loadResource(client, type, id, container): void {
-        return client.api.read({ type: type, id: id }).then(
-            result => renderJSON(container, result.data),
-            result => {
-                container.text(
-                    result.error.responseJSON ?
-                        stringify(result.error.responseJSON) :
-                        result.error.responseText
-                )
-                .prepend(
-                    '<b class="error">' +
-                    result.error.status + " " +
-                    result.error.statusText +
-                    "<br/></b>"
-                )
-                .showPanel("has-error");
-            }
-        );
+        if (type && id) {
+            return client.api.read({ type: type, id: id }).then(
+                result => renderJSON(container, result.data),
+                result => {
+                    container.text(
+                        result.error.responseJSON ?
+                            stringify(result.error.responseJSON) :
+                            result.error.responseText
+                    )
+                    .prepend(
+                        '<b class="error">' +
+                        result.error.status + " " +
+                        result.error.statusText +
+                        "<br/></b>"
+                    )
+                    .showPanel("has-error");
+                }
+            );
+        }
     }
 
     /**

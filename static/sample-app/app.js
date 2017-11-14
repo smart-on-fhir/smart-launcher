@@ -74,16 +74,18 @@ var App = (function () {
         this.onAuthError = this.onAuthError.bind(this);
     }
     App.prototype.loadResource = function (client, type, id, container) {
-        return client.api.read({ type: type, id: id }).then(function (result) { return renderJSON(container, result.data); }, function (result) {
-            container.text(result.error.responseJSON ?
-                stringify(result.error.responseJSON) :
-                result.error.responseText)
-                .prepend('<b class="error">' +
-                result.error.status + " " +
-                result.error.statusText +
-                "<br/></b>")
-                .showPanel("has-error");
-        });
+        if (type && id) {
+            return client.api.read({ type: type, id: id }).then(function (result) { return renderJSON(container, result.data); }, function (result) {
+                container.text(result.error.responseJSON ?
+                    stringify(result.error.responseJSON) :
+                    result.error.responseText)
+                    .prepend('<b class="error">' +
+                    result.error.status + " " +
+                    result.error.statusText +
+                    "<br/></b>")
+                    .showPanel("has-error");
+            });
+        }
     };
     App.prototype.loadPatient = function (client) {
         if (this.options.patient.hidden === true) {
