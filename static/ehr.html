@@ -218,6 +218,7 @@
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/vendor/moment.min.js"></script>
         <script src="/lib.js"></script>
+        <script src="/codec.js"></script>
         <script>
 
         (function() {
@@ -257,7 +258,7 @@
             var iss = appParams.iss;
             var launch = atob(appParams.launch || "");
             try {
-                launch = JSON.parse(launch || "{}");
+                launch = codec.decode(JSON.parse(launch || "{}"));
             }
             catch(error) {
                 console.error(error);
@@ -265,7 +266,6 @@
             // console.dir("appParams: ", appParams)
             // console.log("launch: ", launch)
             // console.log("state: ", state)
-
             // Set frame location
             if (state.app) {
                 $("#frame").prop("src", state.app).css("background", "#FFF");
