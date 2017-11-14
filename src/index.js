@@ -7,6 +7,7 @@ const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
 const fhirError    = require("./fhir-error");
 const generator    = require("./generator");
+const lib          = require("./lib");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -121,15 +122,17 @@ app.use("/generator", generator);
 app.use("/env.js", (req, res) => {
     const out = {};
 
-    [
-        "NODE_ENV",
-        "LOG_TIMES",
-        "ENABLE_SANDBOXES",
-        "ENABLE_BACKEND_SERVICES",
-        "GOOGLE_ANALYTICS_ID"
-    ].forEach(key => {
+    const whitelist = {
+        "NODE_ENV"               : String,
+        "LOG_TIMES"              : lib.bool,
+        "DISABLE_SANDBOXES"       : lib.bool,
+        "DISABLE_BACKEND_SERVICES": lib.bool,
+        "GOOGLE_ANALYTICS_ID"    : String
+    };
+
+    Object.keys(whitelist).forEach(key => {
         if (process.env.hasOwnProperty(key)) {
-            out[key] = process.env[key];
+            out[key] = whitelist[key](process.env[key]);
         }
     });
 

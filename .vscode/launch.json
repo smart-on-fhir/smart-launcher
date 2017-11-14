@@ -9,7 +9,9 @@
                 "cwd": "${workspaceRoot}",
                 "env": {
                     "NODE_ENV": "development",
-                    "LOG_TIMES": "1"
+                    "LOG_TIMES": "1",
+                    "DISABLE_SANDBOXES": "1",
+                    "DISABLE_BACKEND_SERVICES": "0"
                 }
             }
         ]

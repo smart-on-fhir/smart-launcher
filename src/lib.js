@@ -2,10 +2,11 @@ const jwt    = require("jsonwebtoken");
 const config = require("./config");
 const Url    = require("url");
 
-const RE_GT   = />/g;
-const RE_LT   = /</g;
-const RE_AMP  = /&/g;
-const RE_QUOT = /"/g;
+const RE_GT    = />/g;
+const RE_LT    = /</g;
+const RE_AMP   = /&/g;
+const RE_QUOT  = /"/g;
+const RE_FALSE = /^(0|no|false|off|null|undefined|NaN|)$/i;
 
 function htmlEncode(html) {
     return String(html)
@@ -73,6 +74,10 @@ function getFirstMissingProperty(object, properties) {
     );
 }
 
+function bool(x) {
+    return !RE_FALSE.test(String(x).trim());
+}
+
 module.exports = {
     getPath,
     generateRefreshToken,
@@ -81,5 +86,6 @@ module.exports = {
     replyWithError,
     getErrorText,
     getFirstMissingProperty,
-    htmlEncode
+    htmlEncode,
+    bool
 };

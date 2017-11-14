@@ -177,7 +177,7 @@
                                 <span class="text-muted small">(patient opens the app directly and connects to FHIR)</span>
                             </label>
                         </div>
-                        <div class="radio">
+                        <div class="radio" id="launch-bs-radio">
                             <label>
                                 <input type="radio" name="launch-type" id="launch-bs">
                                 Backend Service
@@ -453,7 +453,7 @@
             }
 
             function getSandboxName() {
-                return ENV.ENABLE_SANDBOXES ? $("#sb").val() || "public" : "public";
+                return !ENV.DISABLE_SANDBOXES ? $("#sb").val() || "public" : "public";
             }
 
             function getLaunchType() {
@@ -462,7 +462,7 @@
 
             function getTags() {
                 var tags = [], sb = getSandboxName();
-                if (ENV.ENABLE_SANDBOXES) {
+                if (!ENV.DISABLE_SANDBOXES) {
                     tags = $(".sb :checked").filter(":visible").map(
                         function () { return $(this).val() }
                     ).get();
@@ -496,7 +496,7 @@
             function buildForm() {
 
                 // Build the FHIR tag checkboxes
-                if (ENV.ENABLE_SANDBOXES) {
+                if (!ENV.DISABLE_SANDBOXES) {
                     $(".sandbox-panel").show();
                     $("#fhir-version-2").closest(".col-sm-6").remove();
                     $(".fhir-tags").html(
@@ -866,7 +866,7 @@
             function handleFormChange() {
                 var launchType = getLaunchType();
                 $(".launch").hide().filter("." + launchType).show();
-                if (ENV.ENABLE_SANDBOXES) {
+                if (!ENV.DISABLE_SANDBOXES) {
                     $(".sb").hide().filter(".sb." + getFhirVersion()).show();
                 }
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
@@ -919,12 +919,19 @@
             }
 
             $(function init() {
-                $("body").toggleClass("no-sandboxes", !ENV.ENABLE_SANDBOXES);
+                $("body")
+                    .toggleClass("no-sandboxes", ENV.DISABLE_SANDBOXES)
+                    .toggleClass("no-backend-services", ENV.DISABLE_BACKEND_SERVICES);
+
+                if (ENV.DISABLE_BACKEND_SERVICES) {
+                    $("#launch-bs-radio").hide();
+                }
+
                 $("#loading").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
-                if (ENV.ENABLE_SANDBOXES && !$("#sb").val()) {
+                if (!ENV.DISABLE_SANDBOXES && !$("#sb").val()) {
                     $("#sb").val(Lib.generateUID());
                 }
                 bindEventHandlers();
