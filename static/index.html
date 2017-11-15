@@ -342,7 +342,8 @@
 
             <div class="panel panel-success alert-success">
                 <div class="panel-heading">
-                        <a href="#" target="_blank" class="btn btn-sm btn-success pull-right launch launch-bs" style="margin: -4px -10px 0 0" id="download" download="config.json">Download as JSON</a>
+                    <a href="#" target="_blank" class="btn btn-sm btn-success pull-right launch launch-bs" style="margin: -4px -10px 0 0" id="download" download="config.json">Download as JSON</a>
+                    <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
                     <b class="text-success launch launch-pt launch-ehr launch-prov">Launch</b>
                     <b class="text-success launch launch-bs">Launch Configuration</b>
                 </div>
@@ -387,7 +388,7 @@
                             <label>FHIR Server Url</label>
                             <textarea id="standalone-launch-url" class="form-control" readonly></textarea>
                             <p class="help-block small launch launch-pt launch-prov">
-                                <a class="btn btn-info btn-xs pull-right" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App</a>
+                                <b class="btn btn-success btn-sm pull-right"  onClick="copyElement('#standalone-launch-url')">Copy</b>
                                 Your app should use the URL above as base URL (and <code>aud</code> parameter) and authenticate as
                                 described <a target="_blank" href="http://docs.smarthealthit.org/authorization/#standalone-launch-sequence">here</a>.
                             </p>
