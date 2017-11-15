@@ -11,7 +11,7 @@ require("colors");
 
 module.exports = function (req, res) {
 
-    if (req.url == "/metadata") {
+    if (req.url.match(/^\/metadata/)) {
         return require("./reverse-proxy")(req, res);
     }
 
