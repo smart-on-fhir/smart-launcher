@@ -289,18 +289,27 @@ class App {
         // loads if it is in standalone mode and what is the fhir URL.
         sessionStorage.standaloneLaunch = fhirServer;
 
+        this.renderScopes();
+
         let scope = this.scope.toString();
         if (scope) {
 
-            // This wil do a redirect so we are unloading from the window after
-            // this call is made!
-            FHIR.oauth2.authorize({
-                client: {
-                    client_id: "my_web_app",
-                    scope    : scope
-                },
-                server: fhirServer
-            });
+            if (this.query.start) {
+
+                // This wil do a redirect so we are unloading from the window after
+                // this call is made!
+                FHIR.oauth2.authorize({
+                    client: {
+                        client_id: "my_web_app",
+                        scope    : scope
+                    },
+                    server: fhirServer
+                });
+
+            }
+            else {
+                $("#aud").focus();
+            }
         }
     }
 
@@ -311,8 +320,8 @@ class App {
         if (aud && scope) {
             var url = location.href.split("?").shift();
             $(".standalone-launch-options").parent().hide();
-            url += "?aud=" + aud + "&scope=" + scope;
-            location.assign(url);
+            url += "?aud=" + aud + "&scope=" + scope + "&start=1";
+            location.href = url;
         }
     }
 
@@ -353,6 +362,7 @@ class App {
      */
     private renderScopes() {
         if (sessionStorage.standaloneLaunch) {
+            $(".standalone-launch-options").show().parent().show();
             $("#aud").val(sessionStorage.standaloneLaunch);
             let custom = [];
             $(':checkbox[name="scope"]').prop("checked", false);
@@ -366,7 +376,6 @@ class App {
                 }
             });
             $('[name="custom_scope"]').val(custom.join(" "));
-            $(".standalone-launch-options").show().parent().show();
         }
     }
 
@@ -413,7 +422,7 @@ class App {
 
     private renderRefreshButton(client): void {
         if (client.tokenResponse.refresh_token) {
-            $("a.refresh").css("display", "inline-block").off().on("click", e => {
+            $(".refresh").css("display", "inline-block").off().on("click", e => {
                 e.preventDefault();
                 $(".auth-errors").hide();
                 $.ajax({
@@ -501,7 +510,7 @@ class App {
      * This method should be called on DOM ready to initialize the application
      */
     public init() {
-        $("a.launch").on("click", e => {
+        $("#launch-form").on("submit", e => {
             e.preventDefault();
             this.reLaunch();
         });

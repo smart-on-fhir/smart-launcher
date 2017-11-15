@@ -194,7 +194,7 @@ pre.wrap {
     box-sizing: border-box;
 }
 
-.standalone-launch-options a.launch {
+.standalone-launch-options .launch {
     display: inline-block;
     padding: 1ex 1em;
     border-radius: 3px;
@@ -203,11 +203,11 @@ pre.wrap {
     border: 1px solid #328c88;
     text-decoration: none;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
-    min-width: 6em;
+    min-width: 8em;
     text-align: center;
 }
 
-.standalone-launch-options a.refresh {
+.standalone-launch-options .refresh {
     /* display: inline-block; */
     padding: 1ex 1em;
     border-radius: 3px;
@@ -216,10 +216,10 @@ pre.wrap {
     text-decoration: none;
     margin: 10px 0;
     background: rgba(51, 140, 136, 0.23);
-    min-width: 6em;
+    min-width: 8em;
     text-align: center;
 }
-.standalone-launch-options a.refresh:hover {
+.standalone-launch-options .refresh:hover {
     background: #EEE;
     text-shadow: 0 1px 0 #FFF;
 }

@@ -165,15 +165,21 @@ var App = (function () {
     };
     App.prototype.initStandaloneLaunch = function (fhirServer) {
         sessionStorage.standaloneLaunch = fhirServer;
+        this.renderScopes();
         var scope = this.scope.toString();
         if (scope) {
-            FHIR.oauth2.authorize({
-                client: {
-                    client_id: "my_web_app",
-                    scope: scope
-                },
-                server: fhirServer
-            });
+            if (this.query.start) {
+                FHIR.oauth2.authorize({
+                    client: {
+                        client_id: "my_web_app",
+                        scope: scope
+                    },
+                    server: fhirServer
+                });
+            }
+            else {
+                $("#aud").focus();
+            }
         }
     };
     App.prototype.reLaunch = function () {
@@ -182,8 +188,8 @@ var App = (function () {
         if (aud && scope) {
             var url = location.href.split("?").shift();
             $(".standalone-launch-options").parent().hide();
-            url += "?aud=" + aud + "&scope=" + scope;
-            location.assign(url);
+            url += "?aud=" + aud + "&scope=" + scope + "&start=1";
+            location.href = url;
         }
     };
     App.prototype.getScopesFromForm = function () {
@@ -216,6 +222,7 @@ var App = (function () {
     };
     App.prototype.renderScopes = function () {
         if (sessionStorage.standaloneLaunch) {
+            $(".standalone-launch-options").show().parent().show();
             $("#aud").val(sessionStorage.standaloneLaunch);
             var custom_1 = [];
             $(':checkbox[name="scope"]').prop("checked", false);
@@ -229,7 +236,6 @@ var App = (function () {
                 }
             });
             $('[name="custom_scope"]').val(custom_1.join(" "));
-            $(".standalone-launch-options").show().parent().show();
         }
     };
     App.prototype.renderTokenResponse = function (client) {
@@ -269,7 +275,7 @@ var App = (function () {
     App.prototype.renderRefreshButton = function (client) {
         var _this = this;
         if (client.tokenResponse.refresh_token) {
-            $("a.refresh").css("display", "inline-block").off().on("click", function (e) {
+            $(".refresh").css("display", "inline-block").off().on("click", function (e) {
                 e.preventDefault();
                 $(".auth-errors").hide();
                 $.ajax({
@@ -316,7 +322,7 @@ var App = (function () {
     };
     App.prototype.init = function () {
         var _this = this;
-        $("a.launch").on("click", function (e) {
+        $("#launch-form").on("submit", function (e) {
             e.preventDefault();
             _this.reLaunch();
         });
