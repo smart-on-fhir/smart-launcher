@@ -8,6 +8,7 @@ const Url       = require("url");
 const jwkToPem  = require("jwk-to-pem");
 const Codec     = require("../static/codec.js");
 const base64url = require("base64-url");
+const Lib       = require("../src/lib");
 
 
 const ENABLE_FHIR_VERSION_2  = true;
@@ -310,7 +311,7 @@ describe('index', function() {
         .expect('Content-Type', /html/)
         .expect(200, done);
     });
-    });
+});
 
 ["picker", "login", "authorize"].forEach(endPoint => {
     describe(endPoint, function() {
@@ -375,6 +376,7 @@ describe('Proxy', function() {
         request(app)
         .get("/v/" + PREFERRED_FHIR_VERSION + "/fhir/Patient")
         .expect(res => {
+            // FIXME: version mismatch...
             if (res.text.indexOf(config.fhirServerR3) > -1) {
                 throw new Error("Not all URLs replaced");
             }
@@ -382,7 +384,46 @@ describe('Proxy', function() {
         .end(done);
     });
 
-    it ("Inject the SMART information in metadata responses");
+    buildRoutePermutations("fhir/metadata").forEach(path => {
+        it(path + ' inject the SMART information in metadata responses', done => {
+            request(app)
+            .get(path)
+            .expect('Content-Type', /\bjson\b/i)
+            .expect(200)
+            .expect(res => {
+                let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
+                
+                // authorize ---------------------------------------------------
+                let authorizeCfg = uris.find(o => o.url == "authorize");
+                if (!authorizeCfg) {
+                    throw new Error("No 'authorize' endpoint found in the conformance statement");
+                }
+                if (authorizeCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/authorize")) {
+                    throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
+                }
+
+                // token -------------------------------------------------------
+                let tokenCfg = uris.find(o => o.url == "token");
+                if (!tokenCfg) {
+                    throw new Error("No 'token' endpoint found in the conformance statement");
+                }
+                if (tokenCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/token")) {
+                    throw new Error("Wrong 'token' endpoint found in the conformance statement");
+                }
+
+                // register ----------------------------------------------------
+                // TODO: Un-comment when we support DCR
+                // let registerCfg  = uris.find(o => o.url == "register");
+                // if (!registerCfg) {
+                //     throw new Error("No 'register' endpoint found in the conformance statement");
+                // }
+                // if (registerCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/register")) {
+                //     throw new Error("Wrong 'register' endpoint found in the conformance statement");
+                // }
+            })
+            .end(done);
+        });
+    });
 
     it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query", done => {
         let patientID;
