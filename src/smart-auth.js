@@ -506,8 +506,8 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 
     var token = Object.assign({}, code.context, {
         token_type: "bearer",
-        expires_in: code.dur ?
-            code.dur * 60 :
+        expires_in: code.accessTokensExpireIn ?
+            code.accessTokensExpireIn * 60 :
             grantType === 'client_credentials' ?
                 15 * 60 :
                 60 * 60,
@@ -534,7 +534,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     }
 
     token.access_token = jwt.sign(token, config.jwtSecret, {
-        expiresIn: code.dur ? code.dur + " minutes" : "1h"
+        expiresIn: `${code.accessTokensExpireIn || 60} minutes`
     });
     res.json(token);
 });
@@ -574,14 +574,12 @@ router.post("/register-backend-client", bodyParser.urlencoded({ extended: false 
     };
 
     if (dur) {
-        jwtToken.dur = dur
+        jwtToken.accessTokensExpireIn = dur;
     }
 
     if (req.body.auth_error) {
         jwtToken.auth_error = req.body.auth_error;
     }
 
-    res.type("text").send(jwt.sign(jwtToken, config.jwtSecret, {
-        expiresIn: dur + " minutes"
-    }));
+    res.type("text").send(jwt.sign(jwtToken, config.jwtSecret));
 });
