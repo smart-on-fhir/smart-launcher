@@ -49,21 +49,22 @@ function getRequestedSIM(request) {
  */
 function needToPickPatient(scope, sim) {
 
-    // If already have one patient selected
+    // No - if already have one patient selected
     if (sim.patient && sim.patient.indexOf(",") == -1) {
         return false;
     }
 
-    // 0 or multiple patients selected + provider launch + launch/patient scope
+    // Yes - if 0 or multiple patients selected and provider launch and launch/patient scope
     if (sim.launch_prov && scope.has("launch/patient")) {
         return true;
     }
 
-    // 0 or multiple patients selected + EHR launch + patient/... scope
-    if (sim.launch_ehr && scope.matches(/\bpatient\//) && scope.matches(/\blaunch\b/)) {
+    // Yes - if 0 or multiple patients selected and ehr launch and launch/patient oor launch scope
+    if (sim.launch_ehr && (scope.has("launch/patient") || scope.has("launch"))) {
         return true;
     }
 
+    // No by default
     return false;
 }
 

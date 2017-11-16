@@ -204,7 +204,7 @@
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
                         <label for="patient" class="text-right" style="display:block;">
-                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> scope</span>
+                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> or <code>launch/patient</code> scopes</span>
                             <span class="text-muted normal-weight launch launch-prov"><code>launch/patient</code> scope</span>
                             <span class="pull-left">Patient(s) </span>
                         </label>
@@ -900,14 +900,6 @@
                     indeterminate: patients.length !== 1,
                     disabled     : ptDisabled
                 }).parent().toggleClass("disabled", ptDisabled);
-
-                // if (!providers.length) {
-                //     $("#prov-skip-login").prop("indeterminate", true);
-                // }
-
-                // if (!patients.length) {
-                //     $("#pt-skip-login").prop("checked", false);
-                // }
 
                 Lib.formToQs();
 
