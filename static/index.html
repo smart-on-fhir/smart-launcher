@@ -58,7 +58,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 0">
                         <li class="dropdown">
-                            <button class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Save <span class="caret"></span></button>
+                            <button type="button" class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Save <span class="caret"></span></button>
                             <div class="dropdown-menu">
                                 <div class="panel-body">
                                     <p>
@@ -94,6 +94,8 @@
         </div>
 
         <!-- Main Contents ================================================= -->
+        <form>
+            <button type="submit" style="visibility: hidden; height: 0">Submit</button>
         <div class="container" id="content" style="display:none;">
 
             <!-- Sandboxes ================================================= -->
@@ -207,7 +209,7 @@
                             <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
-                            <input id="patient" class="form-control" value="" placeholder="Patient ID">
+                            <input id="patient" class="form-control" value="" placeholder="Patient ID" name="patient" autocomplete="off">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button" id="patient-select-button"><span class="caret"></span></button>
                             </span>
@@ -226,7 +228,7 @@
                             <span class="text-muted normal-weight"><code>openid</code> and <code>profile</code> scopes</span>
                             <span class="pull-left">Provider(s) </span>
                         </label>
-                        <input id="provider" class="form-control" placeholder="Provider ID">
+                        <input id="provider" class="form-control" placeholder="Provider ID" name="provider" autocomplete="off">
                         <p class="help-block small">
                             Simulates user who is launching the app. If no provider
                             is selected, or if multiple comma delimited Practitioner
@@ -242,7 +244,7 @@
                             <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
-                            <input id="user-pt" class="form-control" placeholder="Patient ID">
+                            <input id="user-pt" class="form-control" placeholder="Patient ID" name="user-pt" autocomplete="off">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
@@ -258,8 +260,8 @@
                     <br clear="all" class="launch launch-bs"/>
                     <div class="form-group col-sm-6 launch launch-bs">
                         <label for="public-key" style="display: block">
-                            <button class="btn btn-warning btn-xs pull-right hidden" data-toggle="modal" data-target="#rsa-dialog" id="show-private-key" style="margin-left: 3px">View Private Key</button>
-                            <button class="btn btn-info btn-xs pull-right" id="generate-keys">Generate Keys</button>
+                            <button type="button" class="btn btn-warning btn-xs pull-right hidden" data-toggle="modal" data-target="#rsa-dialog" id="show-private-key" style="margin-left: 3px">View Private Key</button>
+                            <button type="button" class="btn btn-info btn-xs pull-right" id="generate-keys">Generate Keys</button>
                             Public Key
                         </label>
                         <textarea id="public-key" rows="3" class="form-control input-sm" placeholder="base64-encoded RSA-256 public key"></textarea>
@@ -270,7 +272,7 @@
                     <!-- ISS =============================================== -->
                     <div class="form-group col-sm-6 launch launch-bs">
                         <label for="iss">Service URL</label>
-                        <input type="text" id="iss" class="form-control" placeholder="Service URL">
+                        <input type="text" id="iss" class="form-control" placeholder="Service URL" name="service-url" autocomplete="on">
                     </div>
 
                     <!-- Advanced ========================================== -->
@@ -378,7 +380,7 @@
                     <div class="form-group col-xs-12" style="margin-bottom: 0">
                         <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
                         <div class="input-group launch launch-ehr">
-                            <input id="launch-url" class="form-control" placeholder="Launch URL">
+                            <input name="launch-url" id="launch-url" class="form-control" placeholder="Launch URL" autocomplete="on">
                             <span class="input-group-btn">
                                 <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
                             </span>
@@ -415,6 +417,7 @@
                 </div>
             </div>
         </div>
+        </form>
 
         <!-- Footer ======================================================== -->
         <div class="container">
@@ -524,6 +527,7 @@
             function validateLaunchUrl() {
                 var val = getLaunchUrl();
                 var idx = val.indexOf(":");
+                handleFormChange();
                 if (!val || idx < 1 || idx === val.length - 1) {
                     $("#ehr-launch-url").prop("disabled", true).addClass("disabled");
                     return false;
@@ -534,7 +538,7 @@
 
             function bindEventHandlers() {
 
-                $("#launch-url").on("change input", validateLaunchUrl);
+                $("#launch-url").on("keyup change input paste", validateLaunchUrl);
 
                 $(document).on("input", "input,textarea", function() {
                     handleFormChange();
@@ -681,6 +685,16 @@
                         var fileName = this.getAttribute("download") || "";
                         window.navigator.msSaveOrOpenBlob(blobObject, fileName);
                         return;
+                    }
+                });
+
+                $("form").on("submit", function(e) {
+                    e.preventDefault();
+                    if (getLaunchType() == "launch-ehr") {
+                        var link = $("#ehr-launch-url:not(.disabled)");
+                        if (link[0]) {
+                            link[0].click();
+                        }
                     }
                 });
             }
