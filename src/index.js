@@ -39,14 +39,15 @@ if (process.env.NODE_ENV == "development") {
     app.use(require('morgan')('combined'));
 }
 
-app.use((req, res, next) => {
-    let proto = req.headers["x-forwarded-proto"];
-    let host  = req.headers.host;
-    if (proto && (`${proto}://${host}` !== config.baseUrl)) { 
-        return res.redirect(301, config.baseUrl + req.url);
-    }
-    next();
-});
+// HTTP to HTTPS redirect (this is Heroku-specific!)
+// app.use((req, res, next) => {
+//     let proto = req.headers["x-forwarded-proto"];
+//     let host  = req.headers.host;
+//     if (proto && (`${proto}://${host}` !== config.baseUrl)) { 
+//         return res.redirect(301, config.baseUrl + req.url);
+//     }
+//     next();
+// });
 
 //reject xml
 app.use(handleXmlRequest);
@@ -123,11 +124,11 @@ app.use("/env.js", (req, res) => {
     const out = {};
 
     const whitelist = {
-        "NODE_ENV"               : String,
-        "LOG_TIMES"              : lib.bool,
+        "NODE_ENV"                : String,
+        "LOG_TIMES"               : lib.bool,
         "DISABLE_SANDBOXES"       : lib.bool,
         "DISABLE_BACKEND_SERVICES": lib.bool,
-        "GOOGLE_ANALYTICS_ID"    : String
+        "GOOGLE_ANALYTICS_ID"     : String
     };
 
     Object.keys(whitelist).forEach(key => {
