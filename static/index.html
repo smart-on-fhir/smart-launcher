@@ -150,12 +150,12 @@
                 
                     <!-- Launch Type ======================================= -->
                     <div class="form-group col-sm-6">
-                        <label for="launch-type">Launch Type</label>
+                        <label for="launch-type" style="font-weight:900">Launch Type</label>
                         <div class="radio" style="margin-top: 0">
-                            <label>
+                            <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-ehr" checked>
                                 Provider EHR Launch
-                                <span class="text-muted small">(practitioner opens the app from within an EHR)</span>
+                                <span class="text-muted small normal-weight">(practitioner opens the app from within an EHR)</span>
                             </label>
                             <div style="margin: 5px 0 10px">
                                 <label id="sim-ehr-label">
@@ -164,36 +164,37 @@
                             </div>
                         </div>
                         <div class="radio">
-                            <label>
+                            <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-prov">
                                 Provider Standalone Launch 
-                                <span class="text-muted small">(practitioner opens the app directly and connects to FHIR)</span>
+                                <span class="text-muted small normal-weight">(practitioner opens the app directly and connects to FHIR)</span>
                             </label>
                         </div>
                         <div class="radio">
-                            <label>
+                            <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-pt">
                                 Patient Standalone Launch 
-                                <span class="text-muted small">(patient opens the app directly and connects to FHIR)</span>
+                                <span class="text-muted small normal-weight">(patient opens the app directly and connects to FHIR)</span>
                             </label>
                         </div>
                         <div class="radio" id="launch-bs-radio">
-                            <label>
+                            <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-bs">
                                 Backend Service
-                                <span class="text-muted small">(app connects to FHIR without user login)</span>
+                                <span class="text-muted small normal-weight">(app connects to FHIR without user login)</span>
                             </label>
                         </div>
+                        <br/>
                     </div>
 
                     <!-- FHIR Version ====================================== -->
                     <div class="form-group col-sm-6">
-                        <label for="fhir-version-2">FHIR Version</label>
-                        <select id="fhir-version-2" class="form-control fhir-version"></select>
+                        <label for="fhir-version-2" style="font-weight:900">FHIR Version</label>
+                        <select id="fhir-version-2" class="form-control fhir-version" style="font-weight:500"></select>
                         <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
                             <a class="pull-right btn btn-info btn-xs open-url-preview" href="#" target="_blank">Test</a>
-                            <span class="text-muted"> Open FHIR Server Endpoint: </span>
-                            <a class="form-control-static open-url text-info"></a>
+                            <span class="text-muted" style="font-weight:500"> Open FHIR Server Endpoint: </span>
+                            <a class="form-control-static open-url text-info" style="font-weight:500"></a>
                         </div>
                     </div>
                     <br clear="all" class="launch launch-ehr launch-prov hidden-xs show-if-no-sandboxes"/>
@@ -344,6 +345,7 @@
                 <div class="panel-heading">
                     <a href="#" target="_blank" class="btn btn-sm btn-success pull-right launch launch-bs" style="margin: -4px -10px 0 0" id="download" download="config.json">Download as JSON</a>
                     <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <a class="pull-right launch launch-ehr text-success" id="ehr-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
                     <b class="text-success launch launch-pt launch-ehr launch-prov">Launch</b>
                     <b class="text-success launch launch-bs">Launch Configuration</b>
                 </div>
@@ -779,14 +781,17 @@
                     }
                 });
 
-                var openUrl       = baseUrl + "/fhir";
-                var launchData    = Lib.base64UrlEncode(JSON.stringify(codec.encode(urlParams)));
-                var standaloneUrl = baseUrl + "/sim/" + launchData + "/fhir";
-                var appLaunchUrl  = getLaunchUrl();
-                var ehrLaunchUrl  = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
+                var openUrl            = baseUrl + "/fhir";
+                var launchData         = Lib.base64UrlEncode(JSON.stringify(codec.encode(urlParams)));
+                var standaloneUrl      = baseUrl + "/sim/" + launchData + "/fhir";
+                var appLaunchUrl       = getLaunchUrl();
+                var ehrLaunchUrl       = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
+                var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
 
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
+                        "&user=" + encodeURIComponent(urlParams.provider || "");
+                    sampleEhrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(sampleEhrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "");
                 }
 
@@ -801,6 +806,11 @@
                 $("#standalone-launch-url-test").attr(
                     "href",
                     "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
+                );
+
+                $("#ehr-launch-url-test").attr(
+                    "href",
+                    sampleEhrLaunchUrl
                 );
                 
                 if (launchType == "launch-bs") {
@@ -866,11 +876,19 @@
                 var patients   = $("#user-pt" ).val().split(/\s*,\s*/).filter(Boolean);
                 var prDisabled = !providers[0] || providers.length !== 1;
                 var ptDisabled = !patients [0] || patients .length !== 1;
-                $("#prov-skip-login").prop("disabled", prDisabled).parent().toggleClass("disabled", prDisabled);
-                $("#pt-skip-login"  ).prop("disabled", ptDisabled).parent().toggleClass("disabled", ptDisabled);
+                
+                $("#prov-skip-login").prop({
+                    indeterminate: providers.length !== 1,
+                    disabled     : prDisabled
+                }).parent().toggleClass("disabled", prDisabled);
+                
+                $("#pt-skip-login").prop({
+                    indeterminate: patients.length !== 1,
+                    disabled     : ptDisabled
+                }).parent().toggleClass("disabled", ptDisabled);
 
                 // if (!providers.length) {
-                //     $("#prov-skip-login").prop("checked", false);
+                //     $("#prov-skip-login").prop("indeterminate", true);
                 // }
 
                 // if (!patients.length) {
@@ -924,12 +942,12 @@
                     $("#sb").val(Lib.generateUID());
                 }
                 bindEventHandlers();
-                if (!$("#launch-url").val()) {
-                    $("#launch-url").val(
-                        (location.origin || (location.protocol + "//" + location.host)) +
-                        "/sample-app/launch.html"
-                    );
-                }
+                // if (!$("#launch-url").val()) {
+                //     $("#launch-url").val(
+                //         (location.origin || (location.protocol + "//" + location.host)) +
+                //         "/sample-app/launch.html"
+                //     );
+                // }
                 handleFormChange();
                 validateLaunchUrl();
                 setupGoogleAnalytics();
