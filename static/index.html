@@ -802,6 +802,8 @@
                 var standaloneUrl      = baseUrl + "/sim/" + launchData + "/fhir";
                 var appLaunchUrl       = getLaunchUrl();
                 var ehrLaunchUrl       = appLaunchUrl + "?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
+                ehrLaunchUrl = ehrLaunchUrl.replace(/iss=https?/, 'iss=' + appLaunchUrl.match(/^https?/)[0]);
+                // debugger;
                 var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
 
                 if (urlParams.sim_ehr) {
