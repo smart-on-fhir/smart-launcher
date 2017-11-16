@@ -342,7 +342,7 @@ router.get("/authorize", function (req, res) {
 
     // The "aud" param must match the apiUrl
     if (!sim.aud_validated) {
-        if (sandboxify.normalizeUrl(req.query.aud) != sandboxify.normalizeUrl(apiUrl)) {
+        if (sandboxify.normalizeUrl(req.query.aud).replace(/^https?/, "") != sandboxify.normalizeUrl(apiUrl).replace(/^https?/, "")) {
             return Lib.redirectWithError(req, res, "bad_audience");
         }
         sim.aud_validated = "1";
