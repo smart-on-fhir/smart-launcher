@@ -45,7 +45,7 @@
                     <div class="pull-left logo">
                         <img src="/img/smart-bug.png" />
                     </div>
-                    <a class="navbar-brand" href="/index.html" style="white-space:nowrap;text-overflow:ellipsis;text-shadow:none">
+                    <a class="navbar-brand" href="/index.html" style="white-space:nowrap;text-overflow:ellipsis;text-shadow:none" title="Click here to re-start the app with it's default settings">
                         SMART App Launcher <b style="color:#efa948;text-shadow:0 0 1px #000, 0 1px 0 #000">alpha</b>
                     </a>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
@@ -58,7 +58,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right" style="margin-right: 0">
                         <li class="dropdown">
-                            <button type="button" class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0">Save <span class="caret"></span></button>
+                            <button type="button" class="dropdown-toggle btn btn-warning" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="margin:8px 0" onmousedown="$('#bookmark-preview').val(location.href);">Save <span class="caret"></span></button>
                             <div class="dropdown-menu">
                                 <div class="panel-body">
                                     <p>
@@ -73,7 +73,7 @@
                                             <a id="bookmark" href="#" target="_blank" class="btn btn-default" style="width:11em">Google Bookmark</a>
                                         </div>
                                         <div class="col-xs-6 text-left">
-                                            <button class="btn btn-default" style="width:11em" onMouseDown="copyUrl();return false;" type="button">Copy</button>
+                                            <button class="btn btn-default" style="width:11em" onMouseDown="copyElement('#bookmark-preview');return false;" type="button">Copy</button>
                                         </div>
                                     </div>
                                 </div>
@@ -95,7 +95,7 @@
 
         <!-- Main Contents ================================================= -->
         <form>
-            <button type="submit" style="visibility: hidden; height: 0">Submit</button>
+            <button type="submit" style="position: fixed; top: -100px">Submit</button>
         <div class="container" id="content" style="display:none;">
 
             <!-- Sandboxes ================================================= -->
@@ -204,7 +204,7 @@
                     <!-- Patient =========================================== -->
                     <div class="form-group col-sm-6 launch launch-ehr launch-prov">
                         <label for="patient" class="text-right" style="display:block;">
-                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> or <code>launch/patient</code> scopes</span>
+                            <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> or <code>launch/patient</code> scope</span>
                             <span class="text-muted normal-weight launch launch-prov"><code>launch/patient</code> scope</span>
                             <span class="pull-left">Patient(s) </span>
                         </label>
@@ -282,7 +282,7 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <label class="launch launch-ehr">
-                                    Active Encounter in EHR <span class="text-muted normal-weight">if the app requests a <code>launch</code> scope</span>
+                                    Active Encounter in EHR <span class="text-muted normal-weight"> &nbsp; <code>launch</code> or <code>launch/encounter</code> scope</span>
                                 </label>
                                 <div class="radio launch launch-ehr" style="margin-top: 0">
                                     <label>
@@ -440,10 +440,36 @@
         <script>
 
             var STATE = Lib.getUrlQuery({ camelCaseKeys: true });
+            var paramMap = {
+                "launch-ehr": [
+                    [ "#launch-ehr"      , "launch_ehr"       ],
+                    [ "#patient"         , "patient"          ],
+                    [ "#auth-error"      , "auth_error"       ],
+                    [ "#provider"        , "provider"         ],
+                    [ "#sim-ehr"         , "sim_ehr"          ],
+                    [ "#select-encounter", "select_encounter" ]
+                ],
+                "launch-prov": [
+                    [ "#launch-prov"     , "launch_prov"      ],
+                    [ "#patient"         , "patient"          ],
+                    [ "#auth-error"      , "auth_error"       ],
+                    [ "#prov-skip-login" , "skip_login"       ], 
+                    [ "#prov-skip-auth"  , "skip_auth"        ], 
+                    [ "#provider"        , "provider"         ]
+                ],
+                "launch-pt": [
+                    [ "#launch-pt"       , "launch_pt"        ],
+                    [ "#auth-error"      , "auth_error"       ],
+                    [ "#pt-skip-login"   , "skip_login"       ],
+                    [ "#pt-skip-auth"    , "skip_auth"        ],
+                    [ "#user-pt"         , "patient"          ]
+                ],
+                "launch-bs": []
+            };
 
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
-                return $(".fhir-version:visible").val() || CONFIG.fhirVersions[0].name;
+                return $(ENV.DISABLE_SANDBOXES ? "#fhir-version-2" : "#fhir-version-1").val() || CONFIG.fhirVersions[0].name;
             }
 
             function getSandboxName() {
@@ -472,11 +498,22 @@
                 return $.trim($("#launch-url").val());
             }
 
-            // -----------------------------------------------------------------
+            function getSim() {
+                var sim = {};
 
-            function copyUrl() {
-                copyElement("#bookmark-preview");
+                $.each(paramMap[getLaunchType()], function(i, param) {
+                    var val = $(param[0]).is(":checkbox,:radio") ?
+                        $(param[0]).is(":checked") :
+                        $(param[0]).val();
+                    if (val) {
+                        sim[param[1]] = (val === true ? "1" : val);
+                    }
+                });
+
+                return sim;
             }
+
+            // -----------------------------------------------------------------
 
             function copyElement(selector) {
                 var el = $(selector)[0];
@@ -757,44 +794,9 @@
 
             function buildUrls() {
                 // debugger;
-                var baseUrl = getBaseUrl();
-                var launchType = getLaunchType();
-                var paramMap = {
-                    "launch-ehr": [
-                        [ "#launch-ehr"      , "launch_ehr"       ],
-                        [ "#patient"         , "patient"          ],
-                        [ "#auth-error"      , "auth_error"       ],
-                        [ "#provider"        , "provider"         ],
-                        [ "#sim-ehr"         , "sim_ehr"          ],
-                        [ "#select-encounter", "select_encounter" ]
-                    ],
-                    "launch-prov": [
-                        [ "#launch-prov"     , "launch_prov"      ],
-                        [ "#patient"         , "patient"          ],
-                        [ "#auth-error"      , "auth_error"       ],
-                        [ "#prov-skip-login" , "skip_login"       ], 
-                        [ "#prov-skip-auth"  , "skip_auth"        ], 
-                        [ "#provider"        , "provider"         ]
-                    ],
-                    "launch-pt": [
-                        [ "#launch-pt"       , "launch_pt"        ],
-                        [ "#auth-error"      , "auth_error"       ],
-                        [ "#pt-skip-login"   , "skip_login"       ],
-                        [ "#pt-skip-auth"    , "skip_auth"        ],
-                        [ "#user-pt"         , "patient"          ]
-                    ]
-                };
-
-                var urlParams = {};
-                $.each(paramMap[launchType], function(i, param) {
-                    var val = $(param[0]).is(":checkbox,:radio") ?
-                        $(param[0]).is(":checked") :
-                        $(param[0]).val();
-                    if (val) {
-                        urlParams[param[1]] = (val === true ? "1" : val);
-                    }
-                });
-
+                var baseUrl            = getBaseUrl();
+                var launchType         = getLaunchType();
+                var urlParams          = getSim();
                 var openUrl            = baseUrl + "/fhir";
                 var launchData         = Lib.base64UrlEncode(JSON.stringify(codec.encode(urlParams)));
                 var standaloneUrl      = baseUrl + "/sim/" + launchData + "/fhir";
@@ -815,17 +817,8 @@
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
                 $("#token-url").val(baseUrl + "/auth/token")
-                
-                // console.log(JSON.stringify(urlParams, null, 4))
-                $("#standalone-launch-url-test").attr(
-                    "href",
-                    "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
-                );
-
-                $("#ehr-launch-url-test").attr(
-                    "href",
-                    sampleEhrLaunchUrl
-                );
+                $("#standalone-launch-url-test").attr("href", "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl));
+                $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
                 
                 if (launchType == "launch-bs") {
                     var hasJSON = false;
@@ -902,8 +895,6 @@
                 }).parent().toggleClass("disabled", ptDisabled);
 
                 Lib.formToQs();
-
-                $("#bookmark-preview").val(location.href);
 
                 $("#auth-error option").each(function(i, o) {
                     var meta;
