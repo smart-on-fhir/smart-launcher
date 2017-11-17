@@ -103,7 +103,7 @@ module.exports = function (req, res) {
             chunks.push(chunk.toString());
         })
         .on('end', () => {
-            console.log(chunks.join(''));
+            console.log(fhirRequestOptions, chunks.join(''));
         })
         .on('response', response => {
             let contentType = response.headers['content-type'];
