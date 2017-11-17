@@ -96,11 +96,20 @@ module.exports = function (req, res) {
 
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
+    const chunks = [];
     request(fhirRequestOptions)
+    
+        .on('data', (chunk) => {
+            chunks.push(chunk.toString());
+        })
+        .on('end', () => {
+            console.log(chunks.join(''));
+        })
         .on('response', response => {
             let contentType = response.headers['content-type'];
             res.status(response.statusCode);
             contentType && res.type(contentType);
+            // var x = response.toJSON();
             if (logTime) {
                 console.log(
                     ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
