@@ -90,21 +90,29 @@ module.exports = function (req, res) {
     if (fhirRequestOptions.headers.hasOwnProperty("host")) {
         delete fhirRequestOptions.headers.host;
     }
+
     if (fhirRequestOptions.headers.hasOwnProperty("authorization")) {
         delete fhirRequestOptions.headers.authorization;
     }
 
+    // remove custom headers
+    for (let name in fhirRequestOptions.headers) {
+        if (name.search(/^x-/i) === 0) {
+            delete fhirRequestOptions.headers[name];
+        }
+    }
+
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
-    const chunks = [];
+    // const chunks = [];
     request(fhirRequestOptions)
     
-        .on('data', (chunk) => {
-            chunks.push(chunk.toString());
-        })
-        .on('end', () => {
-            console.log(fhirRequestOptions, chunks.join(''));
-        })
+        // .on('data', (chunk) => {
+        //     chunks.push(chunk.toString());
+        // })
+        // .on('end', () => {
+        //     console.log(fhirRequestOptions, chunks.join(''));
+        // })
         .on('response', response => {
             let contentType = response.headers['content-type'];
             res.status(response.statusCode);
@@ -117,7 +125,7 @@ module.exports = function (req, res) {
                 );
             }
         })
-        // .pipe(replStream(fhirServer, fullFhirBaseUrl))
+        .pipe(replStream(fhirServer, fullFhirBaseUrl))
         .pipe(res);
 
 };
