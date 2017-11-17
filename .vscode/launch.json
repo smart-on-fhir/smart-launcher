@@ -11,7 +11,8 @@
                     "NODE_ENV": "development",
                     "LOG_TIMES": "1",
                     "DISABLE_SANDBOXES": "1",
-                    "DISABLE_BACKEND_SERVICES": "0"
+                    "DISABLE_BACKEND_SERVICES": "0",
+                    "FHIR_SERVER_R2": "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open"
                 }
             }
         ]

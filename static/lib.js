@@ -160,22 +160,26 @@
      * @return {Promise<String>} Returns a promise that will eventually be resolved
      *                           with the new selection.
      */
-    function selectPatients(selection, options) {
+    function selectPatients(selection, options, configFile) {
         var dfd = new $.Deferred();
         var cfg = $.extend({
             // The origin of the patient browser app
-            origin: location.protocol + "//patient-browser.smarthealthit.org",
+            // origin: location.protocol + "//patient-browser.smarthealthit.org",
+            origin: location.origin,//"http://localhost:9001",
             // What config file to load
             // config: "stu3-open-sandbox",
             // Popup height    
             height: 700,
             // Popup width
-            width: 1000
+            width: 1000,
+            submitStrategy: "automatic"
         }, options);
 
-        var path = cfg.origin + "/index.html?_=" + Date.now();
+        var path = cfg.origin + "/patient-browser/index.html?_=" + Date.now();
+        if (configFile) {
+            path += "&config=" + configFile;
+        }
         if (selection) {
-            // path += "&config=" + cfg.config;
             path += "#/?_selection=" + encodeURIComponent(selection);
         }
 

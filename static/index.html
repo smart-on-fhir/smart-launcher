@@ -613,39 +613,54 @@
                 $("#patient-select-button").on("click", function() {
                     var input = $("#patient");
                     var fhirVersion = getFhirVersion();
+                    var fhirServer, tags;
                     if (fhirVersion == "r2") {
                         fhirVersion = "DSTU-2"
+                        fhirServer = !ENV.FHIR_SERVER_R2 ||
+                        ENV.FHIR_SERVER_R2 == "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open" ?
+                            "dstu2-open-sandbox" : "";
                     }
                     else if (fhirVersion == "r3") {
                         fhirVersion = "STU-3"
+                        fhirServer = !ENV.FHIR_SERVER_R3 ||
+                        ENV.FHIR_SERVER_R3 == "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open" ?
+                            "stu3-open-sandbox" : "";
                     }
 
-                    var tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
-                        return {
-                            key  : cb.value,
-                            label: $(cb).parent().text(),
-                            selected: true
-                        };
-                    }).get();
-
-                    tags.unshift({
-                        key: $("#sb").val(),
-                        label: "My Own Data",
-                        selected: true
-                    });
-
                     // alert(getBaseUrl() + "/fhir")
+                    var pickerSettings = {
+                        server: {
+                            url : getBaseUrl() + "/fhir",
+                            type: fhirVersion
+                        },
+                        hideTagSelector: !ENV.DISABLE_SANDBOXES
+                    };
+                    
+                    if (!fhirServer) {
+                        pickerSettings.server.conditions = []
+                    }
+
+                    if (!ENV.DISABLE_SANDBOXES) {
+                        tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
+                            return {
+                                key  : cb.value,
+                                label: $(cb).parent().text(),
+                                selected: true
+                            };
+                        }).get();
+
+                        tags.unshift({
+                            key: $("#sb").val(),
+                            label: "My Own Data",
+                            selected: true
+                        });
+
+                        pickerSettings.server.tags = tags
+                    }
+
                     Lib.selectPatients(input.val(), {
-                        pickerSettings: {
-                            server: {
-                                url : getBaseUrl() + "/fhir",
-                                type: fhirVersion,
-                                tags: tags,
-                                conditions: []
-                            },
-                            hideTagSelector: true
-                        }
-                    }).then(function(sel) {
+                        pickerSettings: pickerSettings
+                    }, fhirServer).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
                             buildUrls();
