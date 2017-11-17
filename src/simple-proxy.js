@@ -117,7 +117,7 @@ module.exports = function (req, res) {
                 );
             }
         })
-        .pipe(replStream(fhirServer, fullFhirBaseUrl))
+        // .pipe(replStream(fhirServer, fullFhirBaseUrl))
         .pipe(res);
 
 };
