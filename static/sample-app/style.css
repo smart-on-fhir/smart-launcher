@@ -114,6 +114,10 @@ pre.wrap {
     word-break: break-all !important;
 }
 
+.auth-errors {
+    flex: 0 1 0px;
+}
+
 .auth-errors > div {
     padding      : 1ex;
     flex         : 1;
@@ -122,7 +126,7 @@ pre.wrap {
     border       : 1px solid #dcb4b4;
     color        : #900;
     background   : #F7E6E6;
-    margin       : 0 0 20px;
+    margin       : 0;
 }
 
 .auth-errors h3 {

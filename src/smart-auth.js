@@ -387,62 +387,102 @@ router.get("/authorize", function (req, res) {
 });
 
 
-router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
-
-    let grantType = req.body.grant_type, codeRaw, code, scopes;
-    
-    if (!req.headers["content-type"] || req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
-        return Lib.replyWithError(res, "form_content_type_required", 401);
+// TODO: more validations? Signature?
+function isInvalidToken(token) {
+    if (typeof token != "string") {
+        return "The token must be a string";
     }
 
+    if (token.split(".").length != 3) {
+        return "Invalid token structure";
+    }
+
+    try {
+        JSON.parse(new Buffer(token.split(".")[1], "base64").toString("utf8"));
+    } catch (ex) {
+        return ex.message;
+    }
+
+    return false; // not invalid
+}
+
+function getTokenContext(req, res) {
+    let grantType = req.body.grant_type;
+
+    // Backend Services
     if (grantType === 'client_credentials') {
 
+        // client_assertion_type is required
         if (!req.body.client_assertion_type) {
-            return Lib.replyWithError(res, "missing_client_assertion_type", 401);
+            Lib.replyWithError(res, "missing_client_assertion_type", 401);
+            return null;
         }
 
+        // client_assertion_type must have a fixed value
         if (req.body.client_assertion_type != "urn:ietf:params:oauth:client-assertion-type:jwt-bearer") {
-            return Lib.replyWithError(res, "invalid_client_assertion_type", 401);
+            Lib.replyWithError(res, "invalid_client_assertion_type", 401);
+            return null;
         }
 
-        let token1 = String(req.body.client_assertion).split(".")[1];
-        token1 = new Buffer(token1, "base64").toString("utf8");
-        token1 = JSON.parse(token1);
+        // client_assertion must be a token
+        let tokenError = isInvalidToken(req.body.client_assertion)
+        if (tokenError) {
+            Lib.replyWithError(res, "invalid_registration_token", 401, tokenError);
+            return null;
+        }
+
+        let authenticationToken = String(req.body.client_assertion).split(".")[1];
+        authenticationToken = new Buffer(authenticationToken, "base64").toString("utf8");
+        authenticationToken = JSON.parse(authenticationToken);
+
+        // The client_id must be a token
+        tokenError = isInvalidToken(authenticationToken.sub)
+        if (tokenError) {
+            Lib.replyWithError(res, "invalid_client_details_token", 401, tokenError);
+            return null;
+        }
         
-        let token2 = String(token1.sub).split(".")[1];
-        token2 = new Buffer(token2, "base64").toString("utf8");
-        token2 = JSON.parse(token2);
+        let clientDetailsToken = String(authenticationToken.sub).split(".")[1];
+        clientDetailsToken = new Buffer(clientDetailsToken, "base64").toString("utf8");
+        clientDetailsToken = JSON.parse(clientDetailsToken);
 
-        if (token2.auth_error == "token_expired_registration_token") {
-            return Lib.replyWithError(res, "token_expired_registration_token", 401);
+        // simulate expired_registration_token error
+        if (clientDetailsToken.auth_error == "token_expired_registration_token") {
+            Lib.replyWithError(res, "token_expired_registration_token", 401);
+            return null;
         }
 
-        // Validate token1.aud (must equal this url)
+        // Validate authenticationToken.aud (must equal this url)
         let tokenUrl = config.baseUrl + req.originalUrl;
-        if (tokenUrl !== token1.aud) {
-            return Lib.replyWithError(res, "invalid_aud", 401, tokenUrl);
+        if (tokenUrl !== authenticationToken.aud) {
+            Lib.replyWithError(res, "invalid_aud", 401, tokenUrl);
+            return null;
         }
 
-        // Validate token1.iss (must equal whatever the user entered at
-        // registration time, i.e. token2.iss)
-        if (token1.iss !== token2.iss) {
-            return Lib.replyWithError(res, "invalid_token_iss", 401, token1.iss, token2.iss);
+        // Validate authenticationToken.iss (must equal whatever the user entered at
+        // registration time, i.e. clientDetailsToken.iss)
+        if (authenticationToken.iss !== clientDetailsToken.iss) {
+            Lib.replyWithError(res, "invalid_token_iss", 401, authenticationToken.iss, clientDetailsToken.iss);
+            return null;
         }
 
         // simulated invalid_jti error
-        if (token2.auth_error == "invalid_jti") {
-            return Lib.replyWithError(res, "invalid_jti", 401);
+        if (clientDetailsToken.auth_error == "invalid_jti") {
+            Lib.replyWithError(res, "invalid_jti", 401);
+            return null;
         }
 
         try {
-            jwt.verify(req.body.client_assertion, base64url.decode(token2.pub_key), { algorithm: "RS256" });
+            jwt.verify(req.body.client_assertion, base64url.decode(clientDetailsToken.pub_key), { algorithm: "RS256" });
         } catch (e) {
-            return Lib.replyWithError(res, "invalid_token", 401, e.message);
+            Lib.replyWithError(res, "invalid_token", 401, e.message);
+            return null;
         }
 
-        code = token2;
+        return clientDetailsToken;
     }
     else {
+        let codeRaw;
 
         // The most common case - an app is authorizing
         if (grantType === 'authorization_code') {
@@ -457,9 +497,27 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         try {
             code = jwt.verify(codeRaw, config.jwtSecret);
         } catch (e) {
-            return Lib.replyWithError(res, "invalid_token", 401, e.message);
+            Lib.replyWithError(res, "invalid_token", 401, e.message);
+            return null
         }
+
+        return code;
     }
+}
+
+
+router.post("/token", bodyParser.urlencoded({ extended: false }), function (req, res) {
+
+    if (!req.headers["content-type"] || req.headers["content-type"].indexOf("application/x-www-form-urlencoded") !== 0) {
+        return Lib.replyWithError(res, "form_content_type_required", 401);
+    }
+
+    let code = getTokenContext(req, res);
+    if (!code) {
+        return;
+    }
+
+    let grantType = req.body.grant_type, scopes;
 
     // Request from confidential client
     if (req.headers.authorization && req.headers.authorization.search(/^basic\s*/i) === 0) {
@@ -541,8 +599,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
 });
 
 /**
- * This should handle the Dynamic Client Registration protocol (also used by the
- * back-end services).
+ * This should handle the client registration used by the back-end services.
  */
 router.post("/register-backend-client", bodyParser.urlencoded({ extended: false }), function(req, res) {
 
@@ -569,18 +626,22 @@ router.post("/register-backend-client", bodyParser.urlencoded({ extended: false 
         return Lib.replyWithError(res, "invalid_parameter", 400, "dur");
     }
 
+    // Build the result token
     let jwtToken = {
         pub_key: publicKey,
         iss
     };
 
+    // Note that if dur is 0 accessTokensExpireIn will not be included
     if (dur) {
         jwtToken.accessTokensExpireIn = dur;
     }
 
+    // Custom errors (if any)
     if (req.body.auth_error) {
         jwtToken.auth_error = req.body.auth_error;
     }
 
+    // Reply with signed token as text
     res.type("text").send(jwt.sign(jwtToken, config.jwtSecret));
 });

@@ -385,7 +385,7 @@
                                 <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
                             </span>
                         </div>
-                        <p class="help-block small launch launch-ehr">
+                        <p class="help-block small launch launch-ehr" id="launch-url-help">
                             Full url of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
                         <div class="launch launch-pt launch-prov">
@@ -564,12 +564,29 @@
             function validateLaunchUrl() {
                 var val = getLaunchUrl();
                 var idx = val.indexOf(":");
+                var redirectProto = val.match(/^https?\:/);
+                var currentProto  = location.protocol;
+
                 handleFormChange();
-                if (!val || idx < 1 || idx === val.length - 1) {
+
+                if (!val || idx < 1 || idx === val.length - 1 || !redirectProto) {
                     $("#ehr-launch-url").prop("disabled", true).addClass("disabled");
                     return false;
                 }
+
                 $("#ehr-launch-url").prop("disabled", false).removeClass("disabled");
+
+                // $("#launch-url-help").html(
+                //     redirectProto && redirectProto == currentProto ?
+                //     'Full url of the page in your app that will initialize the ' +
+                //     'SMART session (often the path for a launch.html file)' :
+                //     '<span class="text-danger">Your launch URL has different ' +
+                //     'protocol! Please <a class="btn btn-danger btn-xs" href="' +
+                //     location.href.replace(/^https?\:/, redirectProto) +
+                //     '">Reload</a> this page with the same protocol to avoid ' +
+                //     'launching issues.</span>'
+                // )
+                
                 return true;
             }
 

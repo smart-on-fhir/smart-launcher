@@ -49,7 +49,9 @@ module.exports = {
     "invalid_jti"                     : "Invalid 'jti' value",
     "invalid_aud"                     : "Invalid token 'aud' value. Must be '%s'.",
     "invalid_token_iss"               : "The given service url '%s' does not match the registered '%s'",
-    "token_expired_registration_token": "Registration token expired"
+    "token_expired_registration_token": "Registration token expired",
+    "invalid_registration_token"      : "Invalid registration token: %s",
+    "invalid_client_details_token"    : "Invalid client details token: %s"
   },
   includeEncounterContextInStandaloneLaunch: true
 }
