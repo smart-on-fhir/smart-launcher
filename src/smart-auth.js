@@ -468,7 +468,7 @@ function getTokenContext(req, res) {
 
         // Validate authenticationToken.aud (must equal this url)
         let tokenUrl = config.baseUrl + req.originalUrl;
-        if (tokenUrl !== authenticationToken.aud) {
+        if (tokenUrl.replace(/^https?/, "") !== authenticationToken.aud.replace(/^https?/, "")) {
             Lib.replyWithError(res, "invalid_aud", 401, tokenUrl);
             return null;
         }
