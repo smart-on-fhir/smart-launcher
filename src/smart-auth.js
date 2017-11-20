@@ -610,7 +610,8 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     if (code.user && scopes.has("profile") && scopes.has("openid")) {
         token.id_token = jwt.sign({
             profile: code.user,
-            aud    : req.body.client_id,
+            aud    : [req.body.client_id],
+            sub    : code.user,
             iss    : config.baseUrl
         },
         jwkAsPem,

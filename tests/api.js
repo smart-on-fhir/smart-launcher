@@ -553,6 +553,15 @@ describe('Auth', function() {
                     });
                 });
             });
+
+            // it(`${path} with missing "client_id" param`, done => {
+            //     request(app)
+            //     .get(path + "?response_type=code&client_id=&redirect_uri=http%3A%2F%2Fx&aud=x&state=abc")
+            //     .end(function(error, res) {
+            //         console.log(res.body, res.headers)
+            //         done();
+            //     });
+            // });
         });
 
         // auth/authorize validates the redirect_uri parameter
