@@ -612,7 +612,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
             profile: code.user,
             aud    : [req.body.client_id],
             sub    : code.user,
-            iss    : config.baseUrl
+            iss    : "https://smart-launcher-staging.herokuapp.com/v/r3/fhir"//config.baseUrl
         },
         jwkAsPem,
         {
