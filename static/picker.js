@@ -64,9 +64,15 @@ var SmartPicker = (function() {
 
         var patientId = $(this).attr("id").replace("patient-", "");
         try {
-            parent.setPatient(state.data.entry.find(function(e) {
-                return e.resource.id === patientId
-            }).resource);
+            parent.postMessage({
+                type: 'setPatient',
+                data: state.data.entry.find(function(e) {
+                    return e.resource.id === patientId
+                }).resource
+            }, '*');
+            // parent.setPatient(state.data.entry.find(function(e) {
+            //     return e.resource.id === patientId
+            // }).resource);
         } catch(ex) {}
 
         // if (state.launchUrl == "") return;
