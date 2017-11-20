@@ -83,6 +83,11 @@ var CONFIG = {
             for  : ["launch-bs"]
         },
         {
+            name : "token_invalid_scope",
+            label: "Token - Invalid Scope",
+            for  : ["launch-bs"]
+        },
+        {
             name : "invalid_jti",
             label: "Token - Invalid 'jti' Value (for backend services)",
             for  : ["launch-bs"]

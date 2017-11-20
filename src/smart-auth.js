@@ -406,6 +406,20 @@ function isInvalidToken(token) {
     return false; // not invalid
 }
 
+function hasInvalidSystemScopes(scopes) {
+    scopes = String(scopes || "").trim();
+
+    if (!scopes) {
+        return config.errors.missing_scope;
+    }
+
+    scopes = scopes.split(/\s+/);
+
+    return scopes.find(s => !(
+        /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
+    )) || "";
+}
+
 function getTokenContext(req, res) {
     let grantType = req.body.grant_type;
 
@@ -469,6 +483,19 @@ function getTokenContext(req, res) {
         // simulated invalid_jti error
         if (clientDetailsToken.auth_error == "invalid_jti") {
             Lib.replyWithError(res, "invalid_jti", 401);
+            return null;
+        }
+
+        // Validate scope
+        tokenError = hasInvalidSystemScopes(req.body.scope);
+        if (tokenError) {
+            Lib.replyWithError(res, "invalid_scope", 401, tokenError);
+            return null;
+        }
+
+        // simulated token_invalid_scope
+        if (clientDetailsToken.auth_error == "token_invalid_scope") {
+            Lib.replyWithError(res, "token_invalid_scope", 401);
             return null;
         }
 
