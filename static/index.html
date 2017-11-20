@@ -853,10 +853,15 @@
                         "&user=" + encodeURIComponent(urlParams.provider || "");
                     sampleEhrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(sampleEhrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "");
+
+                    var proto  = appLaunchUrl.match(/^https?/);
+                    var origin = location.origin.replace(/^https?/, proto);
+                    ehrLaunchUrl = origin + ehrLaunchUrl;
+                    sampleEhrLaunchUrl = sampleEhrLaunchUrl + ehrLaunchUrl;
                 }
 
                 $(".open-url").text(openUrl);
-                $(".open-url-preview").attr("href", openUrl + "/metadata");
+                $(".open-url-preview").attr("href"= , openUrl + "/metadata");
                 $("#fhir-server-url").val(openUrl);
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
