@@ -61,7 +61,6 @@ var SmartPicker = (function() {
     }
 
     function handlePatientClick(e) {
-        if (state.launchUrl == "") return;
 
         var patientId = $(this).attr("id").replace("patient-", "");
         try {
@@ -69,6 +68,9 @@ var SmartPicker = (function() {
                 return e.resource.id === patientId
             }).resource);
         } catch(ex) {}
+
+        if (state.launchUrl == "") return;
+
         if (state.showIds != "1" || e.target.tagName == "BUTTON") {
             launchApp(patientId);
         }
