@@ -612,7 +612,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
             profile: code.user,
             aud    : req.body.client_id,
             sub    : code.user,
-            iss    : "https://launch.smarthealthit.org/v/r2/fhir"//config.baseUrl
+            iss    : config.baseUrl
         },
         jwkAsPem,
         {
@@ -625,12 +625,12 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         expiresIn: `${(code.accessTokensExpireIn || 60)} minutes`
     });
 
-    console.log(token, {
-        profile: code.user,
-        aud    : req.body.client_id,
-        sub    : code.user,
-        iss    : "https://launch.smarthealthit.org/v/r2/fhir"//config.baseUrl
-    })
+    // console.log(token, {
+    //     profile: code.user,
+    //     aud    : req.body.client_id,
+    //     sub    : code.user,
+    //     iss    : "https://launch.smarthealthit.org/v/r2/fhir"//config.baseUrl
+    // })
     res.json(token);
 });
 
