@@ -33,7 +33,10 @@ const handleXmlRequest = function(err, req, res, next) {
 
 const app = express();
 
-app.use(cors({ origin: true }));
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 
 if (process.env.NODE_ENV == "development") {
     app.use(require('morgan')('combined'));
