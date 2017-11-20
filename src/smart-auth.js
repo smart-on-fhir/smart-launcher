@@ -608,11 +608,13 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     }
 
     if (code.user && scopes.has("profile") && scopes.has("openid")) {
+        let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+        let iss = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
         token.id_token = jwt.sign({
             profile: code.user,
             aud    : req.body.client_id,
             sub    : code.user,
-            iss    : config.baseUrl
+            iss
         },
         jwkAsPem,
         {
