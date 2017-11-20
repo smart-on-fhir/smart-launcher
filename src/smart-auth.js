@@ -610,7 +610,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     if (code.user && scopes.has("profile") && scopes.has("openid")) {
         token.id_token = jwt.sign({
             profile: code.user,
-            aud    : [req.body.client_id],
+            aud    : req.body.client_id,
             sub    : code.user,
             iss    : "https://launch.herokuapp.com/v/r3/fhir"//config.baseUrl
         },
@@ -623,6 +623,13 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
     token.access_token = jwt.sign(token, config.jwtSecret, {
         expiresIn: `${code.accessTokensExpireIn || 60} minutes`
     });
+
+    console.log(token, {
+        profile: code.user,
+        aud    : req.body.client_id,
+        sub    : code.user,
+        iss    : "https://launch.herokuapp.com/v/r3/fhir"//config.baseUrl
+    })
     res.json(token);
 });
 
