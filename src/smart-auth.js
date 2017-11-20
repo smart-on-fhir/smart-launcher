@@ -612,7 +612,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
             profile: code.user,
             aud    : req.body.client_id,
             sub    : code.user,
-            iss    : "https://launch.herokuapp.com/v/r2/fhir"//config.baseUrl
+            iss    : "https://launch.smarthealthit.org/v/r2/fhir"//config.baseUrl
         },
         jwkAsPem,
         {
@@ -628,7 +628,7 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         profile: code.user,
         aud    : req.body.client_id,
         sub    : code.user,
-        iss    : "https://launch.herokuapp.com/v/r2/fhir"//config.baseUrl
+        iss    : "https://launch.smarthealthit.org/v/r2/fhir"//config.baseUrl
     })
     res.json(token);
 });
