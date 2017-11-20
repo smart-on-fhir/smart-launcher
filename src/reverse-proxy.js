@@ -120,6 +120,7 @@ module.exports = function (req, res) {
         // special handler for metadata requests - inject the SMART information
         if (req.url.match(/^\/metadata/) && response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
             let authBaseUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
+            authBaseUrl = authBaseUrl.replace(/^https?/, req.secure ? "https" : "http");
             body = sandboxify.addAuthToConformance(body, authBaseUrl);
             if (!body) {
                 res.status(404);
