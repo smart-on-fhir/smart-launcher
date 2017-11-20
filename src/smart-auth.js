@@ -616,12 +616,13 @@ router.post("/token", bodyParser.urlencoded({ extended: false }), function (req,
         },
         jwkAsPem,
         {
-            algorithm: "HS256"
+            algorithm: "HS256",
+            expiresIn: `${(code.accessTokensExpireIn || 60)} minutes`
         });
     }
 
     token.access_token = jwt.sign(token, config.jwtSecret, {
-        expiresIn: `${code.accessTokensExpireIn || 60} minutes`
+        expiresIn: `${(code.accessTokensExpireIn || 60)} minutes`
     });
 
     console.log(token, {
