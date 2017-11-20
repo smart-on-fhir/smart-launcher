@@ -557,7 +557,7 @@
                     '<option value="">None</option>' +
                     $.map(CONFIG.simulatedErrors, function(o) {
                         return '<option value="' + o.name + '">' + o.label + '</option>';
-                    })
+                    }).join("")
                 );
             }
 
@@ -941,7 +941,7 @@
                 Lib.formToQs();
 
                 $("#auth-error option").each(function(i, o) {
-                    var meta;
+                    var meta, disabled;
                     for (var i = 0, l = CONFIG.simulatedErrors.length; i < l; i++) {
                         var err = CONFIG.simulatedErrors[i];
                         if (err.name == o.value) {
@@ -949,7 +949,8 @@
                             break;
                         }
                     }
-                    $(o).css("display", meta && meta.for.indexOf(launchType) === -1 ? "none" : "block");
+                    disabled = meta && meta.for.indexOf(launchType) === -1
+                    $(o).css("display", disabled ? "none" : "block").prop("disabled", disabled);
                 });
             }
 
