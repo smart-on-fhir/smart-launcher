@@ -61,22 +61,14 @@ var SmartPicker = (function() {
     }
 
     function handlePatientClick(e) {
+        if (state.launchUrl == "") return;
 
         var patientId = $(this).attr("id").replace("patient-", "");
         try {
-            // parent.postMessage({
-            //     type: 'setPatient',
-            //     data: state.data.entry.find(function(e) {
-            //         return e.resource.id === patientId
-            //     }).resource
-            // }, '*');
             parent.setPatient(state.data.entry.find(function(e) {
                 return e.resource.id === patientId
             }).resource);
         } catch(ex) {}
-
-        // if (state.launchUrl == "") return;
-
         if (state.showIds != "1" || e.target.tagName == "BUTTON") {
             launchApp(patientId);
         }

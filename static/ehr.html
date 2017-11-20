@@ -254,18 +254,6 @@
                 }
             };
 
-            window.addEventListener("message", function(e) {
-                if (e.data.type == 'setUser' && e.data.user && typeof e.data.user == "object") {
-                    setUser(e.data.user);
-                }
-                else if (e.data.type == 'setPatient' && e.data.patient && typeof e.data.patient == "object") {
-                    setPatient(e.data.patient);
-                }
-                else if (e.data.type == 'setEncounterID' && e.data.encounterID) {
-                    setEncounterID(e.data.encounterID);
-                }
-            });
-
             var appParams = Lib.getUrlQuery({ queryString: state.app.split("?")[1] });
             var iss = appParams.iss;
             var launch = atob(appParams.launch || "");
