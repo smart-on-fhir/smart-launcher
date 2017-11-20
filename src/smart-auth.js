@@ -293,8 +293,8 @@ router.get("/authorize", function (req, res) {
     const requiredParams = [
         "redirect_uri",
         "response_type",
-        "client_id",
-        "scope",
+        // "client_id",
+        // "scope",
         "state"
     ];
     if (!sim.aud_validated) {
