@@ -592,7 +592,7 @@
 
             function bindEventHandlers() {
 
-                $("#launch-url").on("keyup change input paste", validateLaunchUrl);
+                $("#launch-url").on("keyup change input", validateLaunchUrl);
 
                 $(document).on("input", "input,textarea", function() {
                     handleFormChange();
