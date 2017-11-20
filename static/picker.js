@@ -69,7 +69,7 @@ var SmartPicker = (function() {
             }).resource);
         } catch(ex) {}
 
-        if (state.launchUrl == "") return;
+        // if (state.launchUrl == "") return;
 
         if (state.showIds != "1" || e.target.tagName == "BUTTON") {
             launchApp(patientId);
