@@ -856,8 +856,8 @@
 
                     var proto  = appLaunchUrl.match(/^https?/);
                     var origin = location.origin.replace(/^https?/, proto);
-                    ehrLaunchUrl = origin + ehrLaunchUrl;
-                    sampleEhrLaunchUrl = sampleEhrLaunchUrl + ehrLaunchUrl;
+                    ehrLaunchUrl       = origin + ehrLaunchUrl;
+                    sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
                 }
 
                 $(".open-url").text(openUrl);
