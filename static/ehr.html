@@ -232,26 +232,26 @@
                 $(".patient-name").text(Lib.humanName(patient));
                 $(".patient-age").text(Lib.formatAge(patient.birthDate));
                 $(".patient-gender").text(Lib.toCamelCase(patient.gender || "unknown", true));
-                $(".patient-id").text(`Patient ID: ${patient.id}`);
+                $(".patient-id").text("Patient ID: " + patient.id);
                 $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
             };
 
             window.setEncounterID = function(id) {
                 if (!id || id == "none" || id == "-1") {
-                    $(".encounter-id").html(`Encounter ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
+                    $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
                 }
                 else {
-                    $(".encounter-id").text(`Encounter ID: ${id}`).css({ opacity: 1 });
+                    $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
                 }
             };
 
             window.setUser = function(user) {
                 if (!user) {
-                    $(".user-id").html(`User ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
+                    $(".user-id").html('User ID: <b style="color:#900">none</b>').css({ opacity: 1 });
                 }
                 else {
                     $(".provider-name").text(Lib.humanName(user));
-                    $(".user-id").text(`User ID: ${user.id}`);
+                    $(".user-id").text("User ID: " + user.id);
                     $(".practitioner, .user div").css({ opacity: 1 });
                 }
             };
@@ -277,7 +277,7 @@
                 $.get(iss + "/Patient/" + launch.patient).done(setPatient);
             }
             else {
-                $(".patient-id").html(`Patient ID: <b style="color: #900">none</b>`);
+                $(".patient-id").html('Patient ID: <b style="color: #900">none</b>');
                 $(".status-bar .patient div").css({ opacity: 1 });
             }
 
@@ -285,7 +285,7 @@
             if (iss && state.user &&  state.user.indexOf(",") == -1) {
                 $.get(iss + "/Practitioner/" + state.user).done(function(data) {
                     $(".provider-name").text(Lib.humanName(data));
-                    $(".user-id").text(`User ID: ${data.id}`);
+                    $(".user-id").text("User ID: " + data.id);
                     $(".practitioner, .user div").css({ opacity: 1 });
                 });
             }
@@ -295,7 +295,7 @@
             }
 
             // initial encounter id html
-            $(".encounter-id").html(`Encounter ID: <b style="color:#900">none</b>`).css({ opacity: 1 });
+            $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
         })();
         </script>
     </body>
