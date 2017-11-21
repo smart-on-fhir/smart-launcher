@@ -11,26 +11,6 @@ var SmartPicker = (function() {
         authUrlSegment: "auth/authorize"
     };
 
-    function getQsParams() {
-        //fix keys with underscores instead of camelcase
-        _parseKey = function(key) {
-            if (key.indexOf("_") == -1) {
-                return key;
-            } else {
-                return (_.map(key.toLowerCase().split("_"), function(seg, i) {
-                    return (i == 0 ? seg[0] : seg[0].toUpperCase()) + seg.slice(1);
-                })).join("")
-            };
-        }
-        var query = ((window.location.search).substring(1) || "");
-        return _
-            .chain(query.split('&'))
-            .map(function(params) {
-                var p = params.split('=');
-                return [_parseKey(p[0]), decodeURIComponent(p[1])];
-            }).object().value();
-    }
-
     // UI Event Handlers
     function bindUiEvents() {
         $("#paging-next, #paging-previous").click(handlePagingClick);
@@ -206,7 +186,7 @@ var SmartPicker = (function() {
 
         function _renderPatients() {
             var tpl = $("#patient-row-template").html();
-            patientRows = _.map(state.data.entry, function(entry) {
+            patientRows = $.map(state.data.entry, function(entry) {
                 return buildPatientRow(entry.resource, tpl, state.showIds == "1", state.launchUrl == "")
             });
             $(".picker table > tbody").prepend(patientRows.join(""))
@@ -238,7 +218,7 @@ var SmartPicker = (function() {
 
     return {
         init: function(config) {
-            state = _.extend(state, config, getQsParams());
+            state = $.extend(state, config, Lib.getUrlQuery({ camelCaseKeys: true }));
             if (!state.aud) {
                 state.aud = location.href.split("?")[0].replace(/\/picker$/, "/fhir");
             }
