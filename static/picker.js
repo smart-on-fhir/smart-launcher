@@ -48,7 +48,9 @@ var SmartPicker = (function() {
             parent.setPatient(state.data.entry.find(function(e) {
                 return e.resource.id === patientId
             }).resource);
-        } catch(ex) {}
+        } catch(ex) {
+            console.error(ex)
+        }
         if (state.showIds != "1" || e.target.tagName == "BUTTON") {
             launchApp(patientId);
         }
