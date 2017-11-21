@@ -1,15 +1,14 @@
-const sanboxify = require("./src/sandboxify");
-const Lib       = require("./src/lib");
+const Lib = require("./src/lib");
 require("colors");
 
 const BASELINES = {
-    "sanboxify.buildUrlPath"        : 0.00158,
-    "sanboxify.normalizeUrl"        : 0.00009,
-    "sanboxify.adjustRequestBody"   : 0.00088,
-    "sanboxify.adjustUrl"           : 0.00112,
-    "sanboxify.addAuthToConformance": 0.00469,
-    "sanboxify.unbundleResource"    : 0.00098,
-    "sanboxify.adjustResponseUrls"  : 0.00296
+    "Lib.buildUrlPath"        : 0.00158,
+    "Lib.normalizeUrl"        : 0.00009,
+    "Lib.adjustRequestBody"   : 0.00088,
+    "Lib.adjustUrl"           : 0.00112,
+    "Lib.addAuthToConformance": 0.00469,
+    "Lib.unBundleResource"    : 0.00098,
+    "Lib.adjustResponseUrls"  : 0.00296
 };
 
 // https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
@@ -56,16 +55,16 @@ function test(label, fn, ...args) {
 console.log("\n");
 
 // Sanboxify -------------------------------------------------------------------
-console.log(("📂  Sanboxify".bold + "\n".padEnd(52, "–")).gray);
-test("sanboxify.buildUrlPath", sanboxify.buildUrlPath, "/abxc/", "/asdb/")
-test("sanboxify.normalizeUrl", sanboxify.normalizeUrl, "dasdasasda/sda/sd/asd/asdasdas")
-test("sanboxify.adjustRequestBody", sanboxify.adjustRequestBody, { resource: {} }, "system", ["sb1", "sb2"])
-test("sanboxify.adjustUrl", sanboxify.adjustUrl, "a/b/c/?f=5", true, ["sb1", "sb2"])
-test("sanboxify.addAuthToConformance", sanboxify.addAuthToConformance, {rest: {}}, "authBaseUrl")
-test("sanboxify.unbundleResource", sanboxify.unbundleResource, '{"entry":[{"resource":1}]}');
+console.log(("📂  Lib".bold + "\n".padEnd(52, "–")).gray);
+test("Lib.buildUrlPath", Lib.buildUrlPath, "/abxc/", "/asdb/")
+test("Lib.normalizeUrl", Lib.normalizeUrl, "dasdasasda/sda/sd/asd/asdasdas")
+test("Lib.adjustRequestBody", Lib.adjustRequestBody, { resource: {} }, "system", ["sb1", "sb2"])
+test("Lib.adjustUrl", Lib.adjustUrl, "a/b/c/?f=5", true, ["sb1", "sb2"])
+test("Lib.addAuthToConformance", Lib.addAuthToConformance, {rest: {}}, "authBaseUrl")
+test("Lib.unBundleResource", Lib.unBundleResource, '{"entry":[{"resource":1}]}');
 test(
-    "sanboxify.adjustResponseUrls",
-    sanboxify.adjustResponseUrls,
+    "Lib.adjustResponseUrls",
+    Lib.adjustResponseUrls,
     "This is a test", // bodyText
     "a", // fhirUrl
     "s", // requestUrl

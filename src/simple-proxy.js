@@ -4,7 +4,7 @@ const jwt        = require("jsonwebtoken");
 const config     = require("./config");
 const replStream = require("replacestream");
 const Url        = require("url");
-const patientMap = require("./patient-compartment.json");
+const patientMap = require("./patient-compartment");
 
 require("colors");
 

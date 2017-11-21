@@ -2,8 +2,7 @@ const request    = require("request");
 const jwt        = require("jsonwebtoken");
 const config     = require("./config");
 const fhirError  = require("./fhir-error");
-const sandboxify = require("./sandboxify");
-const patientMap = require("./patient-compartment.json");
+const patientMap = require("./patient-compartment");
 const Lib        = require("./lib");
 require("colors");
 
@@ -67,20 +66,20 @@ module.exports = function (req, res) {
         // fhirRequest.body = String(fhirRequest.body) + "&_tag=" + sandboxes.join("&");
     }
     else if (Object.keys(req.body).length) {
-        fhirRequest.body = sandboxify.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
+        fhirRequest.body = Lib.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
         fhirRequest.body = Buffer.from(JSON.stringify(fhirRequest.body), 'utf8');
         fhirRequest.headers['content-length'] = Buffer.byteLength(fhirRequest.body)
     }
 
     // make urls conditional and if exists, change /id to ?_id=
     if (isSearchPost) {
-        fhirRequest.url = sandboxify.buildUrlPath(
+        fhirRequest.url = Lib.buildUrlPath(
             fhirServer, req.url
         );
     }
     else {
-        fhirRequest.url = sandboxify.buildUrlPath(
-            fhirServer, sandboxify.adjustUrl(req.url, req.method == "GET", sandboxes)
+        fhirRequest.url = Lib.buildUrlPath(
+            fhirServer, Lib.adjustUrl(req.url, req.method == "GET", sandboxes)
         );
     }
 
@@ -112,17 +111,17 @@ module.exports = function (req, res) {
      
         // adjust urls in the fhir response so future requests will hit the proxy
         if (body) {
-            let requestUrl = sandboxify.buildUrlPath(config.baseUrl, req.originalUrl);
-            let requestBaseUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl)
-            body = sandboxify.adjustResponseUrls(body, fhirRequest.url, requestUrl, fhirServer, requestBaseUrl);
+            let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
+            let requestBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl)
+            body = Lib.adjustResponseUrls(body, fhirRequest.url, requestUrl, fhirServer, requestBaseUrl);
         }
 
         // special handler for metadata requests - inject the SMART information
         if (req.url.match(/^\/metadata/) && response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
-            let authBaseUrl = sandboxify.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
+            let authBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
             let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
             authBaseUrl = authBaseUrl.replace(/^https?/, secure ? "https" : "http");
-            body = sandboxify.addAuthToConformance(body, authBaseUrl);
+            body = Lib.addAuthToConformance(body, authBaseUrl);
             if (!body) {
                 res.status(404);
                 body = fhirError(`Error reading server metadata`);
@@ -131,7 +130,7 @@ module.exports = function (req, res) {
 
         //pull the resource out of the bundle if we converted a /id url into a ?_id= query
         if (req.method =="GET" && RE_RESOURCE_SLASH_ID.test(req.url) && body.indexOf("Bundle") != -1) {
-            body = sandboxify.unbundleResource(body);
+            body = Lib.unBundleResource(body);
             if (!body) {
                 res.status(404);
                 body = fhirError(`Resource ${req.url.slice(1)} is not known`);

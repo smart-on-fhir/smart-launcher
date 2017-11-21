@@ -3,12 +3,12 @@ const jwt        = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const router     = require("express").Router({ mergeParams: true });
 const config     = require("./config");
-const sandboxify = require("./sandboxify");
 const Url        = require("url");
 const Lib        = require("./lib");
 const jwkToPem   = require("jwk-to-pem");
 const base64url  = require("base64-url");
 const Codec      = require("../static/codec.js");
+const ScopeSet   = require("./ScopeSet");
 
 const jwkAsPem = jwkToPem(config.oidcKeypair);
 
@@ -213,55 +213,6 @@ function createAuthCode(req, sim, scope) {
     return jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
 }
 
-/**
- * This class tries to make it easier and cleaner to work with scopes (mostly by
- * using the two major methods - "has" and "matches").
- */
-class ScopeSet
-{
-    constructor(str = "") {
-        this._scopesString = String(str).trim();
-        this._scopes = this._scopesString.split(/\s+/).filter(Boolean);
-    }
-
-    has(scope) {
-        return this._scopes.indexOf(scope) > -1;
-    }
-
-    matches(scopeRegExp) {
-        return this._scopesString.search(scopeRegExp) > -1;
-    }
-
-    add(scope) {
-        if (this.has(scope)) {
-            return false;
-        }
-
-        this._scopes.push(scope);
-        this._scopesString = this._scopes.join(" ");
-        return true;
-    }
-
-    remove(scope) {
-        let index = this._scopes.indexOf(scope);
-        if (index < 0) {
-            return false;
-        }
-        this._scopes.splice(index, 1);
-        this._scopesString = this._scopes.join(" ");
-        return true;
-    }
-
-    toString() {
-        return this._scopesString;
-    }
-
-    toJSON() {
-        return this._scopes;
-    }
-}
-
-
 router.get("/authorize", function (req, res) {
 
     let sim = getRequestedSIM(req);
@@ -335,14 +286,14 @@ router.get("/authorize", function (req, res) {
         return Lib.redirectWithError(req, res, "sim_invalid_scope");
     }
 
-    const apiUrl = sandboxify.buildUrlPath(
+    const apiUrl = Lib.buildUrlPath(
         config.baseUrl,
         req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl)
     );
 
     // The "aud" param must match the apiUrl
     if (!sim.aud_validated) {
-        if (sandboxify.normalizeUrl(req.query.aud).replace(/^https?/, "") != sandboxify.normalizeUrl(apiUrl).replace(/^https?/, "")) {
+        if (Lib.normalizeUrl(req.query.aud).replace(/^https?/, "") != Lib.normalizeUrl(apiUrl).replace(/^https?/, "")) {
             return Lib.redirectWithError(req, res, "bad_audience");
         }
         sim.aud_validated = "1";
@@ -408,19 +359,6 @@ function isInvalidToken(token) {
     return false; // not invalid
 }
 
-function hasInvalidSystemScopes(scopes) {
-    scopes = String(scopes || "").trim();
-
-    if (!scopes) {
-        return config.errors.missing_scope;
-    }
-
-    scopes = scopes.split(/\s+/);
-
-    return scopes.find(s => !(
-        /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
-    )) || "";
-}
 
 function getTokenContext(req, res) {
     let grantType = req.body.grant_type;
@@ -489,7 +427,7 @@ function getTokenContext(req, res) {
         }
 
         // Validate scope
-        tokenError = hasInvalidSystemScopes(req.body.scope);
+        tokenError = ScopeSet.getInvalidSystemScopes(req.body.scope);
         if (tokenError) {
             Lib.replyWithError(res, "invalid_scope", 401, tokenError);
             return null;

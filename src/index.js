@@ -103,9 +103,7 @@ app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 app.use(
     [
         `/v/:fhir_release/sb/:sandbox/sim/:sim${config.fhirBaseUrl}`,
-        `/v/:fhir_release/sb/:sandbox${config.fhirBaseUrl}`,
-        // `/v/:fhir_release/sim/:sim${config.fhirBaseUrl}`,
-        // `/v/:fhir_release${config.fhirBaseUrl}`
+        `/v/:fhir_release/sb/:sandbox${config.fhirBaseUrl}`
     ],
     bodyParser.text({ type: "*/*", limit: 1e6 }),
     handleParseError,
@@ -148,10 +146,10 @@ app.use("/env.js", (req, res) => {
 // static request
 app.use(express.static("static"));
 
-module.exports = app;
-
 if (!module.parent) {
     app.listen(config.port, () => {
         console.log(`Example app listening on port ${config.port}!`)
     });
 }
+
+module.exports = app;
