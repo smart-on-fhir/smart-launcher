@@ -854,10 +854,12 @@
                     sampleEhrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(sampleEhrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "");
 
-                    var proto  = appLaunchUrl.match(/^https?/);
-                    var origin = location.origin.replace(/^https?/, proto);
-                    ehrLaunchUrl       = origin + ehrLaunchUrl;
-                    sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
+                    if (appLaunchUrl) {
+                        var proto  = appLaunchUrl.match(/^https?/);
+                        var origin = location.origin.replace(/^https?/, proto);
+                        ehrLaunchUrl       = origin + ehrLaunchUrl;
+                        sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
+                    }
                 }
 
                 $(".open-url").text(openUrl);
