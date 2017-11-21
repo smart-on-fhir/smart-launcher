@@ -451,15 +451,15 @@ describe('Proxy', function() {
             });
         }) 
 
-        // Get the second id. This should fail if we had a search set
-        .then(res => res.body.resourceType == "Patient" && res.body.id == patientID)
-
-        // log?
-        .then(patient => console.log(patient))
+        // Did we get a patient with the requested id?
+        .then(res => {
+            return res.body.resourceType == "Patient" && res.body.id == patientID ?
+                Promise.resolve() :
+                Promise.reject("No patient returned by id")
+        })
 
         // complete
         .then(() => done(), done);
-        // request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient/`).expect(/\n.+/, done);
     });
 
     it ("Pretty print if called from a browser");
