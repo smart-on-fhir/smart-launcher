@@ -292,10 +292,10 @@ router.get("/authorize", function (req, res) {
     // NOTE that "redirect_uri" MUST be checked first!
     const requiredParams = [
         "redirect_uri",
-        "response_type",
+        "response_type"//,
         // "client_id",
         // "scope",
-        "state"
+        // "state"
     ];
     if (!sim.aud_validated) {
         requiredParams.push("aud");
@@ -382,7 +382,9 @@ router.get("/authorize", function (req, res) {
 
     // LAUNCH!
     RedirectURL.query.code  = createAuthCode(req, sim, scopes);
-    RedirectURL.query.state = req.query.state;
+    if (req.query.state) {
+        RedirectURL.query.state = req.query.state;
+    }
     res.redirect(Url.format(RedirectURL));
 });
 
