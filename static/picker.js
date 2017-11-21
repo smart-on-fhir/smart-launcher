@@ -43,11 +43,15 @@ var SmartPicker = (function() {
     function handlePatientClick(e) {
         if (state.launchUrl == "") return;
 
-        var patientId = $(this).attr("id").replace("patient-", "");
+        var patientId = $(this).attr("id").replace("patient-", ""), i, l, pt;
         try {
-            parent.setPatient(state.data.entry.find(function(e) {
-                return e.resource.id === patientId
-            }).resource);
+            for (i = 0, l = state.data.entry.length; i < l; i++) {
+                pt = state.data.entry[i];
+                if (pt.resource.id === patientId) {
+                    parent.setPatient(pt.resource);
+                    break;
+                }
+            }
         } catch(ex) {
             console.error(ex)
         }
