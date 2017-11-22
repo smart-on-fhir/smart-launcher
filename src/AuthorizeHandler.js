@@ -1,18 +1,12 @@
 // @ts-check
-const jwt       = require("jsonwebtoken");
-const base64url = require("base64-url");
-const Url       = require("url");
-const ScopeSet  = require("./ScopeSet");
-const config    = require("./config");
-const Codec     = require("../static/codec.js");
-const Lib       = require("./lib");
-
-class SMARTHandler {
-    constructor(req, res) {
-        this.request  = req;
-        this.response = res;
-    }
-}
+const jwt          = require("jsonwebtoken");
+const base64url    = require("base64-url");
+const Url          = require("url");
+const ScopeSet     = require("./ScopeSet");
+const config       = require("./config");
+const Codec        = require("../static/codec.js");
+const Lib          = require("./lib");
+const SMARTHandler = require("./SMARTHandler");
 
 class AuthorizeHandler extends SMARTHandler {
 
