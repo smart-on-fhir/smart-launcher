@@ -54,7 +54,8 @@ module.exports = {
     "invalid_client_details_token"    : "Invalid client details token: %s",
     "invalid_scope"                   : 'Invalid scope: "%s"',
     "missing_scope"                   : "Empty scope",
-    "token_invalid_scope"             : "Simulated invalid scope error"
+    "token_invalid_scope"             : "Simulated invalid scope error",
+    "bad_grant_type"                  : "Unknown or missing grant_type parameter"
   },
   includeEncounterContextInStandaloneLaunch: true
 }
