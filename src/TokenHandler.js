@@ -230,7 +230,6 @@ class TokenHandler extends SMARTHandler {
         return jwt.sign({
             profile: clientDetailsToken.user,
             aud    : this.request.body.client_id,
-            // sub    : clientDetailsToken.user,
             sub    : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
             iss
         }, jwkAsPem, {

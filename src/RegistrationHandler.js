@@ -9,12 +9,6 @@ class RegistrationHandler extends SMARTHandler {
         return new RegistrationHandler(req, res).handle();
     }
 
-    // constructor(req, res) {
-    //     super(req, res);
-    //     // this.sim   = this.getRequestedSIM();
-    //     // this.scope = new ScopeSet(decodeURIComponent(req.query.scope));
-    // }
-
     handle() {
         const req = this.request;
         const res = this.response;
