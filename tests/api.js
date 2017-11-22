@@ -926,7 +926,7 @@ describe('Backend Services', () => {
         it ("requires form-urlencoded POST", done => {
             return requestPromise({
                 method: "POST",
-                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`
+                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`
             })
             .then(res => expectStatusCode(res, 401))
             .then(res => {
@@ -941,7 +941,7 @@ describe('Backend Services', () => {
         it ("requires 'iss' parameter", done => {
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {}
             })
             .then(res => expectStatusCode(res, 400))
@@ -957,7 +957,7 @@ describe('Backend Services', () => {
         it ("requires 'pub_key' parameter", done => {
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {
                     iss: "whatever"
                 }
@@ -982,7 +982,7 @@ describe('Backend Services', () => {
                 ].map(dur => {
                     return requestPromise({
                         method: "POST",
-                        uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                        uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                         form  : {
                             iss: "whatever",
                             pub_key: "abc",
@@ -1004,7 +1004,7 @@ describe('Backend Services', () => {
         it ("basic usage", done => {
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {
                     iss    : "whatever",
                     pub_key: "something"
@@ -1024,7 +1024,7 @@ describe('Backend Services', () => {
         it ("accepts custom duration", done => {
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {
                     iss    : "whatever",
                     pub_key: "something",
@@ -1051,7 +1051,7 @@ describe('Backend Services', () => {
             const err = "test error"
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {
                     iss    : "whatever",
                     pub_key: "something",
@@ -1083,7 +1083,7 @@ describe('Backend Services', () => {
 
             return requestPromise({
                 method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
                 form  : {
                     iss,
                     pub_key: PUBLIC_KEY

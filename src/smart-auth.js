@@ -19,7 +19,7 @@ router.post(
 
 // This should handle the client registration used by the back-end services.
 router.post(
-    "/register-backend-client",
+    "/register",
     bodyParser.urlencoded({ extended: false }),
     RegistrationHandler.handleRequest
 );

@@ -894,7 +894,7 @@
                             params.auth_error = authError;
                         }
                         $.ajax({
-                            url: baseUrl + "/auth/register-backend-client",
+                            url: baseUrl + "/auth/register",
                             method: "POST",
                             data: params
                         }).then(function(client_id) {
