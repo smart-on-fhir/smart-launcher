@@ -9,11 +9,14 @@ const jwkToPem  = require("jwk-to-pem");
 const Codec     = require("../static/codec.js");
 const base64url = require("base64-url");
 const Lib       = require("../src/lib");
+const crypto    = require("crypto");
 
 
 const ENABLE_FHIR_VERSION_2  = true;
 const ENABLE_FHIR_VERSION_3  = true;
 const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
+const PUBLIC_KEY  = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFyTmx6RlFwbzRIZWY5dkVPYkdPUQpqc0RtelhyWFY4aDd3bVFxaFdhRkh0cCtLZW14ZmplOU02YkNrdjFsQ2RkajNFU3ZqeTkrd3lHTFlXQXJIdFYrCitGVVA5NjJPTVI5L2lNakpGZ0RDQjM5bnY0MGZLaTJBajRseCt6cE1XUnJZdVN3ZWdiYnNtT0hrL2t5RXUrSlgKTGgzNDlOZlZQSGdaRlhNUno5bUhXNk9hT21PVEVVYlY1RWJ0TnIxUFpCQVNYSGhpZ3VBTXZGcFl5Z2I3blFzQgo4OTBUOXVWcmM4bDB1OWpwc2J2OU10ZXZFeGZCTFlGSDQ4LzFrOUovWk5aalhBY281U2E3QTFlVXZGaSt0b01oCnBPL0lpVCs0L1BQaVRmYU9naXkrd3piNEFhUnF0MVMvWWx5RExIeVJuV3hlNThkMTdWZGY0Y0EzclVpVll0ZEEKWVFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==";
+const PRIVATE_KEY = "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBck5sekZRcG80SGVmOXZFT2JHT1Fqc0RtelhyWFY4aDd3bVFxaFdhRkh0cCtLZW14CmZqZTlNNmJDa3YxbENkZGozRVN2ank5K3d5R0xZV0FySHRWKytGVVA5NjJPTVI5L2lNakpGZ0RDQjM5bnY0MGYKS2kyQWo0bHgrenBNV1JyWXVTd2VnYmJzbU9Iay9reUV1K0pYTGgzNDlOZlZQSGdaRlhNUno5bUhXNk9hT21PVApFVWJWNUVidE5yMVBaQkFTWEhoaWd1QU12RnBZeWdiN25Rc0I4OTBUOXVWcmM4bDB1OWpwc2J2OU10ZXZFeGZCCkxZRkg0OC8xazlKL1pOWmpYQWNvNVNhN0ExZVV2RmkrdG9NaHBPL0lpVCs0L1BQaVRmYU9naXkrd3piNEFhUnEKdDFTL1lseURMSHlSbld4ZTU4ZDE3VmRmNGNBM3JVaVZZdGRBWVFJREFRQUJBb0lCQVFDakRTVlFUZGVORjR0ZwpxUmlRQ29RTkJjOHpPcFAxRFB3aDdkZG1xOFVieThTRHlSMVVFVVI3ZXUzRk54K2UzdjRtaE95UFI2QnVkakJECkZUTFlEVkdPOUw3eFIxa0E0ZE91dHFscUJpRUNiWjd5eFM4RzNKR1AxWG9lSVdwd0M3RXhUSHNpcGVvZWRjbE0KVWVaTVRrRXJFYjhOU0tTd1BDSjlaMlVBQ3hWeXpSN3FraE5hVUZYRGNYb2U5Y2FiK3hCRWFJZkFSUUFodllBVwo3ZTlraldjbzRaRTREWm1HL1JnYnRkR1cxZ05xcERiWnE2cDR4VThIUHdoWWVPVko0dmgwUEZHVEp2VWJPTUx5CjU0dEx5a2lFc0lnQzYzRXZ1aTdmQzByWmRiVEt3Z293dnZvWC9uVXhua1VUQ25sREZtUnFReitCVURLZkVlcWIKRyt4V0NWYUJBb0dCQU5mRDBvN0dIRlhKRDBLMlRuSFdHVWhEdjdTMnJBS2lncHZrdVlqNkFSV3NqckJ1VWpGTgpzSGNnRW52cHRFZloyb2lRZjh0eTNCMG9RdnNsYUxwaTBTOG9uZGVISWI2Sms5SU5xRzJzeE5DdjAxdnozam1GCkk4aGFUajRwSzBpQ3lNWnVISUhWSHFQdUZWOStvSHc1QWVkbytSUjlRZ2NHMEdUTEduYWhHOENKQW9HQkFNMFUKN1lBYkJFVm4wY0JoYU9OREFhVmFLMlBZaGdjc3BOOGJNVDh1QlhYU2VzTXkyS3dRS0EwQVNLbm5vcUNoeThyeQpVbUFRN1NNUHM4V25OcEo4Ukh2cXBOazNiSVEyMnpLSHNBQkNmZ29pcWtPc2FqZmYvQWk0Y1E3UGMwYzV0LzA5CmRnOFJNMEw3cmhBdndRUnFraHNST09UemZocTRONVE0Qnd4NGV4c1pBb0dCQU1FU1JaUGt5dTRvb0RNK0Z5dmUKUFhsZ3htYmJIMGlzU3R0YzdIa1ozV2FicG9OUjlOS1JobHJTcERlbGhPRFduS3FmUXZ1MnFDaWZJbkRCcE5sRQpHNU5yY1BLdnhRNU81YXVNOVM1Tzd6OGVWcTl0cFdrckxqM1dNVFdHZVdqRlB3dnc5Q2xwbjZWcElrNzFiSDQ4Ck5PdnlEeEM2bFI3Y2hoWHJlSjYydzdLaEFvR0FTUHI3a2EwTGxnOWVDMUllMjFFTEV1YkZyaUJ0Z2J3WFovWHIKVG9wNEV2ZTJEQ1RhQ2xFdGo0TGNXT28vYTE1b2dXNCtka1ZQdmp4bVF4NUFRMXpKbWpka05wQ01vM2hLQk85WQphSjlBN3lacTVPNUVWbUgwOUwxK0xrRVF5dlgxVGI5RGRoVXU0dFZobWcwRWFTZnJtb3BFYnVWZnFPNkppTXR2ClpyYXhTSEVDZ1lBcW5EZ0Q3bW53bnFGdmJ0R2JTUjRUdVJzYi9TQi9HejArSzNtdDhRME5NbWNIVDFsM0c1REEKWDEvU3hZdUxLZ1F5UWNPQUh2b3RxcUp0R3I2d0ZaOHJVdnIwTnEwQUtFa2JyODF2V2NpbkhySWFySkZUaVE5Vgp2SGNxYktoRlJ5dEtndjdZcEt1STJSUWM5dG9FNS9BbDZBejJOdlJZOGJ2MzN3QUFxTTl1OXc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=";
 
 
 
@@ -289,6 +292,11 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     return out;
 }
 
+function decodeJwtToken(token) {
+    return JSON.parse(
+        new Buffer(token.split(".")[1], "base64").toString("utf8")
+    );
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 before(() => {
@@ -1013,12 +1021,117 @@ describe('Backend Services', () => {
             .then(res => done(), done)
         });
 
-         it ("accepts custom duration");
-         it ("accepts custom simulated errors");
+        it ("accepts custom duration", done => {
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {
+                    iss    : "whatever",
+                    pub_key: "something",
+                    dur    : 23
+                }
+            })
+            .then(res => expectStatusCode(res, 200))
+            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
+            .then(res => {
+                if (res.body.split(".").length != 3) {
+                    throw new Error("Did not return proper client id");
+                }
+                let token = decodeJwtToken(res.body);
+                let exp = token.accessTokensExpireIn;
+                if (exp != 23) {
+                    throw new Error(
+                        `Expected "accessTokensExpireIn" property to equal 23 but found ${exp}`
+                    )
+                }
+            })
+            .then(res => done(), done)
+        });
+        it ("accepts custom simulated errors", done => {
+            const err = "test error"
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {
+                    iss    : "whatever",
+                    pub_key: "something",
+                    auth_error: err
+                }
+            })
+            .then(res => expectStatusCode(res, 200))
+            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
+            .then(res => {
+                if (res.body.split(".").length != 3) {
+                    throw new Error("Did not return proper client id");
+                }
+                let token = decodeJwtToken(res.body);
+                let x = token.auth_error;
+                if (x !== err) {
+                    throw new Error(
+                    `Expected "auth_error" property to equal "${err}" but found "${x}"`
+                    )
+                }
+            })
+            .then(res => done(), done)
+        });
     });
 
     describe('Authorization Claim', () => {
-        it ("TODO...");
+        it ("Works as expected", done => {
+            const iss = "whatever";
+            const tokenUrl = `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/token`;
+
+            return requestPromise({
+                method: "POST",
+                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register-backend-client`,
+                form  : {
+                    iss,
+                    pub_key: PUBLIC_KEY
+                }
+            })
+            .then(res => {
+                let jwtToken = {
+                    iss,
+                    sub: res.body,
+                    aud: tokenUrl,
+                    exp: Date.now()/1000 + 300, // 5 min
+                    jti: crypto.randomBytes(32).toString("hex")
+                };
+        
+                return requestPromise({
+                    method: "POST",
+                    url   : tokenUrl,
+                    json  : true,
+                    form  : {
+                        scope     : "system/*.*",
+                        grant_type: "client_credentials",
+                        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                        client_assertion: jwt.sign(
+                            jwtToken,
+                            base64url.decode(PRIVATE_KEY),
+                            { algorithm: 'RS256'}
+                        )
+                    }
+                });
+            })
+            .then(res => {
+                // console.log(res.body);
+                if (res.body.token_type !== "bearer") {
+                    throw new Error(`Authorization failed! Expecting token_type: bearer but found ${res.body.token_type}`);
+                }
+                if (res.body.expires_in !== 900) {
+                    throw new Error(`Authorization failed! Expecting expires_in: 900 but found ${res.body.expires_in}`);
+                }
+                if (!res.body.access_token) {
+                    throw new Error(`Authorization failed! No access_token returned`);
+                }
+                if (res.body.access_token.split(".").length != 3) {
+                    throw new Error("Did not return proper access_token");
+                }
+                return res;
+            })
+            .then(res => done(), done);
+        });
     });
     describe('Fhir Requests', () => {
         it ("TODO...");
