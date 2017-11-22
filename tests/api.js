@@ -298,18 +298,14 @@ function decodeJwtToken(token) {
     );
 }
 ////////////////////////////////////////////////////////////////////////////////
-
+let server;
 before(() => {
-    if (!app.listening) {
-        app.listen(config.port);
-    }
+    server = app.listen(config.port);
 });
 
-// after(() => {
-//     if (app.listening) {
-//         // app.close();
-//     }
-// });
+after(() => {
+    server.close();
+});
 
 
 describe('index', function() {
@@ -439,7 +435,7 @@ describe('Proxy', function() {
         // We cannot know any IDs but we need to use one for this test, thus
         // query all the patients with _count=1 to find the first one and use
         // it's ID.
-        requestPromise({
+        return requestPromise({
             uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`,
             json: true,
             qs: {
