@@ -84,6 +84,20 @@ function bool(x) {
     return !RE_FALSE.test(String(x).trim());
 }
 
+function parseToken(token) {
+    if (typeof token != "string") {
+        throw new Error("The token must be a string");
+    }
+
+    token = token.split(".");
+
+    if (token.length != 3) {
+        throw new Error("Invalid token structure");
+    }
+
+    return JSON.parse(new Buffer(token[1], "base64").toString("utf8"));
+}
+
 // Sandbox-ify -----------------------------------------------------------------
 
 function buildUrlPath(...segments) {
@@ -203,6 +217,7 @@ module.exports = {
     getFirstMissingProperty,
     htmlEncode,
     bool,
+    parseToken,
     buildUrlPath,
     addAuthToConformance,
     normalizeUrl,

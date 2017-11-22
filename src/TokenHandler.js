@@ -7,26 +7,11 @@ const SMARTHandler = require("./SMARTHandler");
 const Lib          = require("./lib");
 const ScopeSet     = require("./ScopeSet");
 
+
+// Generate this PEM cert once when the server starts and use it later to sign
+// the id tokens
 const jwkAsPem = jwkToPem(config.oidcKeypair);
 
-// TODO: more validations? Signature?
-function isInvalidToken(token) {
-    if (typeof token != "string") {
-        return "The token must be a string";
-    }
-
-    if (token.split(".").length != 3) {
-        return "Invalid token structure";
-    }
-
-    try {
-        JSON.parse(new Buffer(token.split(".")[1], "base64").toString("utf8"));
-    } catch (ex) {
-        return ex.message;
-    }
-
-    return false; // not invalid
-}
 
 class TokenHandler extends SMARTHandler {
 
@@ -86,24 +71,20 @@ class TokenHandler extends SMARTHandler {
         }
 
         // client_assertion must be a token
-        let tokenError = isInvalidToken(req.body.client_assertion);
-        if (tokenError) {
-            return Lib.replyWithError(res, "invalid_registration_token", 401, tokenError);
+        let authenticationToken;
+        try {
+            authenticationToken = Lib.parseToken(req.body.client_assertion);
+        } catch (ex) {
+            return Lib.replyWithError(res, "invalid_registration_token", 401, ex.message);
         }
-
-        let authenticationToken = String(req.body.client_assertion).split(".")[1];
-        authenticationToken = new Buffer(authenticationToken, "base64").toString("utf8");
-        authenticationToken = JSON.parse(authenticationToken);
 
         // The client_id must be a token
-        tokenError = isInvalidToken(authenticationToken.sub);
-        if (tokenError) {
-            return Lib.replyWithError(res, "invalid_client_details_token", 401, tokenError);
+        let clientDetailsToken;
+        try {
+            clientDetailsToken = Lib.parseToken(authenticationToken.sub);
+        } catch (ex) {
+            return Lib.replyWithError(res, "invalid_client_details_token", 401, ex.message);
         }
-        
-        let clientDetailsToken = String(authenticationToken.sub).split(".")[1];
-        clientDetailsToken = new Buffer(clientDetailsToken, "base64").toString("utf8");
-        clientDetailsToken = JSON.parse(clientDetailsToken);
 
         // simulate expired_registration_token error
         if (clientDetailsToken.auth_error == "token_expired_registration_token") {
@@ -128,7 +109,7 @@ class TokenHandler extends SMARTHandler {
         }
 
         // Validate scope
-        tokenError = ScopeSet.getInvalidSystemScopes(req.body.scope);
+        let tokenError = ScopeSet.getInvalidSystemScopes(req.body.scope);
         if (tokenError) {
             return Lib.replyWithError(res, "invalid_scope", 401, tokenError);
         }
@@ -224,6 +205,10 @@ class TokenHandler extends SMARTHandler {
         return true;
     }
 
+    /**
+     * Generates the id token that is included in the response if needed
+     * @param {Object} clientDetailsToken
+     */
     createIdToken(clientDetailsToken) {
         let secure = this.request.secure || this.request.headers["x-forwarded-proto"] == "https";
         let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
@@ -238,6 +223,10 @@ class TokenHandler extends SMARTHandler {
         });
     }
 
+    /**
+     * Generates and sends the response
+     * @param {Object} clientDetailsToken 
+     */
     finish(clientDetailsToken) {
         const req = this.request;
         const res = this.response;
