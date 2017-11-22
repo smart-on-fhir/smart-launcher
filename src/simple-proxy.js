@@ -1,16 +1,17 @@
 // @ts-check
+const Url        = require("url");
 const request    = require("request");
 const jwt        = require("jsonwebtoken");
-const config     = require("./config");
 const replStream = require("replacestream");
-const Url        = require("url");
+const config     = require("./config");
 const patientMap = require("./patient-compartment");
 
 require("colors");
 
 
-module.exports = function (req, res) {
+module.exports = (req, res) => {
 
+    // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
         return require("./reverse-proxy")(req, res);
     }
@@ -29,10 +30,12 @@ module.exports = function (req, res) {
                 config.jwtSecret
             );
         } catch (e) {
-            return res.status(401).send(`${e.name || "Error"}: ${e.message || "Invalid token"}`);
+            return res.status(401).send(
+                `${e.name || "Error"}: ${e.message || "Invalid token"}`
+            );
         }
 
-        // Simulate invalid token error
+        // Simulated errors
         if (token.sim_error) {
             return res.status(401).send(token.sim_error);
         }
@@ -104,28 +107,18 @@ module.exports = function (req, res) {
 
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
-    // const chunks = [];
     request(fhirRequestOptions)
-    
-        // .on('data', (chunk) => {
-        //     chunks.push(chunk.toString());
-        // })
-        // .on('end', () => {
-        //     console.log(fhirRequestOptions, chunks.join(''));
-        // })
-        .on('response', response => {
-            let contentType = response.headers['content-type'];
-            res.status(response.statusCode);
-            contentType && res.type(contentType);
-            // var x = response.toJSON();
-            if (logTime) {
-                console.log(
-                    ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
-                    String((Date.now() - logTime) + "ms").yellow.bold
-                );
-            }
-        })
-        .pipe(replStream(fhirServer, fullFhirBaseUrl))
-        .pipe(res);
-
+    .on('response', response => {
+        let contentType = response.headers['content-type'];
+        res.status(response.statusCode);
+        contentType && res.type(contentType);
+        if (logTime) {
+            console.log(
+                ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
+                String((Date.now() - logTime) + "ms").yellow.bold
+            );
+        }
+    })
+    .pipe(replStream(fhirServer, fullFhirBaseUrl))
+    .pipe(res);
 };

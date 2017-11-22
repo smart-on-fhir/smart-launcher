@@ -17,9 +17,7 @@ router.post(
     TokenHandler.handleRequest
 );
 
-/**
- * This should handle the client registration used by the back-end services.
- */
+// This should handle the client registration used by the back-end services.
 router.post(
     "/register-backend-client",
     bodyParser.urlencoded({ extended: false }),
