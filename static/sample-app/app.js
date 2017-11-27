@@ -308,8 +308,11 @@ var App = (function () {
         this.loadPatient(client);
         this.loadEncounter(client);
     };
-    App.prototype.onAuthError = function (xhr) {
-        this.renderGlobalError(xhr.responseText);
+    App.prototype.onAuthError = function (error) {
+        if (error == "No 'state' parameter found in authorization response.") {
+            return this.renderGlobalError(error);
+        }
+        this.renderGlobalError(error.responseText);
     };
     App.prototype.setScopes = function (scopes) {
         this.scope.set(scopes);

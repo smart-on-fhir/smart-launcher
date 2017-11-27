@@ -480,8 +480,11 @@ class App {
         this.loadEncounter(client);
     }
 
-    private onAuthError(xhr) {
-        this.renderGlobalError(xhr.responseText);
+    private onAuthError(error) {
+        if (error == "No 'state' parameter found in authorization response.") {
+            return this.renderGlobalError(error);
+        }
+        this.renderGlobalError(error.responseText);
     }
     
     public constructor(options: AppOptions) {
