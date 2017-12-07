@@ -98,6 +98,56 @@ function parseToken(token) {
     return JSON.parse(new Buffer(token[1], "base64").toString("utf8"));
 }
 
+// require a valid auth token if there is an auth token
+function checkAuth(req, res, next) {
+    if (req.headers.authorization) {
+        try {
+            token = jwt.verify(
+                req.headers.authorization.split(" ")[1],
+                config.jwtSecret
+            );
+        } catch (e) {
+            return res.status(401).send(
+                `${e.name || "Error"}: ${e.message || "Invalid token"}`
+            );
+        }
+        if (token.sim_error) {
+            return res.status(401).send(token.sim_error);
+        }
+    }
+    next();
+}
+
+function operationOutcome(res, message, {
+    httpCode  = 500,
+    issueCode = "processing", // http://hl7.org/fhir/valueset-issue-type.html
+    severity  = "error"       // fatal | error | warning | information
+} = {}){
+    return res.status(httpCode).json({
+        "resourceType": "OperationOutcome",
+        "text": {
+            "status": "generated",
+            "div": `<div xmlns="http://www.w3.org/1999/xhtml">
+    <h1>Operation Outcome</h1>
+    <table border="0">
+        <tr>
+            <td style="font-weight:bold;">ERROR</td>
+            <td>[]</td>
+            <td><pre>${htmlEncode(message)}</pre></td>
+        </tr>
+    </table>
+</div>`
+        },
+        "issue": [
+            {
+                "severity"   : severity,
+                "code"       : issueCode,
+                "diagnostics": message
+            }
+        ]
+    });
+}
+
 // Sandbox-ify -----------------------------------------------------------------
 
 function buildUrlPath(...segments) {
@@ -111,7 +161,6 @@ function buildUrlPath(...segments) {
 function normalizeUrl(url) {
     return buildUrlPath(url).toLowerCase();
 }
-
 
 /**
  * Given a conformance statement (as JSON string), replaces the auth URIs with
@@ -218,6 +267,8 @@ module.exports = {
     htmlEncode,
     bool,
     parseToken,
+    checkAuth,
+    operationOutcome,
     buildUrlPath,
     addAuthToConformance,
     normalizeUrl,
