@@ -55,7 +55,14 @@ module.exports = {
     "invalid_scope"                   : 'Invalid scope: "%s"',
     "missing_scope"                   : "Empty scope",
     "token_invalid_scope"             : "Simulated invalid scope error",
-    "bad_grant_type"                  : "Unknown or missing grant_type parameter"
+    "bad_grant_type"                  : "Unknown or missing grant_type parameter",
+    "file_expired"                    : 'The requested file "%s" is missing or expired',
+    "file_generation_failed"          : "File generation failed"
   },
-  includeEncounterContextInStandaloneLaunch: true
+  includeEncounterContextInStandaloneLaunch: true,
+  bulkFiles: {
+    defaultPageSize: 5000, // Max. number of fhir resources (lines) in one ndjson file
+    defaultWaitTime: 10,    // seconds
+    throttle: 0 // the number of milliseconds to wait before fetching the next chunk which (typically the next BD row)
+  }
 }
