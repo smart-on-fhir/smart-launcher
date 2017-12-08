@@ -49,6 +49,12 @@ function printf(s) {
     return String(s || "").replace(/(%s)/g, a => ++i > l ? "" : args[i]);
 }
 
+function die(error="Unknown error") {
+    console.log("\n"); // in case we have something written to stdout directly
+    console.error(error);
+    process.exit(1);
+}
+
 function generateRefreshToken(code) {
     let token = {};
     ["context", "client_id", "scope", "user", "iat", "exp", "auth_error"].forEach(key => {
@@ -275,5 +281,6 @@ module.exports = {
     unBundleResource,
     adjustResponseUrls,
     adjustUrl,
-    adjustRequestBody
+    adjustRequestBody,
+    die
 };
