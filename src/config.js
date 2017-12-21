@@ -55,9 +55,7 @@ module.exports = {
     "invalid_scope"                   : 'Invalid scope: "%s"',
     "missing_scope"                   : "Empty scope",
     "token_invalid_scope"             : "Simulated invalid scope error",
-    "bad_grant_type"                  : "Unknown or missing grant_type parameter",
-    "file_expired"                    : 'The requested file "%s" is missing or expired',
-    "file_generation_failed"          : "File generation failed"
+    "bad_grant_type"                  : "Unknown or missing grant_type parameter"
   },
   includeEncounterContextInStandaloneLaunch: true
 }
