@@ -59,10 +59,5 @@ module.exports = {
     "file_expired"                    : 'The requested file "%s" is missing or expired',
     "file_generation_failed"          : "File generation failed"
   },
-  includeEncounterContextInStandaloneLaunch: true,
-  bulkFiles: {
-    defaultPageSize: 5000, // Max. number of fhir resources (lines) in one ndjson file
-    defaultWaitTime: 10,    // seconds
-    throttle: 0 // the number of milliseconds to wait before fetching the next chunk which (typically the next BD row)
-  }
+  includeEncounterContextInStandaloneLaunch: true
 }
