@@ -5,18 +5,19 @@ const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
 const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
-const fhirError    = require("./fhir-error");
 const generator    = require("./generator");
 const lib          = require("./lib");
 
 
 const handleParseError = function(err, req, res, next) {
     if (err instanceof SyntaxError && err.status === 400) {
-        return res.status(400)
-            .send( fhirError(`Failed to parse JSON content, error was: ${err.message}`) );
-    } else {
-        next(err, req, res);
+        return lib.operationOutcome(
+            res,
+            `Failed to parse JSON content, error was: ${err.message}`,
+            { httpCode: 400 }
+        );
     }
+    next(err, req, res);
 }
 
 const handleXmlRequest = function(err, req, res, next) {
@@ -25,10 +26,9 @@ const handleXmlRequest = function(err, req, res, next) {
         req.headers['content-type'] && req.headers['content-type'].indexOf("xml") != -1 ||
         /_format=.*xml/i.test(req.url)
     ) {
-        return res.status(400).send( fhirError("XML format is not supported") )
-    } else {
-        next(err, req, res)
+        return lib.operationOutcome(res, "XML format is not supported", { httpCode: 400 });
     }
+    next(err, req, res)
 }
 
 const app = express();

@@ -532,16 +532,18 @@
                     $("#fhir-version-2").closest(".col-sm-6").remove();
                     $(".fhir-tags").html(
                         $.map(CONFIG.fhirVersions, function(v) {
-                            return $.map(v.tags, function(t) {
-                                return '<div class="checkbox sb ' + v.name + '">' +
-                                    '<label>' +
-                                        '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
-                                        '"' + (t.selected ? ' checked' : '') + '>' +
-                                            '<b>' + t.displayName + '</b> <small class="text-muted">(' +
-                                                t.description + ')</small>' +
-                                        '</label>' +
-                                    '</div>';
-                            }).join("");
+                            return v.tags && v.tags.length ?
+                                $.map(v.tags, function(t) {
+                                    return '<div class="checkbox sb ' + v.name + '">' +
+                                        '<label>' +
+                                            '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
+                                            '"' + (t.selected ? ' checked' : '') + '>' +
+                                                '<b>' + t.displayName + '</b> <small class="text-muted">(' +
+                                                    t.description + ')</small>' +
+                                            '</label>' +
+                                        '</div>';
+                                }).join("") :
+                                '<span class="text-muted">No tags defined on the selected server</span>';
                         }).join("")
                     );
                 }
@@ -787,7 +789,7 @@
                 }
 
                 switch(getLaunchType()) {
-                    case "launch-ehr" :
+                    case "launch-ehr":
                         type = "Provider EHR Launch";
                         patient = $("#patient").val() || "none";
                         user = $("#provider").val() || "none";
@@ -800,6 +802,9 @@
                     case "launch-pt":
                         type = "Patient Standalone Launch";
                         user = $("#user-pt").val() || "none";
+                    break;
+                    case "launch-bs":
+                        type = "Backend Service Launch";
                     break;
                 }
 
