@@ -23,7 +23,11 @@ module.exports = (req, res) => {
 
     const launchParams = {
         launch_ehr: 1, // launch_ehr - signals that we are doing an EHR launch
-        sim_ehr: lib.bool(sim_ehr)
+        sim_ehr: lib.bool(sim_ehr),
+        patient,
+        provider,
+        select_encounter: lib.bool(select_encounter),
+        auth_error
     };
 
     // debugger;
