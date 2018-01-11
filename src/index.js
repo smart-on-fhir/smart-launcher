@@ -7,6 +7,7 @@ const simpleProxy  = require("./simple-proxy");
 const config       = require("./config");
 const generator    = require("./generator");
 const lib          = require("./lib");
+const launcher     = require("./launcher");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -121,6 +122,7 @@ app.use(
     simpleProxy
 );
 
+app.get("/launcher", launcher);
 app.use("/generator", generator);
 
 app.use("/env.js", (req, res) => {
