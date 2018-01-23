@@ -1,22 +1,47 @@
-SMART/FHIR proxy server and app launcher
+# SMART/FHIR proxy server and app launcher
 
-Goals:
-- Awesome development and testing environment for SMART apps
-- Easy to install and run on a local machine
-- Private datasets for individual
-- Save and share launch simulations
-- Hackable for experimentation
 
-Non-Goals:
-- Reference / production implementation of SMART
+## OIDC Keys generation
+To generate new private and public keys make sure you have `openssl` (comes pre-installed with the Mac), `cd` to the project root and execute:
+```sh
+npm run cert
+```
+Then re-start the server and it will use the new keys.
 
-Features:
-- Works with any JSON FHIR server
-- Virtual private sandboxes via URL parameter
-	- https://localhost:3055/v/r3/fhir/Patient (not sandboxed) 
-	- https://localhost:3055/v/r3/sb/empty-sandbox/fhir/Patient (empty sandbox) 
-	- https://localhost:3055/v/r3/sb/empty-sandbox,smart-7-2017/fhir/Patient (intersect of sandboxes, with the first as read/write and the second as read only)
-- Support for multiple FHIR versions
-- Mock auth and OIDC
-- Configurable auth errors
-- Standalone launch simulations
+## OIDC Token verification
+If you want to verify the tokens follow this procedure:
+1. Point your server to `/.well-known/openid-configuration/`. This should render a JSON with a link to another file like this:
+```json
+{
+    jwks_uri: "http://localhost:8443/keys"
+}
+```
+2. Follow that link and it should return an array with one or more JWK keys like this:
+```json
+{
+    keys: [
+        {
+            alg: "RS256",
+            kid: "9c37bf73343adb93920a7ae80260b0e57684551e",
+            use: "sig",
+            kty: "RSA",
+            ...
+        }
+    ]
+}
+```
+
+3. Use the first key and extract the public key out of it. To do so, you can use tools like https://github.com/Brightspace/node-jwk-to-pem. Something like this would be the basic example:
+```js
+const JWK_KEY = getJwkKeySomehow(); // as described above
+const ID_TOKEN = getIdTokenSomehow();
+try {
+    jwt.verify(ID_TOKEN, jwkToPem(JWK_KEY), { algorithms: ["RS256"] });
+} catch (ex) {
+    // Cannot verify the token...
+}
+```
+Libraries like https://www.npmjs.com/package/jwks-rsa can be used to automate this process.
+
+### Notes about jwt.io
+People often use https://jwt.io/ to generate and validate tokens. However, it seems that the RS256 signature verification feature expects you to paste `x.509` formatted public key or certificate and does not work with PEM-encoded PKCS#1 public keys. For that reason, if you want to manually verify your token at https://jwt.io/, you will need to provide the original x.509 version of the public key that you can find at the `/public_key` endpoint of the server.

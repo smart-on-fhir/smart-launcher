@@ -812,7 +812,7 @@ describe('Auth', function() {
                     done();
                 }, done);
             });
-
+            
             it(`the access token can be verified`, done => {
                 lookupOidcKeys((error, keys) => {
                     if (error) {
@@ -820,7 +820,7 @@ describe('Auth', function() {
                     }
                     key = keys[0]
                     try {
-                        jwt.verify(idToken, jwkToPem(key), { algorithms: ["HS256"] })
+                        jwt.verify(idToken, jwkToPem(key), { algorithms: ["RS256"] })
                         done()
                     } catch (ex) {
                         done(ex)

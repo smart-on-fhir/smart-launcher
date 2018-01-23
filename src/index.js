@@ -1,6 +1,7 @@
 const express      = require("express");
 const cors         = require("cors");
 const bodyParser   = require('body-parser');
+const fs           = require("fs")
 const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
 const simpleProxy  = require("./simple-proxy");
@@ -144,6 +145,16 @@ app.use("/env.js", (req, res) => {
 
     res.type("javascript").send(`var ENV = ${JSON.stringify(out, null, 4)};`);
 });
+
+app.get("/public_key", (req, res) => {
+    fs.readFile(__dirname + "/../public-key.pem", "utf8", (err, key) => {
+        if (err) {
+            return res.status(500).end("Failed to read public key");
+        }
+        res.type("text").send(key);
+    });
+});
+
 
 // static request
 app.use(express.static("static"));

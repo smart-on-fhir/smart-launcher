@@ -10,8 +10,7 @@ const ScopeSet     = require("./ScopeSet");
 
 // Generate this PEM cert once when the server starts and use it later to sign
 // the id tokens
-const jwkAsPem = jwkToPem(config.oidcKeypair);
-
+const PRIVATE_KEY = jwkToPem(config.oidcKeypair, { private: true });
 
 class TokenHandler extends SMARTHandler {
 
@@ -217,8 +216,8 @@ class TokenHandler extends SMARTHandler {
             aud    : this.request.body.client_id,
             sub    : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
             iss
-        }, jwkAsPem, {
-            algorithm: "HS256",
+        }, PRIVATE_KEY, {
+            algorithm: "RS256",
             expiresIn: `${(clientDetailsToken.accessTokensExpireIn || 60)} minutes`
         });
     }
