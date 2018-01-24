@@ -13,19 +13,19 @@ If you want to verify the tokens follow this procedure:
 1. Point your server to `/.well-known/openid-configuration/`. This should render a JSON with a link to another file like this:
 ```json
 {
-    jwks_uri: "http://localhost:8443/keys"
+    "jwks_uri": "http://localhost:8443/keys"
 }
 ```
 2. Follow that link and it should return an array with one or more JWK keys like this:
-```json
+```js
 {
-    keys: [
+    "keys": [
         {
-            alg: "RS256",
-            kid: "9c37bf73343adb93920a7ae80260b0e57684551e",
-            use: "sig",
-            kty: "RSA",
-            ...
+            "alg": "RS256",
+            "kid": "9c37bf73343adb93920a7ae80260b0e57684551e",
+            "use": "sig",
+            "kty": "RSA",
+            // ...
         }
     ]
 }
