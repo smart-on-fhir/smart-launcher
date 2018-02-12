@@ -6,3 +6,4 @@ tests/e2e/screenshots
 selenium-debug.log
 
 !.gitkeep
+.vscode/launch.json
