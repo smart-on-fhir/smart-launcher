@@ -12,7 +12,8 @@ var codec = (function() {
         "launch_prov"      : "h",
         "skip_login"       : "i",
         "skip_auth"        : "j",
-        "launch_pt"        : "k"
+        "launch_pt"        : "k",
+        "launch_cds"       : "l"
     };
 
     var CODE_TO_VALUE = {
@@ -26,7 +27,8 @@ var codec = (function() {
         "h" : "launch_prov",
         "i" : "skip_login",
         "j" : "skip_auth",
-        "k" : "launch_pt"
+        "k" : "launch_pt",
+        "l" : "launch_cds"
     };
 
     var SIM_ERRORS = [

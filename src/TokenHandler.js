@@ -270,6 +270,10 @@ class TokenHandler extends SMARTHandler {
         if (clientDetailsToken.user && scope.has("profile") && scope.has("openid")) {
             token.id_token = this.createIdToken(clientDetailsToken);
         }
+
+        if (clientDetailsToken.sde) {
+            token.serviceDiscoveryURL = clientDetailsToken.sde
+        }
     
         // access_token
         token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });

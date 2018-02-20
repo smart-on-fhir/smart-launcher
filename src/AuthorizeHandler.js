@@ -132,8 +132,13 @@ class AuthorizeHandler extends SMARTHandler {
             return true;
         }
     
-        // Yes - if 0 or multiple patients selected and ehr launch and launch/patient oor launch scope
+        // Yes - if 0 or multiple patients selected and ehr launch and launch/patient or launch scope
         if (this.sim.launch_ehr && (this.scope.has("launch/patient") || this.scope.has("launch"))) {
+            return true;
+        }
+
+        // Yes - if 0 or multiple patients selected and CDS launch and launch/patient or launch scope
+        if (this.sim.launch_cds && (this.scope.has("launch/patient") || this.scope.has("launch"))) {
             return true;
         }
     
@@ -166,7 +171,8 @@ class AuthorizeHandler extends SMARTHandler {
                     smart_style_url    : config.baseUrl + "/smart-style.json",
                 },
                 client_id: this.request.query.client_id,
-                scope    : this.request.query.scope
+                scope    : this.request.query.scope,
+                sde      : sim.sde
             };
 
         // auth_error

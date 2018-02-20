@@ -186,6 +186,13 @@
                                 <span class="text-muted small normal-weight">(app connects to FHIR without user login)</span>
                             </label>
                         </div>
+                        <div class="radio visible-if-cds hidden" id="launch-cds-radio">
+                            <label style="font-weight:500">
+                                <input type="radio" name="launch-type" id="launch-cds">
+                                CDS Hooks Service
+                                <span class="text-muted small normal-weight">(test your CDS service)</span>
+                            </label>
+                        </div>
                         <br/>
                     </div>
 
@@ -199,11 +206,12 @@
                             <a class="form-control-static open-url text-info" style="font-weight:500"></a>
                         </div>
                     </div>
-                    <br clear="all" class="launch launch-ehr launch-prov hidden-xs show-if-no-sandboxes"/>
+                    <br clear="all" class="launch launch-ehr launch-prov launch-cds hidden-xs show-if-no-sandboxes"/>
 
                     <!-- Patient =========================================== -->
-                    <div class="form-group col-sm-6 launch launch-ehr launch-prov">
+                    <div class="form-group col-sm-6 launch launch-ehr launch-prov launch-cds">
                         <label for="patient" class="text-right" style="display:block;">
+                            <span class="launch launch-cds">&nbsp;</span>
                             <span class="text-muted normal-weight launch launch-ehr"><code>launch</code> or <code>launch/patient</code> scope</span>
                             <span class="text-muted normal-weight launch launch-prov"><code>launch/patient</code> scope</span>
                             <span class="pull-left">Patient(s) </span>
@@ -215,7 +223,7 @@
                             </span>
                         </div>
                         <p class="help-block small">
-                            Simulates the active patient in EHR when app is launched.
+                            Simulates the active patient in EHR when<span class="launch launch-cds"> the CDS sandbox</span> app is launched.
                             If no Patient ID is entered or if multiple comma delimited
                             IDs are specified, a patient picker will be displayed
                             as part of the launch flow.
@@ -223,14 +231,15 @@
                     </div>
 
                     <!-- Provider ========================================== -->
-                    <div class="form-group col-sm-6 launch launch-ehr launch-prov">
+                    <div class="form-group col-sm-6 launch launch-ehr launch-prov launch-cds">
                         <label for="user" class="text-right" style="display:block;">
-                            <span class="text-muted normal-weight"><code>openid</code> and <code>profile</code> scopes</span>
+                            <span class="launch launch-cds">&nbsp;</span>
+                            <span class="text-muted normal-weight launch launch-ehr launch-prov"><code>openid</code> and <code>profile</code> scopes</span>
                             <span class="pull-left">Provider(s) </span>
                         </label>
                         <input id="provider" class="form-control" placeholder="Provider ID" name="provider" autocomplete="off">
                         <p class="help-block small">
-                            Simulates user who is launching the app. If no provider
+                            Simulates user who is launching the <span class="launch launch-cds"> the CDS sandbox</span> app. If no provider
                             is selected, or if multiple comma delimited Practitioner
                             IDs are specified, a login screen will be displayed as
                             part of the launch flow.
@@ -276,7 +285,7 @@
                     </div>
 
                     <!-- Advanced ========================================== -->
-                    <div class="form-group col-xs-12" style="margin-bottom: 0">
+                    <div class="form-group col-xs-12 launch launch-ehr launch-prov launch-pt launch-bs" style="margin-bottom: 0">
                         <label class="text-warning">Advanced</label>
                         <hr class="solid fg-warning"/>
                         <div class="row">
@@ -349,7 +358,7 @@
                     <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
                     <a class="pull-right launch launch-ehr text-success" id="ehr-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
                     <b class="text-success launch launch-pt launch-ehr launch-prov">Launch</b>
-                    <b class="text-success launch launch-bs">Launch Configuration</b>
+                    <b class="text-success launch launch-bs launch-cds">Launch Configuration</b>
                 </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
                     <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0;color: rgba(205, 198, 158, 0.84);text-shadow: 0px 1px 1px rgb(255, 255, 255), 0px 0px 0px rgb(0, 0, 0);"></h3>
@@ -364,7 +373,7 @@
                             <span class="label label-default">client_secret</span>
                             <small>The app's <code>client_secret</code> is not validated on the SMART test server,
                             so any secret will work. If provided, the <code>Authorization</code> header must conform
-                            to the standart format (<a target="_blank" href="http://docs.smarthealthit.org/authorization/basic-auth-example/"
+                            to the standard format (<a target="_blank" href="http://docs.smarthealthit.org/authorization/basic-auth-example/"
                             >Example</a>). Use the error dropdown above to simulate the server response to an invalid
                             <code>client_secret</code>.
                             </small>
@@ -373,6 +382,9 @@
                             <a href="http://docs.smarthealthit.org/authorization/backend-services/" target="_blank">Backend Services Docs <i class="glyphicon glyphicon-new-window"></i></a>
                             &nbsp;|&nbsp;
                             <a href="https://github.com/smart-on-fhir/sample-apps-stu3/tree/master/backend-service" target="_blank">View NodeJS Example <i class="glyphicon glyphicon-new-window"></i></a>
+                        </li>
+                        <li class="launch launch-cds">
+                            If you have developed CDS service(s) enter your discovery endpoint URL below and click "launch" to launch the CDS Hooks Sandbox.
                         </li>
                     </ul>
                 </div>
@@ -397,6 +409,21 @@
                                 described <a target="_blank" href="http://docs.smarthealthit.org/authorization/#standalone-launch-sequence">here</a>.
                             </p>
                         </div>
+                        <div class="launch launch-cds">
+                            <label for="sde">Discovery Endpoint URL</label>
+                            <div class="input-group">
+                                <input name="sde" id="sde" class="form-control" placeholder="Discovery Endpoint URL" autocomplete="on">
+                                <span class="input-group-btn">
+                                    <a
+                                        id="cds-launch-url"
+                                        href="#"
+                                        target="_blank"
+                                        class="btn btn-success"
+                                    >Launch</a>
+                                </span>
+                            </div>
+                        </div>
+ 
                     </div>
 
                     <div class="form-group col-sm-12 launch launch-bs">
@@ -464,7 +491,15 @@
                     [ "#pt-skip-auth"    , "skip_auth"        ],
                     [ "#user-pt"         , "patient"          ]
                 ],
-                "launch-bs": []
+                "launch-bs": [],
+                "launch-cds": [
+                    [ "#launch-cds"     , "launch_cds"      ],
+                    // [ "#prov-skip-login" , "skip_login"       ], 
+                    // [ "#prov-skip-auth"  , "skip_auth"        ], 
+                    [ "#patient"         , "patient"          ],
+                    [ "#provider"        , "provider"         ],
+                    [ "#sde"             , "sde"              ]
+                ]
             };
 
             // Getters ---------------------------------------------------------
@@ -546,6 +581,10 @@
                                 '<span class="text-muted">No tags defined on the selected server</span>';
                         }).join("")
                     );
+                }
+
+                if (ENV.CDS_SANDBOX_URL) {
+                    $(".visible-if-cds").removeClass("hidden");
                 }
 
                 // Build the FHIR version selector
@@ -875,6 +914,20 @@
                 $("#token-url").val(baseUrl + "/auth/token")
                 $("#standalone-launch-url-test").attr("href", "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl));
                 $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
+
+                var sde = $.trim($("#sde").val());
+                var cdsSandbox = "http://localhost:8080";
+                // var cdsSandbox = "http://sandbox.cds-hooks.org";
+                $("#cds-launch-url").prop({
+                    disabled: !sde,
+                    href: (
+                        cdsSandbox
+                        + "/launch.html?launch=" + launchData
+                        // + "/?_=" + Date.now()
+                        + "&iss=" + encodeURIComponent(openUrl)
+                        // + "&services=" + encodeURIComponent(sde || "")
+                    )
+                }).toggleClass("disabled", !sde);
                 
                 if (launchType == "launch-bs") {
                     var hasJSON = false;

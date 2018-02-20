@@ -1,7 +1,7 @@
 const express      = require("express");
 const cors         = require("cors");
 const bodyParser   = require('body-parser');
-const fs           = require("fs")
+const base64url    = require("base64-url");
 const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
 const simpleProxy  = require("./simple-proxy");
@@ -101,6 +101,13 @@ app.get(buildRoutePermutations("/authorize"), (req, res) => {
 // auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
+// Provide launch_id if the CDS Sandbox asks for it
+app.post(buildRoutePermutations("/fhir/_services/smart/launch"), bodyParser.json(), (req, res) => {
+    res.json({
+        launch_id: base64url.encode(JSON.stringify(req.body.parameters || {}))
+    });
+});
+
 // fhir request using sandboxes (tags)
 app.use(
     [
@@ -134,7 +141,8 @@ app.use("/env.js", (req, res) => {
         "LOG_TIMES"               : lib.bool,
         "DISABLE_SANDBOXES"       : lib.bool,
         "DISABLE_BACKEND_SERVICES": lib.bool,
-        "GOOGLE_ANALYTICS_ID"     : String
+        "GOOGLE_ANALYTICS_ID"     : String,
+        "CDS_SANDBOX_URL"         : String
     };
 
     Object.keys(whitelist).forEach(key => {
