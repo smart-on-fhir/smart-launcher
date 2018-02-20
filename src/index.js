@@ -1,6 +1,7 @@
 const express      = require("express");
 const cors         = require("cors");
 const bodyParser   = require('body-parser');
+const fs           = require("fs");
 const base64url    = require("base64-url");
 const smartAuth    = require("./smart-auth");
 const reverseProxy = require("./reverse-proxy");
@@ -171,6 +172,21 @@ if (!module.parent) {
     app.listen(config.port, () => {
         console.log(`Example app listening on port ${config.port}!`)
     });
+
+    if (process.env.SSL_PORT) {
+        require('pem').createCertificate({
+            days: 100,
+            selfSigned: true
+        }, (err, keys) => {
+            if (err) {
+                throw err
+            }
+            require("https").createServer({
+                key: keys.serviceKey,
+                cert: keys.certificate
+            }, app).listen(process.env.SSL_PORT);
+        });
+    }
 }
 
 module.exports = app;
