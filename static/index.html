@@ -913,19 +913,18 @@
                 $("#standalone-launch-url-test").attr("href", "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl));
                 $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
 
-                var sde = $.trim($("#sde").val());
-                var cdsSandbox = "http://localhost:8080";
-                // var cdsSandbox = "http://sandbox.cds-hooks.org";
-                $("#cds-launch-url").prop({
-                    disabled: !sde,
-                    href: (
-                        cdsSandbox
-                        + "/launch.html?launch=" + launchData
-                        // + "/?_=" + Date.now()
-                        + "&iss=" + encodeURIComponent(openUrl)
-                        // + "&services=" + encodeURIComponent(sde || "")
-                    )
-                }).toggleClass("disabled", !sde);
+                var cdsSandbox = ENV.CDS_SANDBOX_URL;
+                if (cdsSandbox) {
+                    var sde = $.trim($("#sde").val());
+                    $("#cds-launch-url").prop({
+                        disabled: !sde,
+                        href: (
+                            cdsSandbox
+                            + "/launch.html?launch=" + launchData
+                            + "&iss=" + encodeURIComponent(openUrl)
+                        )
+                    }).toggleClass("disabled", !sde);
+                }
                 
                 if (launchType == "launch-bs") {
                     var hasJSON = false;
