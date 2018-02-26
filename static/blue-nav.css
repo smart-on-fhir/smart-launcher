@@ -9,6 +9,12 @@
   margin: 10px 10px 10px 0;
 }
 
+.navbar-custom .navbar-brand {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: none;
+}
+
 .navbar-custom .navbar-brand,
 .navbar-custom .navbar-nav > li > a {
   color: #FFF;

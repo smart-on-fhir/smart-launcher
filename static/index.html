@@ -43,9 +43,9 @@
             <div class="container">
                 <div class="navbar-header">
                     <div class="pull-left logo">
-                        <img src="/img/smart-bug.png" />
+                        <img src="/img/logo.svg" height="30" />
                     </div>
-                    <a class="navbar-brand" href="/index.html" style="white-space:nowrap;text-overflow:ellipsis;text-shadow:none" title="Click here to re-start the app with it's default settings">SMART App Launcher</a>
+                    <a class="navbar-brand" href="/index.html" title="Click here to re-start the app with it's default settings">SMART App Launcher</a>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
@@ -94,7 +94,7 @@
         <!-- Main Contents ================================================= -->
         <form>
             <button type="submit" style="position: fixed; top: -100px">Submit</button>
-        <div class="container" id="content" style="display:none;">
+            <div class="container" id="content" style="display:none;">
 
             <!-- Sandboxes ================================================= -->
             <div class="panel panel-info alert-info sandbox-panel" style="display:none">
@@ -188,7 +188,7 @@
                             <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-cds">
                                 CDS Hooks Service
-                                <span class="text-muted small normal-weight">(test your CDS service)</span>
+                                <span class="text-muted small normal-weight">(test your CDS services)</span>
                             </label>
                         </div>
                         <br/>
@@ -220,8 +220,15 @@
                                 <button class="btn btn-default" type="button" id="patient-select-button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">
-                            Simulates the active patient in EHR when<span class="launch launch-cds"> the CDS sandbox</span> app is launched.
+                        <p class="help-block small launch launch-cds">
+                            Simulates the active patient in EHR when the CDS
+                            sandbox is launched. If no Patient ID is entered or
+                            if multiple comma delimited IDs are specified, a
+                            patient picker will be displayed as part of the
+                            launch flow.
+                        </p>
+                        <p class="help-block small launch launch-ehr launch-prov">
+                            Simulates the active patient in EHR when app is launched.
                             If no Patient ID is entered or if multiple comma delimited
                             IDs are specified, a patient picker will be displayed
                             as part of the launch flow.
@@ -236,8 +243,14 @@
                             <span class="pull-left">Provider(s) </span>
                         </label>
                         <input id="provider" class="form-control" placeholder="Provider ID" name="provider" autocomplete="off">
-                        <p class="help-block small">
-                            Simulates user who is launching the <span class="launch launch-cds"> the CDS sandbox</span> app. If no provider
+                        <p class="help-block small launch launch-cds">
+                            Simulates user who is launching the CDS sandbox. If
+                            no provider is selected, or if multiple comma delimited
+                            Practitioner IDs are specified, a login screen will
+                            be displayed as part of the launch flow.
+                        </p>
+                        <p class="help-block small launch launch-ehr launch-prov">
+                            Simulates user who is launching the app. If no provider
                             is selected, or if multiple comma delimited Practitioner
                             IDs are specified, a login screen will be displayed as
                             part of the launch flow.
@@ -502,11 +515,16 @@
 
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
-                return $(ENV.DISABLE_SANDBOXES ? "#fhir-version-2" : "#fhir-version-1").val() || CONFIG.fhirVersions[0].name;
+                return $(ENV.DISABLE_SANDBOXES ?
+                    "#fhir-version-2" :
+                    "#fhir-version-1"
+                ).val() || CONFIG.fhirVersions[0].name;
             }
 
             function getSandboxName() {
-                return !ENV.DISABLE_SANDBOXES ? $("#sb").val() || "public" : "public";
+                return !ENV.DISABLE_SANDBOXES ?
+                    $("#sb").val() || "public" :
+                    "public";
             }
 
             function getLaunchType() {
@@ -666,7 +684,6 @@
                             "stu3-open-sandbox" : "";
                     }
 
-                    // alert(getBaseUrl() + "/fhir")
                     var pickerSettings = {
                         server: {
                             url : getBaseUrl() + "/fhir",
@@ -730,8 +747,7 @@
                         label: "My Own Data",
                         selected: true
                     });
-                    // console.log(tags);
-                    // alert(getBaseUrl() + "/fhir")
+
                     Lib.selectPatients(input.val(), {
                         pickerSettings: {
                             server: {
@@ -745,7 +761,6 @@
                     }).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
-                            // buildUrls();
                             handleFormChange()
                         }
                     });
@@ -867,7 +882,6 @@
             }
 
             function buildUrls() {
-                // debugger;
                 var baseUrl            = getBaseUrl();
                 var launchType         = getLaunchType();
                 var urlParams          = getSim();
@@ -887,8 +901,8 @@
                     ehrLaunchUrl += "&iss=" + encodeURIComponent(iss);
                 }
                     
-                // debugger;
-                var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" + encodeURIComponent(openUrl) + "&launch=" + launchData;
+                var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" +
+                    encodeURIComponent(openUrl) + "&launch=" + launchData;
 
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
@@ -910,7 +924,10 @@
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
                 $("#token-url").val(baseUrl + "/auth/token")
-                $("#standalone-launch-url-test").attr("href", "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl));
+                $("#standalone-launch-url-test").attr(
+                    "href",
+                    "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
+                );
                 $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
 
                 var cdsSandbox = ENV.CDS_SANDBOX_URL;
@@ -1020,7 +1037,7 @@
                 if (!ENV.GOOGLE_ANALYTICS_ID) {
                     return;
                 }
-                $('<script async src="https://www.googletagmanager.com/gtag/js?id=UA-109693963-1"/>').appendTo("body");
+                $('<script async src="https://www.googletagmanager.com/gtag/js?id=' + ENV.GOOGLE_ANALYTICS_ID + '"/>').appendTo("body");
                 window.dataLayer = window.dataLayer || [];
                 window.gtag = function(){
                     dataLayer.push(arguments);
