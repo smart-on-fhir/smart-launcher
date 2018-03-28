@@ -2,7 +2,9 @@ const FS = require("fs");
 const convert = require('pem-jwk');
 
 const HOST = process.env.HOST || "localhost";
-const PORT = process.env.PORT || (process.env.NODE_ENV == "test" ? 8444 : 8443);
+const PORT = process.env.LAUNCHER_PORT ||
+             process.env.PORT ||
+             (process.env.NODE_ENV == "test" ? 8444 : 8443);
 
 const PRIVATE_KEY = FS.readFileSync(__dirname + "/../private-key.pem", "utf8");
 const PUBLIC_KEY  = FS.readFileSync(__dirname + "/../public-key.pem", "utf8");
