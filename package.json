@@ -1,7 +1,7 @@
 {
   "name": "smart-launcher",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.1.1",
+  "description": "Launcher for SMART apps",
   "main": "./src/index.js",
   "scripts": {
     "watch": "./node_modules/.bin/nodemon ./src/index.js",
@@ -13,6 +13,14 @@
   },
   "author": "Dan Gottlieb",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smart-on-fhir/smart-launcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smart-on-fhir/smart-launcher/issues"
+  },
+  " homepage": "http://launch.smarthealthit.org/",
   "dependencies": {
     "base64-url": "^2.0.0",
     "body-parser": "^1.14.1",

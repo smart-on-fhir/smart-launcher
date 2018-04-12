@@ -1,5 +1,5 @@
 # SMART/FHIR proxy server and app launcher
-
+Launcher for SMART apps
 
 ## OIDC Keys generation
 To generate new private and public keys make sure you have `openssl` (comes pre-installed with the Mac), `cd` to the project root and execute:
