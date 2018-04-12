@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>SMART EHR</title>
+        <link rel="shortcut icon" href="/img/favicon.png" type="image/png" />
+        <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/blue-nav.css" rel="stylesheet">
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                margin: 0;
+                padding: 0;
+                position: fixed;
+                display: block;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                color: #000;
+                font: menu;
+                cursor: default;
+                background: #ECE9DA;
+                text-shadow: 0 1px 0 #FFF;
+                overflow: hidden;
+                font-family: sans-serif;
+            }
+            iframe {
+                border: 1px solid black;
+                display: flex;
+                flex: 1 1 100px;
+                margin: -1px 1px 1px 1px;
+                box-sizing: border-box;
+                background: rgba(0, 0, 0, 0.3);
+                /* transition: all 1s linear; */
+                height: 100%;
+            }
+            .status-bar {
+                display: flex;
+                background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
+                box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.15) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
+                color: #444;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+            }
+            
+            .flex-row {
+                display       : flex;
+                flex-direction: row;
+                flex          : 1 1 0px;
+                width         : 100%;
+                max-width     : 100%;
+            }
+            .header {
+                display    : flex;
+                box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
+                color      : #444;
+                padding    : 1ex 1em;
+                font-size  : 120%;
+            }
+            .header > .flex-row {
+                flex-wrap: nowrap;
+                white-space: nowrap;
+                line-height: 40px;
+            }
+            .sidebar {
+                background: linear-gradient(rgb(225, 222, 207), rgb(182, 180, 162));
+                display: flex;
+                flex-grow: 0;
+                padding: 1em;
+                box-sizing: border-box;
+                align-items: center;
+                color: rgba(189, 187, 170, 0.5);
+                text-shadow: 0px 0px 0px rgba(0, 0, 0, 0.6), -1px 0px 0px rgba(255, 255, 255, 0.5);
+                border-top: 1px solid rgba(255, 255, 255, 0.8);
+                width: 3em;
+            }
+            .sidebar h3 {
+                transform: rotate(-90deg);
+                white-space: nowrap;
+                margin: 0px 0px 0px -61px;
+            }
+            .header .patient {
+                flex: 1;
+                opacity: 0;
+                transition: opacity 0.4s;
+                margin-right: 1em;
+            }
+            .practitioner {
+                opacity: 0;
+                transition: opacity 0.4s;
+            }
+            .logo {
+                color: #5f5b50;
+                display: inline-block;
+                border-radius: 50px;
+                padding: 5px 15px 5px 0;
+                margin: 0 30px 0 0;
+                text-shadow: 0 1px 0 #FFF;
+                vertical-align: top;
+                line-height: 30px;
+                /* background-image: linear-gradient(0deg, transparent -10px, rgba(182, 180, 162, 0.5)); */
+                white-space: nowrap;
+                min-width: 9em;
+                /* box-shadow: 0 1px 1px -1px #000 inset, 0 -2px 0px -1px #FFF inset; */
+                font-weight: 400;
+                font-size: 20px;
+            }
+            .logo img {
+                max-height: 30px;
+                display: block;
+                float: left;
+                margin: 0 10px 0px 0;
+            }
+            .blue {
+                color: #3B69BE;
+            }
+            .text-muted {
+                color: rgba(0, 0, 0, 0.5);
+            }
+
+
+            /* status-bar contents ------------------------------------------ */
+            .status-bar > .flex-row {
+                justify-content: space-between;
+            }
+            .status-bar > .flex-row > div {
+                padding: 0 8px;
+                margin: 4px 0 3px;
+                box-sizing: border-box;
+                border-right: 1px solid rgba(0, 0, 0, 0.2);
+                border-left: 1px solid rgba(255, 255, 255, 0.5);
+                line-height: 1.2;
+                flex-grow: 1;
+            }
+            .status-bar > .flex-row > div:last-child {
+                border-right: none;
+            }
+            .status-bar > .flex-row > div:first-child {
+                border-left: none;
+            }
+            .status-bar > .flex-row > div.encounter,
+            .status-bar > .flex-row > div.user,
+            .status-bar > .flex-row > div.patient {
+                overflow     : hidden;
+                text-overflow: ellipsis;
+                text-align   : center;
+            }
+            .status-bar > .flex-row .encounter-id,
+            .status-bar > .flex-row .user-id,
+            .status-bar > .flex-row .patient-id {
+                display       : inline;
+                vertical-align: top;
+                opacity       : 0;
+                transition    : opacity 0.4s;
+            }
+        </style>
+    </head>
+    <body class="ehr">
+        <div class="header">
+            <div class="flex-row">
+                <div>
+                    <div class="logo">
+                        <img src="/img/smart-logo.png" /> Simulated EHR
+                    </div>
+                </div>
+                <div class="patient">
+                    <span class="blue"><i class="glyphicon glyphicon-user"></i><b> Patient: </b></span>
+                    <b class="patient-name"></b><span class="text-muted">, age: </span>
+                    <b class="patient-age"></b><span class="text-muted">, sex: </span>
+                    <b class="patient-gender"></b>
+                </div>
+                <div class="practitioner">
+                    <span class="blue"><i class="glyphicon glyphicon-user"></i><b> User: </b></span>
+                    <b class="provider-name"></b>
+                </div>
+            </div>
+        </div>
+        <div class="flex-row">
+            <div class="sidebar">
+                <h3>EHR Sidebar</h3>
+            </div>
+            <iframe name="iframe" id="frame" src="about:blank"></iframe>
+        </div>
+        <div class="status-bar">
+            <div class="flex-row">
+                <div>EHR Status bar</div>
+                <div class="patient">
+                    <div class="patient-id"></div>
+                </div>
+                <div class="user">
+                    <div class="user-id"></div>
+                </div>
+                <div class="encounter">
+                    <div class="encounter-id"></div>
+                </div>
+            </div>
+        </div>
+        <script src="/vendor/jquery-1.12.3.min.js"></script>
+        <script src="/vendor/moment.min.js"></script>
+        <script src="/lib.js"></script>
+        <script src="/codec.js"></script>
+        <script>
+
+        (function() {
+            var state = $.extend({
+                apiUrlSegment: "fhir"
+            }, Lib.getUrlQuery());
+
+            window.setPatient = function(patient) {
+                $(".patient-name").text(Lib.humanName(patient));
+                $(".patient-age").text(Lib.formatAge(patient.birthDate));
+                $(".patient-gender").text(Lib.toCamelCase(patient.gender || "unknown", true));
+                $(".patient-id").text("Patient ID: " + patient.id);
+                $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
+            };
+
+            window.setEncounterID = function(id) {
+                if (!id || id == "none" || id == "-1") {
+                    $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
+                }
+                else {
+                    $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
+                }
+            };
+
+            window.setUser = function(user) {
+                if (!user) {
+                    $(".user-id").html('User ID: <b style="color:#900">none</b>').css({ opacity: 1 });
+                }
+                else {
+                    $(".provider-name").text(Lib.humanName(user));
+                    $(".user-id").text("User ID: " + user.id);
+                    $(".practitioner, .user div").css({ opacity: 1 });
+                }
+            };
+
+            var appParams = Lib.getUrlQuery({ queryString: state.app.split("?")[1] });
+            var iss = appParams.iss;
+            var launch = atob(appParams.launch || "");
+            try {
+                launch = codec.decode(JSON.parse(launch || "{}"));
+            }
+            catch(error) {
+                console.error(error);
+            }
+            // console.dir("appParams: ", appParams)
+            // console.log("launch: ", launch)
+            // console.log("state: ", state)
+            // Set frame location
+            if (state.app) {
+                $("#frame").prop("src", state.app).css("background", "#FFF");
+            }
+            // Load the patient?
+            if (iss && launch && launch.patient && launch.patient.indexOf(",") == -1) {
+                $.get(iss + "/Patient/" + launch.patient).done(setPatient);
+            }
+            else {
+                $(".patient-id").html('Patient ID: <b style="color: #900">none</b>');
+                $(".status-bar .patient div").css({ opacity: 1 });
+            }
+
+            // Load the user?
+            if (iss && state.user &&  state.user.indexOf(",") == -1) {
+                $.get(iss + "/Practitioner/" + state.user).done(function(data) {
+                    $(".provider-name").text(Lib.humanName(data));
+                    $(".user-id").text("User ID: " + data.id);
+                    $(".practitioner, .user div").css({ opacity: 1 });
+                });
+            }
+            else {
+                $(".user-id").html('User ID: <b style="color: #900">none</b>').css({ opacity: 1 });
+                $(".user").css({ opacity: 1 });
+            }
+
+            // initial encounter id html
+            $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
+        })();
+        </script>
+    </body>
+</html>

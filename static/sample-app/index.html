@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>SMART Sample App</title>
+        <link rel="shortcut icon" href="/img/favicon.png" type="image/png" />
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <h1 class="page-header no-logo" style="flex: 0 0 34px">
+            <div class="page-header-details"></div>
+            SMART Sample App
+        </h1>
+        <div class="row auth-errors hidden">
+            <div>
+                <h3>Authorization failed</h3>
+                <div></div>
+            </div>
+        </div>
+        <div class="row hidden" style="flex: 0 0 200px">
+            <div class="panel standalone-launch-options">
+                <h4>Standalone Launch Parameters</h4>
+                <form id="launch-form">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <th style="text-align:right">aud:</th>
+                                <td colspan="3">
+                                    <input type="text" name="aud" id="aud" value="https://sb-fhir-stu3.smarthealthit.org/smartstu3/data">
+                                </td>
+                                <td rowspan="2" style="border-right:1px solid #DDD"></td>
+                                <td rowspan="2" style="border-left:1px solid #FFF"></td>
+                                <td rowspan="2">
+                                    <button type="submit" class="launch">Run</button>
+                                    <br/>
+                                    <button type="button" class="refresh hidden">Refresh</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align:right">scope:</th>
+                                <td>
+                                    <label><input name="scope" type="checkbox" value="openid"> openid </label><br/>
+                                    <label><input name="scope" type="checkbox" value="profile"> profile </label><br/>
+                                    <label><input name="scope" type="checkbox" value="offline_access"> offline_access </label><br/>
+                                    <label><input name="scope" type="checkbox" value="online_access"> online_access </label><br/>
+                                </td>
+                                <td>
+                                    <label><input name="scope" type="checkbox" value="patient/*.read"> patient/*.read </label><br/>
+                                    <label><input name="scope" type="checkbox" value="patient/*.write"> patient/*.write </label><br/>
+                                    <label><input name="scope" type="checkbox" value="user/*.*"> user/*.* </label><br/>
+                                    <label><input name="scope" type="checkbox" value="patient/*.*"> patient/*.* </label><br/>
+                                </td>
+                                <td>
+                                    <label><input name="scope" type="checkbox" value="launch/encounter"> launch/encounter </label><br/>
+                                    <label><input name="scope" type="checkbox" value="launch/patient"> launch/patient </label><br/>
+                                    <label><input name="scope" type="checkbox" value="smart/orchestrate_launch"> smart/orchestrate_launch </label><br/>
+                                    <input name="custom_scope" type="text" placeholder="Other space-separated scopes" size="32"><br/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+        </div>
+        <div class="row content hidden" style="flex: 1 1 0px">
+            <div class="panel">
+                <h4>Access Token Response</h4>
+                <pre class="token-response" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+            <div class="panel hidden">
+                <h4>ID Token</h4>
+                <pre class="id_token" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+            <div class="panel hidden">
+                <h4>Refresh Token</h4>
+                <pre class="refresh_token" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+            <div class="panel">
+                <h4>Patient</h4>
+                <pre class="patient" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+            <div class="panel">
+                <h4>User</h4>
+                <pre class="user" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+            <div class="panel">
+                <h4>Encounter</h4>
+                <pre class="encounter" data-lang="json"><img src="/img/ajax-loader.gif" width="16"/> Loading...</pre>
+            </div>
+        </div>
+        <script src="/vendor/fhir-client.js"></script>
+        <script src="/vendor/jquery-1.12.3.min.js"></script>
+        <script src="/vendor/monaco-editor/min/vs/loader.js"></script>
+        <script src="/lib.js"></script>
+        <script src="./app.js"></script>
+    </body>
+</html>

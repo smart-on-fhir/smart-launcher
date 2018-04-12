@@ -1,0 +1,48 @@
+{
+  "name": "smart-launcher",
+  "version": "0.1.1",
+  "description": "Launcher for SMART apps",
+  "main": "./src/index.js",
+  "scripts": {
+    "watch": "./node_modules/.bin/nodemon ./src/index.js",
+    "start": "node ./src/index.js",
+    "test": "NODE_ENV=test ./node_modules/.bin/mocha tests",
+    "test:watch": "NODE_ENV=test ./node_modules/.bin/mocha -w tests",
+    "test:e2e": "NODE_ENV=test node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch",
+    "cert": "openssl genrsa -out private-key.pem 2048 && openssl rsa -in private-key.pem -outform PEM -pubout -out public-key.pem"
+  },
+  "author": "Dan Gottlieb",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smart-on-fhir/smart-launcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smart-on-fhir/smart-launcher/issues"
+  },
+  " homepage": "http://launch.smarthealthit.org/",
+  "dependencies": {
+    "base64-url": "^2.0.0",
+    "body-parser": "^1.14.1",
+    "colors": "^1.1.2",
+    "cors": "^2.7.1",
+    "express": "^4.13.3",
+    "jsonwebtoken": "^5.4.0",
+    "jwk-to-pem": "^1.2.6",
+    "morgan": "^1.6.1",
+    "pem-jwk": "^1.5.1",
+    "replaceall": "^0.1.6",
+    "replacestream": "^4.0.3",
+    "request": "^2.65.0",
+    "ursa": "^0.9.4"
+  },
+  "devDependencies": {
+    "mocha": "^2.5.3",
+    "nightwatch": "^0.9.16",
+    "nodemon": "^1.7.1",
+    "pem": "^1.12.3",
+    "selenium-download": "^2.0.10",
+    "supertest": "^1.2.0",
+    "typescript": "^2.6.1"
+  }
+}

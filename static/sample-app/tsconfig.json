@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target" : "ES5",
+        "module" : "none",
+        "removeComments": true,
+        "lib": [
+            "es6",
+            "dom",
+            "es2015.promise"
+        ]
+    }
+}
