@@ -280,7 +280,9 @@ class AuthorizeHandler extends SMARTHandler {
                 config.baseUrl,
                 req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl)
             );
-            if (Lib.normalizeUrl(req.query.aud).replace(/^https?/, "") != Lib.normalizeUrl(apiUrl).replace(/^https?/, "")) {
+            let a = Lib.normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
+            let b = Lib.normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
+            if (a != b) {
                 Lib.redirectWithError(req, res, "bad_audience");
                 return false;
             }
