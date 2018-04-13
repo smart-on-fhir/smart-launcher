@@ -135,7 +135,9 @@ app.get("/launcher", launcher);
 app.use("/generator", generator);
 
 app.use("/env.js", (req, res) => {
-    const out = {};
+    const out = {
+        DISABLE_SANDBOXES: true // No sandbox support by default
+    };
 
     const whitelist = {
         "NODE_ENV"                : String,

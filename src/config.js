@@ -10,10 +10,18 @@ const PRIVATE_KEY = FS.readFileSync(__dirname + "/../private-key.pem", "utf8");
 const PUBLIC_KEY  = FS.readFileSync(__dirname + "/../public-key.pem", "utf8");
 const JWK         = convert.pem2jwk(PRIVATE_KEY);
 
+if (!process.env.FHIR_SERVER_R2) {
+  throw new Error('The FHIR_SERVER_R2 environment variable must be set');
+}
+
+if (!process.env.FHIR_SERVER_R3) {
+  throw new Error('The FHIR_SERVER_R3 environment variable must be set');
+}
+
 module.exports = {
-  fhirServerR2: process.env.FHIR_SERVER_R2 || "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open", // http://localhost:8080/baseDstu2
-  fhirServerR3: process.env.FHIR_SERVER_R3 || "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open",
-  baseUrl: process.env.BASE_URL            || `http://${HOST}:${PORT}`,
+  fhirServerR2: process.env.FHIR_SERVER_R2,
+  fhirServerR3: process.env.FHIR_SERVER_R3,
+  baseUrl: process.env.BASE_URL || `http://${HOST}:${PORT}`,
   sandboxTagSystem: process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
   authBaseUrl: process.env.AUTH_BASE_URL || "/auth",
   fhirBaseUrl: process.env.FHIR_BASE_URL || "/fhir",
