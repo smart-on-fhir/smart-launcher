@@ -672,16 +672,12 @@
                     var fhirVersion = getFhirVersion();
                     var fhirServer, tags;
                     if (fhirVersion == "r2") {
-                        fhirVersion = "DSTU-2"
-                        fhirServer = !ENV.FHIR_SERVER_R2 ||
-                        ENV.FHIR_SERVER_R2 == "https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open" ?
-                            "dstu2-open-sandbox" : "";
+                        fhirVersion = "DSTU-2";
+                        fhirServer = ENV.PICKER_CONFIG_R2 || "";
                     }
                     else if (fhirVersion == "r3") {
-                        fhirVersion = "STU-3"
-                        fhirServer = !ENV.FHIR_SERVER_R3 ||
-                        ENV.FHIR_SERVER_R3 == "https://sb-fhir-stu3.smarthealthit.org/smartstu3/open" ?
-                            "stu3-open-sandbox" : "";
+                        fhirVersion = "STU-3";
+                        fhirServer = ENV.PICKER_CONFIG_R3 || "";
                     }
 
                     var pickerSettings = {
