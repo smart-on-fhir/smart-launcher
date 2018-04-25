@@ -145,7 +145,9 @@ app.use("/env.js", (req, res) => {
         "DISABLE_SANDBOXES"       : lib.bool,
         "DISABLE_BACKEND_SERVICES": lib.bool,
         "GOOGLE_ANALYTICS_ID"     : String,
-        "CDS_SANDBOX_URL"         : String
+        "CDS_SANDBOX_URL"         : String,
+        "PICKER_CONFIG_R2"        : String,
+        "PICKER_CONFIG_R3"        : String
     };
 
     Object.keys(whitelist).forEach(key => {
