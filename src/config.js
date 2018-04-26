@@ -10,13 +10,16 @@ const PRIVATE_KEY = FS.readFileSync(__dirname + "/../private-key.pem", "utf8");
 const PUBLIC_KEY  = FS.readFileSync(__dirname + "/../public-key.pem", "utf8");
 const JWK         = convert.pem2jwk(PRIVATE_KEY);
 
-if (!process.env.FHIR_SERVER_R2) {
-  throw new Error('The FHIR_SERVER_R2 environment variable must be set');
-}
-
-if (!process.env.FHIR_SERVER_R3) {
-  throw new Error('The FHIR_SERVER_R3 environment variable must be set');
-}
+[
+  "FHIR_SERVER_R2",
+  "FHIR_SERVER_R3",
+  "PICKER_CONFIG_R2",
+  "PICKER_CONFIG_R3"
+].forEach(name => {
+  if (!process.env[name]) {
+    throw new Error(`The "${name} environment variable must be set`);
+  }
+});
 
 module.exports = {
   fhirServerR2: process.env.FHIR_SERVER_R2,

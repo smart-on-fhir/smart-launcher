@@ -471,6 +471,7 @@
         <script src="/jquery.picker.js"></script>
         <script>
 
+            var lastLaunchType = "unknown";
             var STATE = Lib.getUrlQuery({ camelCaseKeys: true });
             var paramMap = {
                 "launch-ehr": [
@@ -612,7 +613,7 @@
                 );
             }
 
-            function validateLaunchUrl() {
+            function validateLaunchUrl() {console.log("validateLaunchUrl");
                 var val = getLaunchUrl();
                 var idx = val.indexOf(":");
                 var redirectProto = val.match(/^https?\:/);
@@ -984,10 +985,17 @@
 
             function handleFormChange() {
                 var launchType = getLaunchType();
-                $(".launch").hide().filter("." + launchType).show();
+                if (lastLaunchType != launchType) {
+                    lastLaunchType = launchType;
+                    var toggles = $(".launch");
+                    toggles.filter(":not(" + launchType + "):visible").hide();
+                    toggles.filter("." + launchType + ":not(:visible)").show();
+                }
+
                 if (!ENV.DISABLE_SANDBOXES) {
                     $(".sb").hide().filter(".sb." + getFhirVersion()).show();
                 }
+
                 $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
                 $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
                 buildUrls();
