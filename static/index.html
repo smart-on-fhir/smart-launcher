@@ -10,12 +10,6 @@
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
         <link href="/blue-nav.css" rel="stylesheet">
-        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
     </head>
     <body>
         <!-- Private Key Dialog ============================================ -->
@@ -104,7 +98,7 @@
                 <div class="panel-body navbar-default" style="padding-bottom: 0">
                     <div class="form-group col-sm-6">
                         <label for="sb">Name</label>
-                        <input id="sb" class="form-control">
+                        <input type="text" id="sb" class="form-control">
                         <p class="help-block small">
                             Launch with this randomly generated sandbox name,
                             or enter a previously used name to use an existing
@@ -215,7 +209,7 @@
                             <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
-                            <input id="patient" class="form-control" value="" placeholder="Patient ID" name="patient" autocomplete="off">
+                            <input type="text" id="patient" class="form-control" value="" placeholder="Patient ID" name="patient" autocomplete="off">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button" id="patient-select-button"><span class="caret"></span></button>
                             </span>
@@ -242,7 +236,7 @@
                             <span class="text-muted normal-weight launch launch-ehr launch-prov"><code>openid</code> and <code>profile</code> scopes</span>
                             <span class="pull-left">Provider(s) </span>
                         </label>
-                        <input id="provider" class="form-control" placeholder="Provider ID" name="provider" autocomplete="off">
+                        <input type="text" id="provider" class="form-control" placeholder="Provider ID" name="provider" autocomplete="off">
                         <p class="help-block small launch launch-cds">
                             Simulates user who is launching the CDS sandbox. If
                             no provider is selected, or if multiple comma delimited
@@ -264,7 +258,7 @@
                             <span class="pull-left">Patient(s) </span>
                         </label>
                         <div class="input-group">
-                            <input id="user-pt" class="form-control" placeholder="Patient ID" name="user-pt" autocomplete="off">
+                            <input type="text" id="user-pt" class="form-control" placeholder="Patient ID" name="user-pt" autocomplete="off">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
@@ -403,7 +397,7 @@
                     <div class="form-group col-xs-12" style="margin-bottom: 0">
                         <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
                         <div class="input-group launch launch-ehr">
-                            <input name="launch-url" id="launch-url" class="form-control" placeholder="Launch URL" autocomplete="on">
+                            <input type="text" name="launch-url" id="launch-url" class="form-control" placeholder="Launch URL" autocomplete="on">
                             <span class="input-group-btn">
                                 <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
                             </span>
@@ -423,7 +417,7 @@
                         <div class="launch launch-cds">
                             <label for="sde">Discovery Endpoint URL</label>
                             <div class="input-group">
-                                <input name="sde" id="sde" class="form-control" placeholder="Discovery Endpoint URL" autocomplete="on">
+                                <input type="text" name="sde" id="sde" class="form-control" placeholder="Discovery Endpoint URL" autocomplete="on">
                                 <span class="input-group-btn">
                                     <a
                                         id="cds-launch-url"
