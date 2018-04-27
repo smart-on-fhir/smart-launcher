@@ -710,7 +710,6 @@
                     }, fhirServer).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
-                            // buildUrls();
                             handleFormChange();
                         }
                     });
