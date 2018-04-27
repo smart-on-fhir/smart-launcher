@@ -710,7 +710,8 @@
                     }, fhirServer).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
-                            buildUrls();
+                            // buildUrls();
+                            handleFormChange();
                         }
                     });
                 });
@@ -752,7 +753,7 @@
                     }).then(function(sel) {
                         if (sel || sel === "") {// ignore cancel and close cases
                             input.val(sel);
-                            handleFormChange()
+                            handleFormChange();
                         }
                     });
                 });
