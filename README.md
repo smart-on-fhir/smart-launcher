@@ -45,3 +45,9 @@ Libraries like https://www.npmjs.com/package/jwks-rsa can be used to automate th
 
 ### Notes about jwt.io
 People often use https://jwt.io/ to generate and validate tokens. However, it seems that the RS256 signature verification feature expects you to paste `x.509` formatted public key or certificate and does not work with PEM-encoded PKCS#1 public keys. For that reason, if you want to manually verify your token at https://jwt.io/, you will need to provide the original x.509 version of the public key that you can find at the `/public_key` endpoint of the server.
+
+
+### Using Docker
+```
+docker run -t -p 9009:80 smartonfhir/smart-launcher:latest
+```
