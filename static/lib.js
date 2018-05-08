@@ -161,6 +161,7 @@
      *                           with the new selection.
      */
     function selectPatients(selection, options, configFile) {
+        var PICKER_ORIGIN = ENV.PICKER_ORIGIN || "https://patient-browser.smarthealthit.org";
         var dfd = new $.Deferred();
         var cfg = $.extend({
             // The origin of the patient browser app
@@ -175,7 +176,7 @@
             submitStrategy: "automatic"
         }, options);
 
-        var path = cfg.origin + "/patient-browser/index.html?_=" + Date.now();
+        var path = PICKER_ORIGIN + "/index.html?_=" + Date.now();
         if (configFile) {
             path += "&config=" + configFile;
         }
@@ -209,7 +210,7 @@
         var onMessage = function onMessage(e) {
 
             // only if the message is coming from the patient picker
-            if (e.origin === cfg.origin) {
+            if (e.origin === PICKER_ORIGIN) {
 
                 // OPTIONAL: Send your custom configuration options if
                 // needed when the patient browser says it is ready
