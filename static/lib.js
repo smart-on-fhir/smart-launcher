@@ -162,6 +162,7 @@
      */
     function selectPatients(selection, options, configFile) {
         var PICKER_ORIGIN = ENV.PICKER_ORIGIN || "https://patient-browser.smarthealthit.org";
+        PICKER_ORIGIN = PICKER_ORIGIN.replace(/^https?\:/, location.protocol);
         var dfd = new $.Deferred();
         var cfg = $.extend({
             // The origin of the patient browser app
