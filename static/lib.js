@@ -266,9 +266,14 @@
         return out;
     }
     
-    function formatAge(dob) {
+    function formatAge(dob, deceasedDateTime) {
         if (!dob) return "";
         
+        // If deceasedDateTime exists, we have a death date so show age as
+        // the range between date of birth and date of death.
+        if (deceasedDateTime)
+            return moment(deceasedDateTime).diff(moment(dob), 'years') + " (deceased)";
+
         //fix year or year-month style dates 
         if (RE_YEAR.test(dob))
             dob = dob + "-01";
