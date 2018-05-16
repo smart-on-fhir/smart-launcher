@@ -224,7 +224,7 @@
 
             window.setPatient = function(patient) {
                 $(".patient-name").text(Lib.humanName(patient));
-                $(".patient-age").text(Lib.formatAge(patient.birthDate));
+                $(".patient-age").text(Lib.formatAge(patient.birthDate, patient.deceasedDateTime));
                 $(".patient-gender").text(Lib.toCamelCase(patient.gender || "unknown", true));
                 $(".patient-id").text("Patient ID: " + patient.id);
                 $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
