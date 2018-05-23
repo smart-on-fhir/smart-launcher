@@ -45,6 +45,15 @@ module.exports = (req, res) => {
     let fhirVersion = req.params.fhir_release.toUpperCase();
     let fhirVersionLower = fhirVersion.toLowerCase();
     let fhirServer = config[`fhirServer${fhirVersion}`];
+
+    // FHIR_SERVER_R2_INTERNAL and FHIR_SERVER_R2_INTERNAL env variables can be
+    // set to point the request to different location. This is useful when
+    // running as a Docker service and the fhir servers are in another service
+    // container
+    if (process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"]) {
+        fhirServer = process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"];
+    }
+
     if (!fhirServer) {
         return res.status(400).send({
             error: `FHIR server ${req.params.fhir_release} not found`

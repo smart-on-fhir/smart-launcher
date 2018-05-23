@@ -20,14 +20,23 @@ module.exports = function (req, res) {
     let token = null;
     let sandboxes = req.params.sandbox && req.params.sandbox.split(",");
     let isSearchPost = req.method == "POST" && req.url.endsWith("/_search");
+    let fhirRelease = (req.params.fhir_release || "").toUpperCase();
+    let fhirServer = config["fhirServer" + fhirRelease];
 
-    let fhirServer = config["fhirServer" + req.params.fhir_release.toUpperCase()];
+    // FHIR_SERVER_R2_INTERNAL and FHIR_SERVER_R2_INTERNAL env variables can be
+    // set to point the request to different location. This is useful when
+    // running as a Docker service and the fhir servers are in another service
+    // container
+    if (process.env["FHIR_SERVER_" + fhirRelease + "_INTERNAL"]) {
+        fhirServer = process.env["FHIR_SERVER_" + fhirRelease + "_INTERNAL"];
+    }
+
     if (!fhirServer) {
         return res.status(400).send({
             error: `FHIR server ${req.params.fhir_release} not found`
         });
     }
-
+    
     // only allow gets to blacklisted sandboxes (like the SMART default patients)
     if (req.method != "GET" && !req.url.endsWith("/_search") && (
         !sandboxes ||
@@ -107,7 +116,7 @@ module.exports = function (req, res) {
             return res.send(JSON.stringify(error, null, 4));
         }
         res.status(response.statusCode);
-        res.type(response.headers['content-type']);
+        response.headers['content-type'] && res.type(response.headers['content-type']);
      
         // adjust urls in the fhir response so future requests will hit the proxy
         if (body) {
