@@ -117,6 +117,10 @@ module.exports = (req, res) => {
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
     request(fhirRequestOptions)
+    .on('error', function(error) {
+        console.error(error);
+        res.status(502).end(String(error)); // Bad Gateway
+    })
     .on('response', response => {
         let contentType = response.headers['content-type'];
         res.status(response.statusCode);
