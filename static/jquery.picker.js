@@ -9,15 +9,17 @@
         return $.map(props.data.entry, function(o) {
             if ("name" in o.resource) {
                 return (
-                    '<li>' +
+                    '<li class="picker-option">' +
                         '<a href="javascript: void 0" data-id="' + o.resource.id + '">' +
-                            '<span class="text-muted pull-right">' +
+                            '<div class="picker-option-left">' +
+                                '<input type="checkbox" value="' + o.resource.id + '"' +
+                                (values.indexOf(o.resource.id) > -1 ? " checked" : "") +
+                                ' /> <b>&nbsp;' +
+                                Lib.humanName(o.resource) + '</b>' +
+                            '</div>' + 
+                            '<div class="text-muted picker-option-right">' +
                                 '<b>ID: </b>' + o.resource.id +
-                            '</span>' +
-                            '<input type="checkbox" value="' + o.resource.id + '"' +
-                            (values.indexOf(o.resource.id) > -1 ? " checked" : "") +
-                            ' /> <b>&nbsp;' +
-                            Lib.humanName(o.resource) + '</b>' +
+                            '</div>' +
                         '</a>' + 
                     '</li>'
                 );

@@ -156,3 +156,30 @@ textarea {
 .no-sandboxes .show-if-sandboxes {
   display: none;
 }
+
+
+.picker-option {
+  white-space: normal;
+}
+.picker-option a {
+  display: block;
+  white-space: normal !important;
+  max-width: 100%;
+}
+.picker-option-left {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: auto;
+  text-overflow: ellipsis;
+  vertical-align: top;
+  width: 100%;
+  max-width: 20rem;
+}
+.picker-option-right {
+  padding-left: 20px;
+  display: inline-block;
+  vertical-align: middle;
+  text-align: right;
+  min-width: 10rem;
+  font-size: small;
+}
