@@ -137,7 +137,9 @@ app.use("/generator", generator);
 app.use("/env.js", (req, res) => {
     const out = {
         DISABLE_SANDBOXES: true, // No sandbox support by default
-        PICKER_ORIGIN    : "https://patient-browser.smarthealthit.org"
+        PICKER_ORIGIN    : "https://patient-browser.smarthealthit.org",
+        STU2_ENABLED     : true,
+        STU3_ENABLED     : true
     };
 
     const whitelist = {
@@ -149,7 +151,9 @@ app.use("/env.js", (req, res) => {
         "CDS_SANDBOX_URL"         : String,
         "PICKER_CONFIG_R2"        : String,
         "PICKER_CONFIG_R3"        : String,
-        "PICKER_ORIGIN"           : String
+        "PICKER_ORIGIN"           : String,
+        "STU2_ENABLED"            : lib.bool,
+        "STU3_ENABLED"            : lib.bool
     };
 
     Object.keys(whitelist).forEach(key => {

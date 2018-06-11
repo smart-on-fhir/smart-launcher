@@ -76,6 +76,18 @@
             </div>
         </div>
 
+        <!-- Offline Server Warnings ======================================= -->
+        <div class="container">
+            <div class="alert alert-warning disabled-server-stu2 alert-dismissible" style="display:none">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <i class="glyphicon glyphicon-exclamation-sign"></i> <b>The DSTU-2 server is disabled.</b> You will not be able to launch DSTU-2 applications!
+            </div>
+            <div class="alert alert-warning disabled-server-stu3 alert-dismissible" style="display:none">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <i class="glyphicon glyphicon-exclamation-sign"></i> <b>The STU-3 server is disabled.</b> You will not be able to launch STU-3 applications!
+            </div>
+        </div>
+
         <!-- Loader ======================================================== -->
         <div class="container" id="loading">
             <div class="row">
@@ -571,6 +583,14 @@
             }
 
             function buildForm() {
+
+                if (!ENV.STU2_ENABLED) {
+                    $(".disabled-server-stu2").show();
+                }
+
+                if (!ENV.STU3_ENABLED) {
+                    $(".disabled-server-stu3").show();
+                }
 
                 // Build the FHIR tag checkboxes
                 if (!ENV.DISABLE_SANDBOXES) {
