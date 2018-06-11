@@ -901,6 +901,7 @@
                 var standaloneUrl      = baseUrl + "/sim/" + launchData + "/fhir";
                 var appLaunchUrl       = getLaunchUrl();
                 var ehrLaunchUrl       = "";
+                var publicFhirUrl      = ENV["FHIR_SERVER_" + getFhirVersion().toUpperCase()];
 
                 if (appLaunchUrl) {
                     ehrLaunchUrl = appLaunchUrl + "?launch=" + launchData;
@@ -929,8 +930,9 @@
                     }
                 }
 
-                $(".open-url").text(openUrl);
-                $(".open-url-preview").attr("href", openUrl + "/metadata");
+                
+                $(".open-url").text(publicFhirUrl);
+                $(".open-url-preview").attr("href", publicFhirUrl + "/metadata");
                 $("#fhir-server-url").val(openUrl);
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);

@@ -153,7 +153,9 @@ app.use("/env.js", (req, res) => {
         "PICKER_CONFIG_R3"        : String,
         "PICKER_ORIGIN"           : String,
         "STU2_ENABLED"            : lib.bool,
-        "STU3_ENABLED"            : lib.bool
+        "STU3_ENABLED"            : lib.bool,
+        "FHIR_SERVER_R2"          : String,
+        "FHIR_SERVER_R3"          : String
     };
 
     Object.keys(whitelist).forEach(key => {
