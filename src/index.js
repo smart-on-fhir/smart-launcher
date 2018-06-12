@@ -182,7 +182,7 @@ app.use(express.static("static"));
 
 if (!module.parent) {
     app.listen(config.port, () => {
-        console.log(`Example app listening on port ${config.port}!`)
+        console.log(`SMART launcher listening on port ${config.port}!`)
     });
 
     if (process.env.SSL_PORT) {
@@ -196,7 +196,9 @@ if (!module.parent) {
             require("https").createServer({
                 key: keys.serviceKey,
                 cert: keys.certificate
-            }, app).listen(process.env.SSL_PORT);
+            }, app).listen(process.env.SSL_PORT, () => {
+                console.log(`SMART launcher listening on port ${process.env.SSL_PORT}!`)
+            });
         });
     }
 }
