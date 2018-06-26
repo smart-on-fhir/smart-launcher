@@ -227,58 +227,63 @@ class TokenHandler extends SMARTHandler {
      * @param {Object} clientDetailsToken 
      */
     finish(clientDetailsToken) {
-        const req = this.request;
-        const res = this.response;
+        try {
+            const req = this.request;
+            const res = this.response;
+            
+            // Request from confidential client
+            if (!this.validateAuth(clientDetailsToken)) {
+                return;
+            }
         
-        // Request from confidential client
-        if (!this.validateAuth(clientDetailsToken)) {
-            return;
-        }
-    
-        const scope = new ScopeSet(decodeURIComponent(clientDetailsToken.scope));
-    
-        if (clientDetailsToken.auth_error == "token_invalid_token") {
-            return Lib.replyWithError(res, "sim_invalid_token", 401);
-        }
-    
-        // refresh_token
-        if (scope.has('offline_access') || scope.has('online_access')) {
-            clientDetailsToken.context.refresh_token = Lib.generateRefreshToken(clientDetailsToken);
-        }
+            const scope = new ScopeSet(decodeURIComponent(clientDetailsToken.scope));
+        
+            if (clientDetailsToken.auth_error == "token_invalid_token") {
+                return Lib.replyWithError(res, "sim_invalid_token", 401);
+            }
+        
+            // refresh_token
+            if (scope.has('offline_access') || scope.has('online_access')) {
+                clientDetailsToken.context.refresh_token = Lib.generateRefreshToken(clientDetailsToken);
+            }
 
-        const expiresIn = clientDetailsToken.accessTokensExpireIn ?
-            clientDetailsToken.accessTokensExpireIn * 60 :
-            req.body.grant_type === 'client_credentials' ?
-                15 * 60 :
-                60 * 60;
-    
-        var token = Object.assign({}, clientDetailsToken.context, {
-            token_type: "bearer",
-            scope     : clientDetailsToken.scope,
-            client_id : req.body.client_id,
-            expires_in: expiresIn
-        });
-    
-        // sim_error
-        if (clientDetailsToken.auth_error == "request_invalid_token") {
-            token.sim_error = "Invalid token";
-        } else if (clientDetailsToken.auth_error == "request_expired_token") {
-            token.sim_error = "Token expired";
-        }
-    
-        // id_token
-        if (clientDetailsToken.user && scope.has("profile") && scope.has("openid")) {
-            token.id_token = this.createIdToken(clientDetailsToken);
-        }
+            const expiresIn = clientDetailsToken.accessTokensExpireIn ?
+                clientDetailsToken.accessTokensExpireIn * 60 :
+                req.body.grant_type === 'client_credentials' ?
+                    15 * 60 :
+                    60 * 60;
+        
+            var token = Object.assign({}, clientDetailsToken.context, {
+                token_type: "bearer",
+                scope     : clientDetailsToken.scope,
+                client_id : req.body.client_id,
+                expires_in: expiresIn
+            });
+        
+            // sim_error
+            if (clientDetailsToken.auth_error == "request_invalid_token") {
+                token.sim_error = "Invalid token";
+            } else if (clientDetailsToken.auth_error == "request_expired_token") {
+                token.sim_error = "Token expired";
+            }
+        
+            // id_token
+            if (clientDetailsToken.user && scope.has("profile") && scope.has("openid")) {
+                token.id_token = this.createIdToken(clientDetailsToken);
+            }
 
-        if (clientDetailsToken.sde) {
-            token.serviceDiscoveryURL = clientDetailsToken.sde
+            if (clientDetailsToken.sde) {
+                token.serviceDiscoveryURL = clientDetailsToken.sde
+            }
+        
+            // access_token
+            token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });
+        
+            res.json(token);
+        } catch (ex) {
+            console.error(ex);
+            throw ex;
         }
-    
-        // access_token
-        token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });
-    
-        res.json(token);
     }
 }
 
