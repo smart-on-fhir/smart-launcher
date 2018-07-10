@@ -250,8 +250,8 @@ class TokenHandler extends SMARTHandler {
             const expiresIn = clientDetailsToken.accessTokensExpireIn ?
                 clientDetailsToken.accessTokensExpireIn * 60 :
                 req.body.grant_type === 'client_credentials' ?
-                    15 * 60 :
-                    60 * 60;
+                    config.backendServiceAccessTokenLifetime * 60 :
+                    config.accessTokenLifetime * 60;
         
             var token = Object.assign({}, clientDetailsToken.context, {
                 token_type: "bearer",

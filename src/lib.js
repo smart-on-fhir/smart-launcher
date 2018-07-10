@@ -57,12 +57,14 @@ function die(error="Unknown error") {
 
 function generateRefreshToken(code) {
     let token = {};
-    ["context", "client_id", "scope", "user", "iat", "exp", "auth_error"].forEach(key => {
+    ["context", "client_id", "scope", "user", "iat"/*, "exp"*/, "auth_error"].forEach(key => {
         if (code.hasOwnProperty(key)) {
             token[key] = code[key];
         }
     });
-    return jwt.sign(token, config.jwtSecret);
+    return jwt.sign(token, config.jwtSecret, {
+        expiresIn: config.refreshTokenLifeTime * 60
+    });
 }
 
 function redirectWithError(req, res, name, ...rest) {

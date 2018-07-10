@@ -32,6 +32,11 @@ module.exports = {
   jwtSecret: process.env.SECRET || "thisisasecret",
   port: PORT,
   host: HOST,
+
+  accessTokenLifetime: process.env.ACCESS_TOKEN_LIFETIME || 60, // minutes
+  backendServiceAccessTokenLifetime: process.env.BACKEND_ACCESS_TOKEN_LIFETIME || 15, // minutes
+  refreshTokenLifeTime: process.env.REFRESH_TOKEN_LIFETIME || 60, // minutes
+
   oidcKeypair: Object.assign({
     "alg": "RS256",
     "kid": "9c37bf73343adb93920a7ae80260b0e57684551e",
