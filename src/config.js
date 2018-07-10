@@ -35,7 +35,7 @@ module.exports = {
 
   accessTokenLifetime: process.env.ACCESS_TOKEN_LIFETIME || 60, // minutes
   backendServiceAccessTokenLifetime: process.env.BACKEND_ACCESS_TOKEN_LIFETIME || 15, // minutes
-  refreshTokenLifeTime: process.env.REFRESH_TOKEN_LIFETIME || 60, // minutes
+  refreshTokenLifeTime: process.env.REFRESH_TOKEN_LIFETIME || 60 * 24, // minutes
 
   oidcKeypair: Object.assign({
     "alg": "RS256",
