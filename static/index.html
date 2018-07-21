@@ -682,8 +682,7 @@
                     $(this).select();
                 });
 
-                $("#patient-select-button").on("click", function() {
-                    var input = $("#patient");
+                function launchPatientBrowser(input) {
                     var fhirVersion = getFhirVersion();
                     var fhirServer, tags;
                     if (fhirVersion == "r2") {
@@ -733,48 +732,14 @@
                             handleFormChange();
                         }
                     });
+                }
+
+                $("#patient-select-button").on("click", function() {
+                    launchPatientBrowser($("#patient"));
                 });
 
                 $("#user-pt-select").on("click", function() {
-                    var input = $("#user-pt");
-                    var fhirVersion = getFhirVersion();
-                    if (fhirVersion == "r2") {
-                        fhirVersion = "DSTU-2"
-                    }
-                    else if (fhirVersion == "r3") {
-                        fhirVersion = "STU-3"
-                    }
-
-                    var tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
-                        return {
-                            key  : cb.value,
-                            label: $(cb).parent().text(),
-                            selected: true
-                        };
-                    }).get();
-
-                    tags.unshift({
-                        key: $("#sb").val(),
-                        label: "My Own Data",
-                        selected: true
-                    });
-
-                    Lib.selectPatients(input.val(), {
-                        pickerSettings: {
-                            server: {
-                                url : getBaseUrl() + "/fhir",
-                                type: fhirVersion,
-                                tags: tags,
-                                conditions: []
-                            },
-                            hideTagSelector: true
-                        }
-                    }).then(function(sel) {
-                        if (sel || sel === "") {// ignore cancel and close cases
-                            input.val(sel);
-                            handleFormChange();
-                        }
-                    });
+                    launchPatientBrowser($("#user-pt"));
                 });
 
                 $("#provider").picker({
