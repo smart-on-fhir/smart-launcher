@@ -904,7 +904,9 @@
                 var publicFhirUrl      = ENV["FHIR_SERVER_" + getFhirVersion().toUpperCase()];
 
                 if (appLaunchUrl) {
-                    ehrLaunchUrl = appLaunchUrl + "?launch=" + launchData;
+                    ehrLaunchUrl = appLaunchUrl + 
+                        (appLaunchUrl.indexOf("?") > -1 ? "&" : "?") +
+                        "launch=" + launchData;
                     var proto = appLaunchUrl.match(/^https?/);
                     var iss = openUrl;
                     if (proto && proto[0]) {
