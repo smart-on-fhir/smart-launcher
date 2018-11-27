@@ -138,7 +138,6 @@ module.exports = function (req, res) {
         }
 
         // pull the resource out of the bundle if we converted a /id url into a ?_id= query
-        console.log("====> ", req.url);
         if (req.method =="GET" && RE_RESOURCE_SLASH_ID.test(req.url) && typeof body == "string" && body.indexOf("Bundle") != -1) {
             body = Lib.unBundleResource(body);
             if (!body) {
