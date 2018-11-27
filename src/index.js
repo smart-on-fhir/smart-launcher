@@ -45,6 +45,27 @@ if (process.env.NODE_ENV == "development") {
     app.use(require('morgan')('combined'));
 }
 
+const BLACK_LIST = [
+    "18.217.254.14"
+];
+
+app.use((req, res, next) => {
+    let ip = req.headers["x-forwarded-for"] + "";
+    if (ip) {
+        ip = ip.split(",").pop();
+    }
+    else {
+        ip = req.connection.remoteAddress;
+    }
+    if (ip && BLACK_LIST.indexOf(ip) > -1) {
+        console.log(
+            `Your IP (${ip}) cannot access this service for some reason. ` +
+            `To find out more, please contact us at launch@smarthealthit.org. (${req.url})`
+        );
+    }
+    next();
+});
+
 // HTTP to HTTPS redirect (this is Heroku-specific!)
 // app.use((req, res, next) => {
 //     let proto = req.headers["x-forwarded-proto"];
