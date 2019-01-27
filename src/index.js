@@ -106,7 +106,10 @@ const buildRoutePermutations = (lastSegment) => {
 }
 
 // Well-known SMART Configuration
-app.get(buildRoutePermutations("/.well-known/smart-configuration"), wellKnownSmart);
+app.get(buildRoutePermutations(
+    `${config.fhirBaseUrl}/.well-known/smart-configuration`),
+    wellKnownSmart
+);
 
 // picker
 app.get(buildRoutePermutations("/picker"), (req, res) => {
