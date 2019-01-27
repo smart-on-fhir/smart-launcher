@@ -1,15 +1,16 @@
-const express      = require("express");
-const cors         = require("cors");
-const bodyParser   = require('body-parser');
-const fs           = require("fs");
-const base64url    = require("base64-url");
-const smartAuth    = require("./smart-auth");
-const reverseProxy = require("./reverse-proxy");
-const simpleProxy  = require("./simple-proxy");
-const config       = require("./config");
-const generator    = require("./generator");
-const lib          = require("./lib");
-const launcher     = require("./launcher");
+const express        = require("express");
+const cors           = require("cors");
+const bodyParser     = require('body-parser');
+const fs             = require("fs");
+const base64url      = require("base64-url");
+const smartAuth      = require("./smart-auth");
+const reverseProxy   = require("./reverse-proxy");
+const simpleProxy    = require("./simple-proxy");
+const config         = require("./config");
+const generator      = require("./generator");
+const lib            = require("./lib");
+const launcher       = require("./launcher");
+const wellKnownSmart = require("./wellKnownSmartConfiguration");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -86,6 +87,7 @@ app.use(handleXmlRequest);
 app.get("/.well-known/openid-configuration/", (req, res) => {
     res.json({"jwks_uri": `${config.baseUrl}/keys`})
 });
+
 app.get("/keys", (req, res) => {
     let key = {}
     Object.keys(config.oidcKeypair).forEach(p => {
@@ -94,7 +96,7 @@ app.get("/keys", (req, res) => {
     res.json({"keys":[key]})
 });
 
-buildRoutePermutations = (lastSegment) => {
+const buildRoutePermutations = (lastSegment) => {
     return [
         "/v/:fhir_release/sb/:sandbox/sim/:sim" + lastSegment,
         "/v/:fhir_release/sb/:sandbox" + lastSegment,
@@ -102,6 +104,9 @@ buildRoutePermutations = (lastSegment) => {
         "/v/:fhir_release" + lastSegment
     ];
 }
+
+// Well-known SMART Configuration
+app.get(buildRoutePermutations("/.well-known/smart-configuration"), wellKnownSmart);
 
 // picker
 app.get(buildRoutePermutations("/picker"), (req, res) => {
