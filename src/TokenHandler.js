@@ -212,9 +212,10 @@ class TokenHandler extends SMARTHandler {
         let secure = this.request.secure || this.request.headers["x-forwarded-proto"] == "https";
         let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
         return jwt.sign({
-            profile: clientDetailsToken.user,
-            aud    : this.request.body.client_id,
-            sub    : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
+            profile : clientDetailsToken.user,
+            fhirUser: clientDetailsToken.user,
+            aud     : this.request.body.client_id,
+            sub     : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
             iss
         }, PRIVATE_KEY, {
             algorithm: "RS256",
@@ -268,7 +269,7 @@ class TokenHandler extends SMARTHandler {
             }
         
             // id_token
-            if (clientDetailsToken.user && scope.has("profile") && scope.has("openid")) {
+            if (clientDetailsToken.user && scope.has("openid") && (scope.has("profile") || scope.has("fhirUser"))) {
                 token.id_token = this.createIdToken(clientDetailsToken);
             }
 

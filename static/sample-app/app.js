@@ -362,7 +362,7 @@ $(function () {
         encounter: {
             hidden: false
         },
-        scope: "patient/*.* user/*.* launch/patient launch/encounter openid offline_access profile"
+        scope: "patient/*.* user/*.* launch/patient launch/encounter openid fhirUser profile offline_access"
     });
     app.init();
 });

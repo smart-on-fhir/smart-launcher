@@ -57,8 +57,8 @@ class AuthorizeHandler extends SMARTHandler {
             return false;
         }
     
-        // Require both "openid" and "profile" scopes
-        if (!this.scope.has("openid") || !this.scope.has("profile")) {
+        // Require both "openid" and "profile|fhirUser" scopes
+        if (!(this.scope.has("openid") && (this.scope.has("profile") || this.scope.has("fhirUser")))) {
             return false;
         }
     
@@ -195,7 +195,7 @@ class AuthorizeHandler extends SMARTHandler {
         }
 
         // user
-        if (scope.has("openid") && scope.has("profile")) {
+        if (scope.has("openid") && (scope.has("profile") || scope.has("fhirUser"))) {
             
             // patient as user
             if (sim.launch_pt) {

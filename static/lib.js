@@ -350,7 +350,7 @@
             return out;
         }
 
-        if (scope == "profile") {
+        if (scope == "profile" || scope == "fhirUser") {
             out.read = "Your profile information";
             return out;
         }
