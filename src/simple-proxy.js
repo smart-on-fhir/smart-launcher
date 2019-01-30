@@ -5,6 +5,7 @@ const jwt        = require("jsonwebtoken");
 const replStream = require("replacestream");
 const config     = require("./config");
 const patientMap = require("./patient-compartment");
+const Lib        = require("./lib");
 
 require("colors");
 
@@ -16,7 +17,7 @@ module.exports = (req, res) => {
         return require("./reverse-proxy")(req, res);
     }
 
-    let logTime = process.env.LOG_TIMES ? Date.now() : null;
+    let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
     let token = null;
 

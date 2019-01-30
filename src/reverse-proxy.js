@@ -15,7 +15,7 @@ const RE_RESOURCE_SLASH_ID = new RegExp(
 
 module.exports = function (req, res) {
 
-    let logTime = process.env.LOG_TIMES ? Date.now() : null;
+    let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
     let token = null;
     let sandboxes = req.params.sandbox && req.params.sandbox.split(",");
