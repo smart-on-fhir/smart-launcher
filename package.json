@@ -9,7 +9,7 @@
     "test": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/mocha test/*.js",
     "test:cover": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc --reporter=lcov --reporter=text mocha test/*.js",
     "test:watch": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nodemon -w ./test ./node_modules/.bin/nyc --reporter=lcov mocha -R progress test/*.js",
-    "coverage"  : "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc report",
+    "coverage": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc report",
     "test:e2e": "NODE_ENV=test node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch",
     "cert": "openssl genrsa -out private-key.pem 2048 && openssl rsa -in private-key.pem -outform PEM -pubout -out public-key.pem",
     "dev": "concurrently npm:watch npm:test:watch"

@@ -11,17 +11,18 @@ function getRequestBaseURL(req) {
 }
 
 module.exports = (req, res) => {
-
-    const baseURL  = getRequestBaseURL(req);
-    const release  = req.params.fhir_release;
-    const authBase = config.authBaseUrl;
+    const prefix = `${getRequestBaseURL(req)}${
+        (req.originalUrl || req.originalUrl)
+        .replace(/\/fhir\/\.well-known\/smart-configuration$/, "")
+        }${config.authBaseUrl}`;
+    
     const json = {
 
         // REQUIRED, URL to the OAuth2 authorization endpoint.
-        authorization_endpoint: `${baseURL}/v/${release}${authBase}/authorize`,
+        authorization_endpoint: `${prefix}/authorize`,
 
         // REQUIRED, URL to the OAuth2 token endpoint.
-        token_endpoint: `${baseURL}/v/${release}${authBase}/token`,
+        token_endpoint: `${prefix}/token`,
 
         // OPTIONAL, if available, URL to the OAuth2 dynamic registration endpoint for this FHIR server.
         registration_endpoint: undefined,
