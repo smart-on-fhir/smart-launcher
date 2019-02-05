@@ -1,24 +1,8 @@
 {
-    "mocha.subdirectory": "/Users/vlad/dev/smart-launcher",
     "mocha.env": {
         "DOTENV_CONFIG_PATH": "env/test.env"
     },
     "mocha.files.glob": "test/*.js",
-    // "mocha.showInExplorer": false,
-    // "mocha.coverage": {
-    //     "enable": true,
-    //     "decoration": true,
-    //     "runWithInterval": false,
-    //     "autoUpdateInterval": 20000,
-    //     "activeOnStart": true,
-    //     "runAfterTest": false,
-    //     "runCoverageAfterFileSave": false,
-    //     "reporters": [
-    //             "lcov"
-    // //         // "text",
-    // //         "text-summary"
-    //     ]
-    // },
     "coverage-gutters.showGutterCoverage": false,
     "coverage-gutters.showLineCoverage": true,
     "coverage-gutters.showRulerCoverage": true,
@@ -41,5 +25,9 @@
     // "lcov.sourceMaps": true,
     "lcov.watch": [],
     "lcov.branchCoverage": "simple",
+    "cSpell.words": [
+        "fhir",
+        "openid"
+    ],
     // "mocha.logVerbose": true
 }

@@ -301,11 +301,28 @@ function decodeJwtToken(token) {
 ////////////////////////////////////////////////////////////////////////////////
 let server;
 before(() => {
-    server = app.listen(config.port);
+    return new Promise((resolve, reject) => {
+        server = app.listen(config.port, error => {
+            if (error) {
+                return reject(error);
+            }
+            resolve();
+        });
+    });
 });
 
 after(() => {
-    server.close();
+    if (server && server.listening) {
+        return new Promise(resolve => {
+            server.close(error => {
+                if (error) {
+                    console.log("Error shutting down the : ", error);
+                }
+                server = null;
+                resolve();
+            });
+        });
+    }
 });
 
 
