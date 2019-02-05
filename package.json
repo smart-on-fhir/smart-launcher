@@ -4,14 +4,17 @@
   "description": "Launcher for SMART apps",
   "main": "./src/index.js",
   "scripts": {
-    "watch": "./node_modules/.bin/nodemon ./src/index.js",
+    "watch": "DOTENV_CONFIG_PATH=env/development.env node -r dotenv/config ./node_modules/.bin/nodemon ./src/index.js",
     "start": "node ./src/index.js",
-    "test": "NODE_ENV=test ./node_modules/.bin/mocha tests",
-    "test:watch": "NODE_ENV=test ./node_modules/.bin/mocha -w tests",
+    "test": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/mocha test/*.js",
+    "test:cover": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc --reporter=lcov --reporter=text mocha test/*.js",
+    "test:watch": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nodemon -w ./test ./node_modules/.bin/nyc --reporter=lcov mocha -R progress test/*.js",
+    "coverage"  : "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc report",
     "test:e2e": "NODE_ENV=test node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch",
-    "cert": "openssl genrsa -out private-key.pem 2048 && openssl rsa -in private-key.pem -outform PEM -pubout -out public-key.pem"
+    "cert": "openssl genrsa -out private-key.pem 2048 && openssl rsa -in private-key.pem -outform PEM -pubout -out public-key.pem",
+    "dev": "concurrently npm:watch npm:test:watch"
   },
-  "author": "Dan Gottlieb",
+  "author": "Dan Gottlieb, Vladimir Ignatov",
   "license": "ISC",
   "repository": {
     "type": "git",
@@ -25,7 +28,9 @@
     "base64-url": "^2.0.0",
     "body-parser": "^1.14.1",
     "colors": "^1.1.2",
+    "concurrently": "^4.1.0",
     "cors": "^2.7.1",
+    "dotenv": "^6.2.0",
     "express": "^4.13.3",
     "jsonwebtoken": "^5.4.0",
     "jwk-to-pem": "^1.2.6",
@@ -38,9 +43,11 @@
     "ursa": "^0.9.4"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
     "mocha": "^2.5.3",
     "nightwatch": "^0.9.16",
     "nodemon": "^1.7.1",
+    "nyc": "^13.1.0",
     "selenium-download": "^2.0.10",
     "supertest": "^1.2.0",
     "typescript": "^2.6.1"

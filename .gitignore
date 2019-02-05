@@ -1,9 +1,11 @@
 node_modules
 
-tests/e2e/bin
-tests/e2e/reports
-tests/e2e/screenshots
+test/e2e/bin
+test/e2e/reports
+test/e2e/screenshots
 selenium-debug.log
 
 !.gitkeep
 .vscode/launch.json
+coverage
+.nyc_output
