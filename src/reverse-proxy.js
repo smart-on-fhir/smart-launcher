@@ -130,7 +130,7 @@ module.exports = function (req, res) {
             let authBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
             let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
             authBaseUrl = authBaseUrl.replace(/^https?/, secure ? "https" : "http");
-            body = Lib.addAuthToConformance(body, authBaseUrl);
+            body = Lib.augmentConformance(body, authBaseUrl);
             if (!body) {
                 res.status(404);
                 body = fhirError(`Error reading server metadata`);

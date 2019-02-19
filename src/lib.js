@@ -172,12 +172,13 @@ function normalizeUrl(url) {
 
 /**
  * Given a conformance statement (as JSON string), replaces the auth URIs with
- * new ones that point to our proxy server.
+ * new ones that point to our proxy server. Also add the rest.security.service
+ * field.
  * @param {String} bodyText    A conformance statement as JSON string
  * @param {String} authBaseUrl The baseUrl of our server
  * @returns {Object|null} Returns the modified JSON object or null in case of error
  */
-function addAuthToConformance(bodyText, authBaseUrl) {
+function augmentConformance(bodyText, authBaseUrl) {
     let json;
     try {
         json = JSON.parse(bodyText);
@@ -185,10 +186,10 @@ function addAuthToConformance(bodyText, authBaseUrl) {
             json.rest[0].security = {};
         }
     } catch (e) {
+        console.error(e);
         return null;
     }
 
-    // TODO: Add the register endpoint too
     json.rest[0].security.extension = [{
         "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
         "extension": [
@@ -202,6 +203,19 @@ function addAuthToConformance(bodyText, authBaseUrl) {
             }
         ]
     }];
+
+    json.rest[0].security.service = [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/restful-security-service",
+              "code": "SMART-on-FHIR",
+              "display": "SMART-on-FHIR"
+            }
+          ],
+          "text": "OAuth2 using SMART-on-FHIR profile (see http://docs.smarthealthit.org)"
+        }
+    ]
 
     return json;
 }
@@ -278,7 +292,7 @@ module.exports = {
     checkAuth,
     operationOutcome,
     buildUrlPath,
-    addAuthToConformance,
+    augmentConformance,
     normalizeUrl,
     unBundleResource,
     adjustResponseUrls,

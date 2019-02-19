@@ -6,7 +6,7 @@ const BASELINES = {
     "Lib.normalizeUrl"        : 0.00009,
     "Lib.adjustRequestBody"   : 0.00088,
     "Lib.adjustUrl"           : 0.00112,
-    "Lib.addAuthToConformance": 0.00469,
+    "Lib.augmentConformance"  : 0.00469,
     "Lib.unBundleResource"    : 0.00098,
     "Lib.adjustResponseUrls"  : 0.00296
 };
@@ -60,7 +60,7 @@ test("Lib.buildUrlPath", Lib.buildUrlPath, "/abxc/", "/asdb/")
 test("Lib.normalizeUrl", Lib.normalizeUrl, "dasdasasda/sda/sd/asd/asdasdas")
 test("Lib.adjustRequestBody", Lib.adjustRequestBody, { resource: {} }, "system", ["sb1", "sb2"])
 test("Lib.adjustUrl", Lib.adjustUrl, "a/b/c/?f=5", true, ["sb1", "sb2"])
-test("Lib.addAuthToConformance", Lib.addAuthToConformance, {rest: {}}, "authBaseUrl")
+test("Lib.augmentConformance", Lib.augmentConformance, {rest: {}}, "authBaseUrl")
 test("Lib.unBundleResource", Lib.unBundleResource, '{"entry":[{"resource":1}]}');
 test(
     "Lib.adjustResponseUrls",
