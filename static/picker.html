@@ -9,12 +9,11 @@
         <link href="/vendor/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet">
         <link href="/blue-nav.css" rel="stylesheet">
         <style>
-            th,
-            tr.patient>td {
+            th, tr.patient>td {
                 cursor: pointer;
             }
-            /* initial visibility state */
 
+            /* initial visibility state */
             #global-error,
             #message-no-patients,
             #patient-template,
@@ -27,12 +26,26 @@
                 display: none;
             }
 
+            .female { color: #b8446a }
+            .male { color: #3B69BE }
+
             span.col-sort-ind.col-sort-ind-active {
                 display: inline;
             }
 
             tr:not(.no-hover):hover {
                 background-color: #eee;
+            }
+
+            .col-sort-ind {
+                color: #999;
+            }
+
+            .label-warning {
+                background: #FFF;
+                color: #f0ad4e;
+                border: 1px solid #f0ad4e;
+                padding: 1px 4px 2px;
             }
         </style>
     </head>
@@ -41,7 +54,9 @@
             <div class="container-fluid">
                 <div class="navbar-header">
                     <div class="pull-left" style="margin: 10px;">
-                        <img src="/img/smart-bug.png" />
+                        <!-- <img src="/img/smart-bug.png" />
+                        <img src="/img/logo.svg" width="30" /> -->
+                        <img src="/img/smart-logo.png" width="30" />
                     </div>
                     <a class="navbar-brand" href="#" style="white-space:nowrap; text-overflow:ellipsis;">
                         SMART EHR
@@ -54,33 +69,32 @@
                 <div class="col-xs-12">
                     <div class="alert alert-danger" role="alert">
                         <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-                        <span id="global-error-message">An error occured loading patients, please try again later.</span>
+                        <span id="global-error-message">An error occurred loading patients, please try again later.</span>
                     </div>
                 </div>
             </div>
             <div class="row picker">
                 <div class="col-md-8 col-md-offset-2 col-sm-12">
                     <h2>Select Patient</h2>
-                    <hr/>
                 </div>
             </div>
             <form id="search-form">
-                <div class="row picker" style="margin-bottom:20px;">
+                <div class="row picker" style="margin:10px -15px 20px">
                     <div class="col-md-8 col-md-offset-2 col-sm-12">
                         <div class="input-group">
-                            <input id="search-text" type="text" class="form-control" placeholder="Search names for...">
+                            <input id="search-text" type="text" class="form-control" placeholder="Search by name...">
                             <span class="input-group-btn">
-                        <input type="submit" class="btn btn-default" type="button" value="search" />
-                    </span>
+                                <input type="submit" class="btn btn-default" type="button" value="Search" />
+                            </span>
                         </div>
                     </div>
                 </div>
             </form>
             <script type="text/template" id="patient-row-template">
                 <tr class="patient" id="patient-{id}">
-                    <td><button class="btn btn-xs btn-default">select</button>&nbsp;&nbsp;{name}</td>
+                    <td><input type="radio"/>&nbsp;&nbsp;{name}</td>
                     <td class="text-center">{gender}</td>
-                    <td class="text-center">{age}</td>
+                    <td class="text-left">{age}</td>
                 </tr>
             </script>
             <div class="row picker">
@@ -98,7 +112,7 @@
                                     <span class="col-sort-ind col-sort-ind-desc glyphicon glyphicon-sort-by-attributes-alt"></span>
                                     <span class="col-sort-ind col-sort-ind-asc glyphicon glyphicon-sort-by-attributes"></span>
                                 </th>
-                                <th id="col-header-age" class="col-md-2 col-sm-3 text-center">
+                                <th id="col-header-age" class="col-md-2 col-sm-3 text-left">
                                     <span class="col-title">Age&nbsp;</span>
                                     <span class="col-sort-ind col-sort-ind-desc glyphicon glyphicon-sort-by-attributes-alt"></span>
                                     <span class="col-sort-ind col-sort-ind-asc glyphicon glyphicon-sort-by-attributes"></span>
@@ -117,10 +131,10 @@
                                 </td>
                             </tr>
                             <tr id="paging" class="no-hover">
-                                <td colspan="4">
+                                <td colspan="4" style="padding-right: 0">
                                     <div>
                                         <div class="pull-left" style="padding:8px 0;">
-                                            <span id="paging-from">1</span> to <span id="paging-to">10</span> of <span id="paging-total">103</span>
+                                            <span id="paging-from"></span> to <span id="paging-to"></span><span id="paging-total"></span>
                                         </div>
                                         <div class="pull-right">
                                             <button id="paging-previous" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-menu-left"></span> Previous</button>
@@ -133,7 +147,7 @@
                     </table>
                 </div>
             </div>
-        </div><!-- container -->
+        </div>
         <script src="/vendor/jquery-1.12.3.min.js"></script>
         <script src="/vendor/bootstrap-3.3.6/js/bootstrap.min.js"></script>
         <script src="/vendor/moment.min.js"></script>
