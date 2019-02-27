@@ -209,7 +209,7 @@
                             <span class="text-muted" style="font-weight:500"> Open FHIR Server Endpoint: </span>
                             <a class="form-control-static open-url text-info" style="font-weight:500"></a>
                         </div>
-                        <div class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
+                        <div id="protected-server-preview" class="small" style="border-bottom: 1px dotted #DDD;line-height:26px;margin: 4px 0 0px">
                             <a class="pull-right btn btn-info btn-xs oauth-url-preview" href="#" target="_blank">Test</a>
                             <span class="text-muted" style="font-weight:500"> Protected FHIR Server Endpoint: </span>
                             <a class="form-control-static oauth-url text-info" style="font-weight:500"></a>
@@ -902,11 +902,16 @@
                     }
                 }
 
+                if (launchType == "launch-ehr") {
+                    $(".oauth-url").text(openUrl).show();
+                    $(".oauth-url-preview").attr("href", openUrl + "/metadata").show();
+                    $("#protected-server-preview").show();
+                } else {
+                    $("#protected-server-preview").hide();
+                }
                 
                 $(".open-url").text(publicFhirUrl);
-                $(".open-url-preview").attr("href", publicFhirUrl + "/metadata");
-                $(".oauth-url").text(openUrl);
-                $(".oauth-url-preview").attr("href", openUrl + "/metadata");
+                $(".open-url-preview").attr("href", publicFhirUrl + "/metadata");                
                 $("#fhir-server-url").val(openUrl);
                 $("#ehr-launch-url").attr("href", ehrLaunchUrl);
                 $("#standalone-launch-url").text(standaloneUrl);
