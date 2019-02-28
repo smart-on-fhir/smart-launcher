@@ -279,7 +279,15 @@ class TokenHandler extends SMARTHandler {
         
             // access_token
             token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });
-        
+
+            // The authorization servers response must include the HTTP
+            // Cache-Control response header field with a value of no-store,
+            // as well as the Pragma response header field with a value of no-cache.
+            res.set({
+               "Cache-Control": "no-store",
+               "Pragma": "no-cache"
+            });
+
             res.json(token);
         } catch (ex) {
             console.error(ex);
