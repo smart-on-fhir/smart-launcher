@@ -28,7 +28,9 @@
             body {
                 margin: 0;
                 padding: 0;
+                display: -ms-flexbox;
                 display: flex;
+                -ms-flex-direction: column;
                 flex-direction: column;
                 height: 100%;
                 color: #000;
@@ -41,7 +43,9 @@
             }
             iframe {
                 border: 1px solid black;
+                display: -ms-flexbox;
                 display: flex;
+                -ms-flex: 1 1 100px;
                 flex: 1 1 100px;
                 margin: -1px 1px 1px 1px;
                 box-sizing: border-box;
@@ -50,23 +54,29 @@
                 height: 100%;
             }
             .status-bar {
+                display: -ms-flexbox;
                 display: flex;
                 background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
                 box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.4) inset, 0 9px 5px -5px rgba(0, 0, 0, 0.15) inset, 0 -14px 10px -10px rgba(0, 0, 0, 0.05) inset;
                 color: #444;
                 white-space: nowrap;
+                -ms-flex-wrap: none;
                 flex-wrap: nowrap;
                 text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
             }
             
             .flex-row {
-                display       : flex;
-                flex-direction: row;
-                flex          : 1 1 0px;
-                width         : 100%;
-                max-width     : 100%;
+                display           : -ms-flexbox;
+                display           : flex;
+                -ms-flex-direction: row;
+                flex-direction    : row;
+                -ms-flex          : 1 1 0px;
+                flex              : 1 1 0px;
+                width             : 100%;
+                max-width         : 100%;
             }
             .header {
+                display    : -ms-flexbox;
                 display    : flex;
                 box-shadow : 0 0.5px 0 0 rgba(0, 0, 0, 0.3) inset, 0 1px 0px 0 #FFF inset, 0 -1px 0 0 rgba(0, 0, 0, 0.3) inset, 0 -16px 10px -10px rgba(0, 0, 0, 0.05) inset;
                 color      : #444;
@@ -74,16 +84,21 @@
                 font-size  : 120%;
             }
             .header > .flex-row {
+                -ms-flex-wrap: none;
                 flex-wrap: nowrap;
                 white-space: nowrap;
                 line-height: 40px;
             }
+
             .sidebar {
                 background: linear-gradient(rgb(225, 222, 207), rgb(182, 180, 162));
+                display: -ms-flexbox;
                 display: flex;
+                -ms-flex: 0 1 auto;
                 flex-grow: 0;
                 padding: 1em;
                 box-sizing: border-box;
+                -ms-flex-align: center;
                 align-items: center;
                 color: rgba(189, 187, 170, 0.5);
                 text-shadow: 0px 0px 0px rgba(0, 0, 0, 0.6), -1px 0px 0px rgba(255, 255, 255, 0.5);
@@ -96,7 +111,8 @@
                 margin: 0px 0px 0px -61px;
             }
             .header .patient {
-                flex: 1;
+                -ms-flex: 1 1 0px;
+                flex: 1 1 0px;
                 opacity: 0;
                 transition: opacity 0.4s;
                 margin-right: 1em;
@@ -137,6 +153,7 @@
 
             /* status-bar contents ------------------------------------------ */
             .status-bar > .flex-row {
+                -ms-flex-pack: justify;
                 justify-content: space-between;
             }
             .status-bar > .flex-row > div {
@@ -146,6 +163,7 @@
                 border-right: 1px solid rgba(0, 0, 0, 0.2);
                 border-left: 1px solid rgba(255, 255, 255, 0.5);
                 line-height: 1.2;
+                -ms-flex: 1 1 auto;
                 flex-grow: 1;
             }
             .status-bar > .flex-row > div:last-child {

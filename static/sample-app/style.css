@@ -6,8 +6,11 @@ html {
 }
 
 body {
+    display    : -ms-flexbox;
     display    : flex;
+    -ms-flex-flow  : column;
     flex-flow  : column;
+    -ms-flex   : 1 1 0px;
     flex       : 1 1 0px;
     height     : 100%;
     font-family: sans-serif;
@@ -50,11 +53,16 @@ img {
 }
 
 .row {
-    flex-flow  : row;
-    display    : flex;
-    flex-wrap  : wrap;
-    align-items: stretch;
-    flex       : 1 1 0px;
+    -ms-flex-flow : row;
+    flex-flow     : row;
+    display       : -ms-flexbox;
+    display       : flex;
+    -ms-flex-wrap : wrap;
+    flex-wrap     : wrap;
+    -ms-flex-align: stretch;
+    align-items   : stretch;
+    -ms-flex      : 1 1 0px;
+    flex          : 1 1 0px;
 }
 
 .content {
@@ -66,9 +74,13 @@ img {
 }
 
 .panel {
+    /* display      : -ms-flexbox; */
     /* display      : flex; */
     display      : none;
+
+    -ms-flex-flow: column;
     flex-flow    : column;
+    -ms-flexbox  : 1 1 440px;
     flex         : 1 1 440px;
     /* max-height   : 300px; */
     margin       : 5px 15px 15px;
@@ -81,16 +93,17 @@ img {
 }
 
 .panel h4 {
-    margin     : 0 0 0 1ex;
-    padding    : 0 4px;
-    background : #FFF;
-    font-size  : 16px;
-    align-self : flex-start;
-    color      : #328c88;
-    position   : relative;
-    z-index    : 2;
-    line-height: 20px;
-    display    : inline-block;
+    margin             : 0 0 0 1ex;
+    padding            : 0 4px;
+    background         : #FFF;
+    font-size          : 16px;
+    -ms-flex-item-align: start;
+    align-self         : flex-start;
+    color              : #328c88;
+    position           : relative;
+    z-index            : 2;
+    line-height        : 20px;
+    display            : inline-block;
 }
 
 pre {
@@ -101,6 +114,7 @@ pre {
     background   : #FFF linear-gradient(#FFF, #F6F6F6);
     border-radius: 3px;
     padding      : 14px 10px 10px;
+    -ms-flexbox  : 1 1 200px;
     flex         : 1 1 200px;
     color        : #333;
     margin       : -9px 2px 2px;
@@ -115,12 +129,14 @@ pre.wrap {
 }
 
 .auth-errors {
+    -ms-flexbox: 0 1 0px;
     flex: 0 1 0px;
 }
 
 .auth-errors > div {
     padding      : 1ex;
-    flex         : 1;
+    -ms-flexbox  : 1 1 0px;
+    flex         : 1 1 0px;
     max-width    : 100%;
     border-radius: 4px;
     border       : 1px solid #dcb4b4;
