@@ -157,17 +157,24 @@
                     <!-- Launch Type ======================================= -->
                     <div class="form-group col-sm-6">
                         <label for="launch-type" style="font-weight:900">Launch Type</label>
-                        <div class="radio" style="margin-top: 0">
+                        <div class="radio" id="launch-ehr-radio" style="margin-top: 0">
                             <label style="font-weight:500">
                                 <input type="radio" name="launch-type" id="launch-ehr" checked>
                                 Provider EHR Launch
                                 <span class="text-muted small normal-weight">(practitioner opens the app from within an EHR)</span>
                             </label>
-                            <div style="margin: 5px 0 10px">
-                                <label id="sim-ehr-label">
+                            <div id="sim-ehr-label" style="margin: 5px 0 10px">
+                                <label>
                                     <input type="checkbox" id="sim-ehr" checked> Simulate launch within the EHR user interface
                                 </label>
                             </div>
+                        </div>
+                        <div class="radio" id="launch-pp-radio">
+                            <label style="font-weight:500">
+                                <input type="radio" name="launch-type" id="launch-pp" checked>
+                                Patient Portal Launch
+                                <span class="text-muted small normal-weight">(patient opens the app from within patient portal)</span>
+                            </label>
                         </div>
                         <div class="radio">
                             <label style="font-weight:500">
@@ -269,7 +276,7 @@
                     </div>
                     
                     <!-- Patient =========================================== -->
-                    <div class="form-group col-sm-6 launch launch-pt">
+                    <div class="form-group col-sm-6 launch launch-pp launch-pt">
                         <label for="user" class="text-right" style="display:block;">
                             <span class="text-muted normal-weight"><code>launch/patient</code> scope</span>
                             <span class="pull-left">Patient(s) </span>
@@ -280,10 +287,17 @@
                                 <button class="btn btn-default" id="user-pt-select" type="button"><span class="caret"></span></button>
                             </span>
                         </div>
-                        <p class="help-block small">
+                        <p class="help-block small launch launch-pt">
                             Simulates the user who is launching the app. Patient login page
                             will be displayed as part of the launch flow if no Patient ID
                             is entered or multiple comma delimited Patient IDs are specified.
+                        </p>
+                        <p class="help-block small launch launch-pp">
+                            Simulates the active patient in a patient portal
+                            when app is launched. Patient login page will be
+                            displayed as part of the launch flow if no Patient
+                            ID is entered or multiple comma delimited Patient
+                            IDs are specified. 
                         </p>
                     </div>
 
@@ -307,7 +321,7 @@
                     </div>
 
                     <!-- Advanced ========================================== -->
-                    <div class="form-group col-xs-12 launch launch-ehr launch-prov launch-pt launch-bs" style="margin-bottom: 0">
+                    <div class="form-group col-xs-12 launch launch-ehr launch-pp launch-prov launch-pt launch-bs" style="margin-bottom: 0">
                         <label class="text-warning">Advanced</label>
                         <hr class="solid fg-warning"/>
                         <div class="row">
@@ -340,7 +354,7 @@
                                         </label>
                                     </div>
                                 </div>
-                                <div class="launch launch-pt">
+                                <div class="launch launch-pp launch-pt">
                                     <div class="checkbox" style="margin-top: 0">
                                         <label>
                                             <input type="checkbox" id="pt-skip-login">
@@ -378,20 +392,20 @@
                 <div class="panel-heading">
                     <a href="#" target="_blank" class="btn btn-sm btn-success pull-right launch launch-bs" style="margin: -4px -10px 0 0" id="download" download="config.json">Download as JSON</a>
                     <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
-                    <a class="pull-right launch launch-ehr text-success" id="ehr-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
-                    <b class="text-success launch launch-pt launch-ehr launch-prov">Launch</b>
+                    <a class="pull-right launch launch-ehr launch-pp text-success" id="ehr-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <b class="text-success launch launch-pt launch-ehr launch-pp launch-prov">Launch</b>
                     <b class="text-success launch launch-bs launch-cds">Launch Configuration</b>
                 </div>
                 <div class="panel-body list-group-item-warning text-success" style="box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.06) inset, 0 1px 0 0 #b2dba1 inset">
                     <h3 class="glyphicon glyphicon-info-sign pull-left" style="margin:0;color: rgba(205, 198, 158, 0.84);text-shadow: 0px 1px 1px rgb(255, 255, 255), 0px 0px 0px rgb(0, 0, 0);"></h3>
                     <ul style="margin: 0; list-style: none" class="text-muted">
-                        <li class="launch launch-pt launch-ehr launch-prov">
+                        <li class="launch launch-pt launch-ehr launch-pp launch-prov">
                             <span class="label label-default">client_id</span>
                             <small>The app's <code>client_id</code> is not validated on the SMART test server,
                             so any text string will work. Use the error dropdown above to
                             simulate the server response to an invalid <code>client_id</code>.</small>
                         </li>
-                        <li class="launch launch-pt launch-ehr launch-prov">
+                        <li class="launch launch-pt launch-ehr launch-pp launch-prov">
                             <span class="label label-default">client_secret</span>
                             <small>The app's <code>client_secret</code> is not validated on the SMART test server,
                             so any secret will work. If provided, the <code>Authorization</code> header must conform
@@ -412,14 +426,14 @@
                 </div>
                 <div class="panel-body navbar-default" style="border-radius: 0 0 4px 4px">
                     <div class="form-group col-xs-12" style="margin-bottom: 0">
-                        <label for="launch-url" class="launch launch-ehr">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
-                        <div class="input-group launch launch-ehr">
+                        <label for="launch-url" class="launch launch-ehr launch-pp">App Launch URL <span class="text-muted normal-weight">(required)</span></label>
+                        <div class="input-group launch launch-ehr launch-pp">
                             <input type="text" name="launch-url" id="launch-url" class="form-control" placeholder="Launch URL" autocomplete="on">
                             <span class="input-group-btn">
                                 <a id="ehr-launch-url" href="#" target="_blank" class="btn btn-success">Launch App!</a>
                             </span>
                         </div>
-                        <p class="help-block small launch launch-ehr" id="launch-url-help">
+                        <p class="help-block small launch launch-ehr launch-pp" id="launch-url-help">
                             Full url of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
                         <div class="launch launch-pt launch-prov">
@@ -498,6 +512,15 @@
                     [ "#provider"        , "provider"         ],
                     [ "#sim-ehr"         , "sim_ehr"          ],
                     [ "#select-encounter", "select_encounter" ]
+                ],
+                "launch-pp": [
+                    [ "#launch-pp"       , "launch_ehr"       ],
+                    [ "#launch-pp"       , "launch_pt"        ],
+                    [ "#user-pt"         , "patient"          ],
+                    [ "#auth-error"      , "auth_error"       ],
+                    [ "#pt-skip-login"   , "skip_login"       ],
+                    [ "#pt-skip-auth"    , "skip_auth"        ],
+                    [ "#sim-ehr"         , "sim_ehr"          ]
                 ],
                 "launch-prov": [
                     [ "#launch-prov"     , "launch_prov"      ],
@@ -827,6 +850,11 @@
                         patient = $("#patient").val() || "none";
                         user = $("#provider").val() || "none";
                     break;
+                    case "launch-pp":
+                        type = "Patient Portal Launch";
+                        patient = $("#user-pt").val() || "none";
+                        user = $("#user-pt").val() || "none";
+                    break;
                     case "launch-prov":
                         type = "Provider Standalone Launch";
                         patient = $("#patient").val() || "none";
@@ -903,7 +931,7 @@
                     }
                 }
 
-                if (launchType == "launch-ehr") {
+                if (launchType == "launch-ehr" || launchType == "launch-pp") {
                     $(".oauth-url").text(openUrl).show();
                     $(".oauth-url-preview").attr("href", openUrl + "/metadata").show();
                     $("#protected-server-preview").show();
@@ -998,8 +1026,17 @@
                     $(".sb").hide().filter(".sb." + getFhirVersion()).show();
                 }
 
-                $("#sim-ehr-label").toggleClass("disabled", launchType != "launch-ehr");
-                $("#sim-ehr").prop("disabled", launchType != "launch-ehr");
+                switch (launchType) {
+                    case "launch-ehr":
+                        $("#sim-ehr-label").appendTo("#launch-ehr-radio")
+                    break;
+                    case "launch-pp":
+                        $("#sim-ehr-label").appendTo("#launch-pp-radio")
+                    break;
+                }
+                var disabled = launchType != "launch-ehr" && launchType != "launch-pp";
+                $("#sim-ehr-label").css("display", disabled ? "none" : "block");
+                $("#sim-ehr").prop("disabled", disabled);
                 buildUrls();
 
                 var providers  = $("#provider").val().split(/\s*,\s*/).filter(Boolean);
