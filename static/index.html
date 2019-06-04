@@ -900,7 +900,8 @@
 
                     if (appLaunchUrl) {
                         var proto  = appLaunchUrl.match(/^https?/);
-                        var origin = location.origin.replace(/^https?/, proto);
+                        var origin = location.protocol.replace(/^https?/, proto) + "//" +
+                            location.host;
                         ehrLaunchUrl       = origin + ehrLaunchUrl;
                         sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
                     }
