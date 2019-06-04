@@ -2,19 +2,12 @@ var CONFIG = {
     enableSandboxes: false,
     fhirVersions: [
         {
-            name: "r2",
-            displayName: "R2 (DSTU2)",
+            name: "r4",
+            displayName: "R4",
             tags: [
                 {
-                    id: "r2-smart",
-                    value: "smart-8-2017",
-                    displayName: "SMART",
-                    description: "Core SMART Sample Patients",
-                    selected: true
-                },
-                {
-                    id: "r2-synthea",
-                    value: "synthea-8-2017",
+                    id: "r4-synthea",
+                    value: "synthea-5-2019",
                     displayName: "Synthea",
                     description: "SMART Synthea Sample Patients"
                 }
@@ -42,6 +35,25 @@ var CONFIG = {
                     value: "pro-7-2017",
                     displayName: "PRO",
                     description: "SMART PRO Sample Patients"
+                }
+            ]
+        },
+        {
+            name: "r2",
+            displayName: "R2 (DSTU2)",
+            tags: [
+                {
+                    id: "r2-smart",
+                    value: "smart-8-2017",
+                    displayName: "SMART",
+                    description: "Core SMART Sample Patients",
+                    selected: true
+                },
+                {
+                    id: "r2-synthea",
+                    value: "synthea-8-2017",
+                    displayName: "Synthea",
+                    description: "SMART Synthea Sample Patients"
                 }
             ]
         }

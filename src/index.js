@@ -171,7 +171,8 @@ app.use("/env.js", (req, res) => {
         DISABLE_SANDBOXES: true, // No sandbox support by default
         PICKER_ORIGIN    : "https://patient-browser.smarthealthit.org",
         STU2_ENABLED     : true,
-        STU3_ENABLED     : true
+        STU3_ENABLED     : true,
+        STU4_ENABLED     : true
     };
 
     const whitelist = {
@@ -186,8 +187,10 @@ app.use("/env.js", (req, res) => {
         "PICKER_ORIGIN"           : String,
         "STU2_ENABLED"            : lib.bool,
         "STU3_ENABLED"            : lib.bool,
+        "STU4_ENABLED"            : lib.bool,
         "FHIR_SERVER_R2"          : String,
-        "FHIR_SERVER_R3"          : String
+        "FHIR_SERVER_R3"          : String,
+        "FHIR_SERVER_R4"          : String
     };
 
     Object.keys(whitelist).forEach(key => {
