@@ -17,6 +17,7 @@ ENV FHIR_SERVER_R3 "https://r3.smarthealthit.org"
 # The names of the config files corresponding to the FHIR servers above
 ENV PICKER_CONFIG_R2 "r2"
 ENV PICKER_CONFIG_R3 "r3"
+ENV PICKER_CONFIG_R4 "r4"
 
 ENV PICKER_ORIGIN "https://patient-browser.smarthealthit.org"
 

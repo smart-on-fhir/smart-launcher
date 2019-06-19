@@ -184,6 +184,7 @@ app.use("/env.js", (req, res) => {
         "CDS_SANDBOX_URL"         : String,
         "PICKER_CONFIG_R2"        : String,
         "PICKER_CONFIG_R3"        : String,
+        "PICKER_CONFIG_R4"        : String,
         "PICKER_ORIGIN"           : String,
         "STU2_ENABLED"            : lib.bool,
         "STU3_ENABLED"            : lib.bool,

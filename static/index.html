@@ -702,6 +702,10 @@
                         fhirVersion = "STU-3";
                         fhirServer = ENV.PICKER_CONFIG_R3 || "";
                     }
+                    else if (fhirVersion == "r4") {
+                        fhirVersion = "R4";
+                        fhirServer = ENV.PICKER_CONFIG_R4 || "";
+                    }
 
                     var pickerSettings = {
                         server: {
