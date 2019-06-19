@@ -240,6 +240,16 @@
                 apiUrlSegment: "fhir"
             }, Lib.getUrlQuery());
 
+            var appParams = Lib.getUrlQuery({ queryString: state.app.split("?")[1] });
+            var iss = appParams.iss;
+            var launch = atob(appParams.launch || "");
+            try {
+                launch = codec.decode(JSON.parse(launch || "{}"));
+            }
+            catch(error) {
+                console.error(error);
+            }
+
             window.setPatient = function(patient) {
                 $(".patient-name").text(Lib.humanName(patient));
                 $(".patient-age").text(Lib.formatAge(patient.birthDate, patient.deceasedDateTime));
@@ -265,18 +275,13 @@
                     $(".provider-name").text(Lib.humanName(user));
                     $(".user-id").text("User ID: " + user.id);
                     $(".practitioner, .user div").css({ opacity: 1 });
+
+                    if (launch && launch.launch_pt) {
+                        setPatient(user);
+                    }
                 }
             };
 
-            var appParams = Lib.getUrlQuery({ queryString: state.app.split("?")[1] });
-            var iss = appParams.iss;
-            var launch = atob(appParams.launch || "");
-            try {
-                launch = codec.decode(JSON.parse(launch || "{}"));
-            }
-            catch(error) {
-                console.error(error);
-            }
             // console.dir("appParams: ", appParams)
             // console.log("launch: ", launch)
             // console.log("state: ", state)
@@ -286,7 +291,7 @@
             }
             // Load the patient?
             if (iss && launch && launch.patient && launch.patient.indexOf(",") == -1) {
-                $.get(iss + "/Patient/" + launch.patient).done(setPatient);
+                $.get(iss + "/Patient/" + launch.patient).done(launch.launch_pt ? setUser : setPatient);
             }
             else {
                 $(".patient-id").html('Patient ID: <b style="color: #900">none</b>');
@@ -294,16 +299,16 @@
             }
 
             // Load the user?
-            if (iss && state.user &&  state.user.indexOf(",") == -1) {
-                $.get(iss + "/Practitioner/" + state.user).done(function(data) {
-                    $(".provider-name").text(Lib.humanName(data));
-                    $(".user-id").text("User ID: " + data.id);
-                    $(".practitioner, .user div").css({ opacity: 1 });
-                });
-            }
+            if (iss && state.user && state.user.indexOf(",") == -1) {
+                var userType = launch && launch.launch_pt
+                        ? "Patient"
+                        : "Practitioner";
+                if (typeof user == "string") {
+                    $.get(iss + "/" + userType + "/" + user).done(setUser);
+                    return;
+                }            }
             else {
-                $(".user-id").html('User ID: <b style="color: #900">none</b>').css({ opacity: 1 });
-                $(".user").css({ opacity: 1 });
+                setUser(null);
             }
 
             // initial encounter id html
