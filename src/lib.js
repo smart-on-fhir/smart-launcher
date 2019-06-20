@@ -71,6 +71,9 @@ function redirectWithError(req, res, name, ...rest) {
     let redirectURL = Url.parse(req.query.redirect_uri, true);
     redirectURL.query.error = name;
     redirectURL.query.error_description = getErrorText(name, ...rest);
+    if (req.query.state) {
+        redirectURL.query.state = req.query.state;
+    }
     return res.redirect(Url.format(redirectURL));
 }
 

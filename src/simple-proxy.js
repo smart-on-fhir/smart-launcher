@@ -98,7 +98,7 @@ module.exports = (req, res) => {
         fhirRequestOptions.headers = Object.assign({}, {
             "content-type": "application/json"
         }, req.headers);
-        fhirRequestOptions.headers.accept = "R2" ?
+        fhirRequestOptions.headers.accept = fhirVersion === "R2" ?
             "application/json+fhir" :
             "application/fhir+json";
     }

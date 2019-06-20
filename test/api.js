@@ -615,6 +615,11 @@ describe('Auth', function() {
                             throw new Error(`No error passed to the redirect ${res.headers.location}`)
                         }
                     })
+                    .expect(function(res) {
+                        if (!res.headers.location || res.headers.location.indexOf("state=x") == -1) {
+                            throw new Error(`No state passed to the redirect ${res.headers.location}`)
+                        }
+                    })
                     .end(done);
                 });
             });
