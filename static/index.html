@@ -915,9 +915,9 @@
                         "launch=" + launchData;
                     var proto = appLaunchUrl.match(/^https?/);
                     var iss = openUrl;
-                    if (proto && proto[0]) {
-                        iss = iss.replace(/^https?/, proto);
-                    }
+                    // if (proto && proto[0]) {
+                    //     iss = iss.replace(/^https?/, proto);
+                    // }
                     ehrLaunchUrl += "&iss=" + encodeURIComponent(iss);
                 }
                     
@@ -931,9 +931,10 @@
                         "&user=" + encodeURIComponent(urlParams.provider || "");
 
                     if (appLaunchUrl) {
-                        var proto  = appLaunchUrl.match(/^https?/);
-                        var origin = location.protocol.replace(/^https?/, proto) + "//" +
-                            location.host;
+                        // var proto  = appLaunchUrl.match(/^https?/);
+                        // var origin = location.protocol.replace(/^https?/, proto) + "//" +
+                        //     location.host;
+                        var origin = location.protocol + "//" + location.host;
                         ehrLaunchUrl       = origin + ehrLaunchUrl;
                         sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
                     }
