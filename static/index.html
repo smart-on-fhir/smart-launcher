@@ -913,8 +913,9 @@
                     ehrLaunchUrl = appLaunchUrl + 
                         (appLaunchUrl.indexOf("?") > -1 ? "&" : "?") +
                         "launch=" + launchData;
-                    var proto = appLaunchUrl.match(/^https?/);
+                    // var proto = appLaunchUrl.match(/^https?/);
                     var iss = openUrl;
+                    iss = iss.replace(/^https?/, "https");
                     // if (proto && proto[0]) {
                     //     iss = iss.replace(/^https?/, proto);
                     // }
