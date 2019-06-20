@@ -68,6 +68,8 @@ module.exports = (req, res) => {
         gzip  : true
     };
 
+    const isBinary = fhirRequestOptions.url.pathname.indexOf("/Binary/") === 0;
+
     // if applicable, apply patient scope to GET requests, largely for
     // performance reasons. Full scope support can't be implemented in a proxy
     // because it would require "or" conditions in FHIR API calls (ie ),
@@ -90,15 +92,16 @@ module.exports = (req, res) => {
     }
 
     // Build request headers ---------------------------------------------------
-    fhirRequestOptions.headers = Object.assign({}, {
-        "content-type": "application/json"
-    }, req.headers, {
-        // set everything to JSON since we don't currently support XML and
-        // block XML requests at a middleware layer
-        "accept": fhirVersion == "R2" ?
+    fhirRequestOptions.headers = Object.assign({}, req.headers);
+
+    if (!isBinary) {
+        fhirRequestOptions.headers = Object.assign({}, {
+            "content-type": "application/json"
+        }, req.headers);
+        fhirRequestOptions.headers.accept = "R2" ?
             "application/json+fhir" :
-            "application/fhir+json"
-    });
+            "application/fhir+json";
+    }
 
     if (fhirRequestOptions.headers.hasOwnProperty("host")) {
         delete fhirRequestOptions.headers.host;
@@ -117,22 +120,26 @@ module.exports = (req, res) => {
 
     // Proxy -------------------------------------------------------------------
     let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
-    request(fhirRequestOptions)
-    .on('error', function(error) {
-        console.error(error);
-        res.status(502).end(String(error)); // Bad Gateway
-    })
-    .on('response', response => {
-        let contentType = response.headers['content-type'];
-        res.status(response.statusCode);
-        contentType && res.type(contentType);
-        if (logTime) {
-            console.log(
-                ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
-                String((Date.now() - logTime) + "ms").yellow.bold
-            );
-        }
-    })
-    .pipe(replStream(fhirServer, fullFhirBaseUrl))
-    .pipe(res);
+    let stream = request(fhirRequestOptions)
+        .on('error', function(error) {
+            console.error(error);
+            res.status(502).end(String(error)); // Bad Gateway
+        })
+        .on('response', response => {
+            let contentType = response.headers['content-type'];
+            res.status(response.statusCode);
+            contentType && res.type(contentType);
+            if (logTime) {
+                console.log(
+                    ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
+                    String((Date.now() - logTime) + "ms").yellow.bold
+                );
+            }
+        });
+
+    if (!isBinary) {
+        stream = stream.pipe(replStream(fhirServer, fullFhirBaseUrl));
+    }
+
+    stream.pipe(res);
 };
