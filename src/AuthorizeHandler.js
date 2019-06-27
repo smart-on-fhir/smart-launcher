@@ -166,10 +166,10 @@ class AuthorizeHandler extends SMARTHandler {
         let sim = this.sim,
             scope = this.scope,
             code = {
-                context: {
+                context: Object.assign({}, sim.context || {}, {
                     need_patient_banner: !sim.sim_ehr,
                     smart_style_url    : config.baseUrl + "/smart-style.json",
-                },
+                }),
                 client_id: this.request.query.client_id,
                 scope    : this.request.query.scope,
                 sde      : sim.sde
