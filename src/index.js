@@ -137,7 +137,7 @@ app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 // Provide launch_id if the CDS Sandbox asks for it
 app.post(buildRoutePermutations("/fhir/_services/smart/launch"), bodyParser.json(), (req, res) => {
     res.json({
-        launch_id: base64url.encode(JSON.stringify(req.body.parameters || {}))
+        launch_id: base64url.encode(JSON.stringify({"context": req.body.parameters || {}}))
     });
 });
 
