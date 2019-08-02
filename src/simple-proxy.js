@@ -127,8 +127,12 @@ module.exports = (req, res) => {
         })
         .on('response', response => {
             let contentType = response.headers['content-type'];
+            let etag = response.headers['etag']
+            let location = response.headers['location']
             res.status(response.statusCode);
             contentType && res.type(contentType);
+            etag && res.set('ETag', etag)
+            location && res.set('Location', location)
             if (logTime) {
                 console.log(
                     ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
