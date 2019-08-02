@@ -18,6 +18,7 @@ class AuthorizeHandler extends SMARTHandler {
         super(req, res);
         this.sim = this.getRequestedSIM();
         this.scope = new ScopeSet(decodeURIComponent(req.query.scope));
+        this.nonce = req.query.nonce ? decodeURIComponent(req.query.nonce) : undefined;
     }
 
     /**
@@ -210,6 +211,12 @@ class AuthorizeHandler extends SMARTHandler {
                     code.user = `Practitioner/${sim.provider}`;
                 }
             }
+        }
+
+        // Add nonce, if provided, so it can be reflected back in the subsequent
+        // token request.
+        if (this.nonce) {
+            code.nonce = this.nonce;
         }
 
         return jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
