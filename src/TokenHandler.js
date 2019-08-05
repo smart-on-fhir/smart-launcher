@@ -214,7 +214,7 @@ class TokenHandler extends SMARTHandler {
         return jwt.sign({
             profile : clientDetailsToken.user,
             fhirUser: clientDetailsToken.user,
-            aud     : this.request.body.client_id,
+            aud     : clientDetailsToken.client_id,
             sub     : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
             iss
         }, PRIVATE_KEY, {
