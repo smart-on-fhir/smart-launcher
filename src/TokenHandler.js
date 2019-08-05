@@ -211,13 +211,21 @@ class TokenHandler extends SMARTHandler {
     createIdToken(clientDetailsToken) {
         let secure = this.request.secure || this.request.headers["x-forwarded-proto"] == "https";
         let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
-        return jwt.sign({
+        let payload = {
             profile : clientDetailsToken.user,
             fhirUser: clientDetailsToken.user,
             aud     : clientDetailsToken.client_id,
             sub     : crypto.createHash('sha256').update(clientDetailsToken.user).digest('hex'),
             iss
-        }, PRIVATE_KEY, {
+        };
+        // Reflect back the nonce if it was provided in the original Authentication
+        // Request.
+        let { nonce } = clientDetailsToken;
+        if (nonce) {
+            payload.nonce = nonce;
+        }
+
+        return jwt.sign(payload, PRIVATE_KEY, {
             algorithm: "RS256",
             expiresIn: `${(clientDetailsToken.accessTokensExpireIn || 60)} minutes`
         });
