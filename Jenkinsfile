@@ -15,6 +15,9 @@ pipeline {
 
           env.DOCKER_IMAGE = 'contentgroup/smart-launcher'
           env.DOCKER_LABEL = 'latest'
+          if (env.ENVIRONMENT_NAME == 'develop') {
+            env.DOCKER_LABEL = 'develop'
+          }
 
           env.DOCKER_NAME = "launcher_sandbox_${env.ENVIRONMENT_NAME}"
           env.SANDBOX_HOST = "launcher-${env.ENVIRONMENT_NAME}.sandbox"
