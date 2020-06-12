@@ -13,7 +13,7 @@ pipeline {
           }
           env.ENVIRONMENT_NAME = environment  
 
-          env.DOCKER_IMAGE = 'smartonfhir/smart-launcher'
+          env.DOCKER_IMAGE = 'contentgroup/smart-launcher'
           env.DOCKER_LABEL = 'latest'
 
           env.DOCKER_NAME = "launcher_sandbox_${env.ENVIRONMENT_NAME}"
