@@ -171,6 +171,7 @@ function encodeSim(object = {}) {
  * @param {String} options.launch.patient
  * @param {String} options.launch.encounter
  * @param {String} options.launch.auth_error
+ * @param {String} options.baseUrl
  * @returns {Promise<String>} Returns a promise resolved with the code
  */
 function getAuthCode(options) {
@@ -201,7 +202,7 @@ function getAuthCode(options) {
                     throw new Error(`auth/authorize did not redirect to the redirect_uri`)
                 }
                 let url = Url.parse(res.headers.location, true);
-                let code = url.query.code;
+                let code = url.query.code + "";
                 if (!code) {
                     console.log(res.headers)
                     throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
@@ -454,7 +455,7 @@ describe('Proxy', function() {
         // We cannot know any IDs but we need to use one for this test, thus
         // query all the patients with _count=1 to find the first one and use
         // it's ID.
-        return requestPromise({
+        requestPromise({
             uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`,
             json: true,
             qs: {
@@ -611,13 +612,15 @@ describe('Auth', function() {
                     .get(path)
                     .expect(302)
                     .expect(function(res) {
-                        if (!res.headers.location || res.headers.location.indexOf("error=sim_invalid_redirect_uri") == -1) {
-                            throw new Error(`No error passed to the redirect ${res.headers.location}`)
+                        const loc = res.get("location");
+                        if (!loc || loc.indexOf("error=sim_invalid_redirect_uri") == -1) {
+                            throw new Error(`No error passed to the redirect ${loc}`)
                         }
                     })
                     .expect(function(res) {
-                        if (!res.headers.location || res.headers.location.indexOf("state=x") == -1) {
-                            throw new Error(`No state passed to the redirect ${res.headers.location}`)
+                        const loc = res.get("location");
+                        if (!loc || loc.indexOf("state=x") == -1) {
+                            throw new Error(`No state passed to the redirect ${loc}`)
                         }
                     })
                     .end(done);
@@ -636,12 +639,13 @@ describe('Auth', function() {
                     .get(path)
                     .expect(302)
                     .expect(function(res) {
-                        if (!res.headers.location) {
+                        const loc = res.get("location");
+                        if (!loc) {
                             throw new Error(`No redirect`)
                         }
-                        let url = Url.parse(res.headers.location, true);
+                        let url = Url.parse(loc, true);
                         if (url.query.error != "sim_invalid_scope") {
-                            throw new Error(`Wrong redirect ${res.headers.location}`)
+                            throw new Error(`Wrong redirect ${loc}`)
                         }
                     })
                     .end(done);
@@ -660,12 +664,13 @@ describe('Auth', function() {
                     .get(path)
                     .expect(302)
                     .expect(function(res) {
-                        if (!res.headers.location) {
+                        const loc = res.get("location");
+                        if (!loc) {
                             throw new Error(`No redirect`)
                         }
-                        let url = Url.parse(res.headers.location, true);
+                        let url = Url.parse(loc, true);
                         if (url.query.error != "sim_invalid_client_id") {
-                            throw new Error(`Wrong redirect ${res.headers.location}`)
+                            throw new Error(`Wrong redirect ${loc}`)
                         }
                     })
                     .end(done);
@@ -684,12 +689,13 @@ describe('Auth', function() {
                 .get(path)
                 .expect(302)
                 .expect(function(res) {
-                    if (!res.headers.location) {
+                    const loc = res.get("location");
+                    if (!loc) {
                         throw new Error(`No redirect`)
                     }
-                    let url = Url.parse(res.headers.location, true);
+                    let url = Url.parse(loc, true);
                     if (url.query.error != "bad_audience") {
-                        throw new Error(`Wrong redirect ${res.headers.location}`)
+                        throw new Error(`Wrong redirect ${loc}`)
                     }
                 })
                 .end(done);
@@ -702,7 +708,7 @@ describe('Auth', function() {
             "?client_id=x" +
             "&response_type=code" +
             "&scope=patient%2F*.read%20launch" +
-            "&redirect_uri=https%3A%2F%2Fsb-apps.smarthealthit.org%2Fapps%2Fgrowth-chart%2F" +
+            "&redirect_uri=" + encodeURIComponent("https://sb-apps.smarthealthit.org/apps/growth-chart/") +
             "&state=x" +
             "&login_success=1" +
             "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
@@ -719,8 +725,9 @@ describe('Auth', function() {
                 .get(fullPath)
                 .expect(302)
                 .expect(function(res) {
-                    if (!res.headers.location || res.headers.location.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
-                        throw new Error(`Wrong redirect ${res.headers.location}`)
+                    const loc = res.get("location");
+                    if (!loc || loc.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
+                        throw new Error(`Wrong redirect ${loc}`)
                     }
                 })
                 .end(done);
@@ -810,13 +817,13 @@ describe('Auth', function() {
                 `&scope=profile%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
                 .expect(302)
                 .expect(function(res) {
-                    if (!res.headers.location) {
+                    if (!res.get("location")) {
                         throw new Error(`auth/authorize did not redirect to the redirect_uri`)
                     }
-                    let url = Url.parse(res.headers.location, true);
+                    let url = Url.parse(res.get("location"), true);
                     code = url.query.code;
                     if (!code) {
-                        console.log(res.headers)
+                        // console.log(res.headers)
                         throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
                     }
                     // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
@@ -831,13 +838,13 @@ describe('Auth', function() {
                 `&scope=fhirUser%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
                 .expect(302)
                 .expect(function(res) {
-                    if (!res.headers.location) {
+                    if (!res.get("location")) {
                         throw new Error(`auth/authorize did not redirect to the redirect_uri`)
                     }
-                    let url = Url.parse(res.headers.location, true);
+                    let url = Url.parse(res.get("location"), true);
                     code = url.query.code;
                     if (!code) {
-                        console.log(res.headers)
+                        // console.log(res.headers)
                         throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
                     }
                     // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
@@ -890,7 +897,6 @@ describe('Auth', function() {
                 .then(tokenResponse => {
                     return refreshSession({
                         baseUrl: config.baseUrl + path,
-                        accessToken: tokenResponse.access_token,
                         refreshToken: tokenResponse.refresh_token
                     });
                 })
@@ -906,7 +912,8 @@ describe('Auth', function() {
 });
 
 describe('Generator', () => {
-    describe('RSA Generator', () => {
+    describe('RSA Generator', function() {
+        this.timeout(20000);
         it ("can generate random strings", async () => {
             let res = await requestPromise({
                 uri: `${config.baseUrl}/generator/random`,

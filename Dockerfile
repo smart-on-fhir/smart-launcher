@@ -2,7 +2,7 @@
 # then the image should be started using the same port like:
 #    docker run -t -p 9009:80 -d smartonfhir/smart-launcher:latest
 
-FROM node:9
+FROM node:14
 
 WORKDIR /app
 
@@ -13,6 +13,7 @@ ENV BASE_URL      "http://localhost:9009"
 # Which FHIR servers to use
 ENV FHIR_SERVER_R2 "https://r2.smarthealthit.org"
 ENV FHIR_SERVER_R3 "https://r3.smarthealthit.org"
+ENV FHIR_SERVER_R4 "https://r4.smarthealthit.org"
 
 # The names of the config files corresponding to the FHIR servers above
 ENV PICKER_CONFIG_R2 "r2"
