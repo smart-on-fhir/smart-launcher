@@ -915,7 +915,10 @@
                     ehrLaunchUrl = appLaunchUrl + 
                         (appLaunchUrl.indexOf("?") > -1 ? "&" : "?") +
                         "launch=" + launchData;
-                    var iss = openUrl.replace(/^https?\:/, window.location.protocol);
+                    var iss = openUrl;
+                    if (window.location.protocol === "https:") {
+                        iss = iss.replace(/^https?/, "https");
+                    }
                     ehrLaunchUrl += "&iss=" + encodeURIComponent(iss);
                 }
                     
