@@ -10,6 +10,7 @@ const config         = require("./config");
 const generator      = require("./generator");
 const lib            = require("./lib");
 const launcher       = require("./launcher");
+const wellKnownOIDC  = require("./wellKnownOIDCConfiguration");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
 
 
@@ -83,10 +84,8 @@ if (IP_BLACK_LIST.length) {
 //reject xml
 app.use(handleXmlRequest);
 
-//provide oidc keys when requested
-app.get("/.well-known/openid-configuration/", (req, res) => {
-    res.json({"jwks_uri": `${config.baseUrl}/keys`})
-});
+// Well-known OpenID Connect (OIDC) Configuration
+app.get("/.well-known/openid-configuration/", wellKnownOIDC);
 
 app.get("/keys", (req, res) => {
     let key = {}
