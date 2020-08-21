@@ -17,8 +17,6 @@ export interface RequestDataTabProps {
 }
 
 export default function RequestDataTab(props: RequestDataTabProps) {
-
-  /** Return this component */
   return(
     <Tab
       key={props.id}

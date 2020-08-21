@@ -2,11 +2,11 @@ import React, {useState, useEffect, useRef} from 'react';
 
 import MainNavigation from './MainNavigation';
 import { StorageHelper } from '../util/StorageHelper';
-import { 
-  Overlay, 
+import {
+  Overlay,
   Classes,
-  Switch, 
-  Card, 
+  Switch,
+  Card,
   Elevation,
   H5, H6,
   Divider,
@@ -15,7 +15,6 @@ import {
   IToasterProps,
   Position,
   Toaster,
-  IIntentProps,
   Intent
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
@@ -24,7 +23,6 @@ import StandaloneParameters from './StandaloneParameters';
 import { LaunchScope } from '../models/LaunchScope';
 
 import FHIR from 'fhirclient';
-import { LauncherFhirClient } from '../models/LauncherFhirClient';
 import Client from 'fhirclient/lib/Client';
 import { CopyHelper } from '../util/CopyHelper';
 import DataCard from './DataCard';
@@ -39,9 +37,9 @@ export interface MainPageProps {}
 const _appId:string = 'smart_granular_app';
 
 const _statusAvailable: DataCardStatus = {available: true, complete: false, busy: false};
-const _statusNotAvailable: DataCardStatus = {available: false, complete: false, busy: false};
-const _statusBusy: DataCardStatus = {available: true, complete: false, busy: true};
-const _statusComplete: DataCardStatus = {available: true, complete: true, busy: false};
+// const _statusNotAvailable: DataCardStatus = {available: false, complete: false, busy: false};
+// const _statusBusy: DataCardStatus = {available: true, complete: false, busy: true};
+// const _statusComplete: DataCardStatus = {available: true, complete: true, busy: false};
 
 let _client:Client|undefined = undefined;
 let _authTimeoutCheck:any = undefined;
@@ -51,14 +49,14 @@ export default function MainPage() {
   const initialLoadRef = useRef<boolean>(true);
   const mainDiv = React.createRef<HTMLDivElement>();
   const toasterRef = useRef<IToaster | null>(null);
-  
+
   const [uiDark, setUiDark] = useState<boolean>(false);
   const [settingsOverlayVisible, setSettingsOverlayVisible] = useState<boolean>(false);
 
   const [authTimeout, setAuthTimeout] = useState<number>(-1);
 
   const [aud, setAud] = useState<string>('');
-  const [code, setCode] = useState<string>('');
+  // const [code, setCode] = useState<string>('');
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -78,10 +76,10 @@ export default function MainPage() {
       }
 
       var url = new URL(window.location.href);
-  
+
       getFromQueryOrStorage(url, 'aud', setAud, true);
-  
-      if (getFromQueryOrStorage(url, 'code', setCode, false) !== '') {
+
+      if (getFromQueryOrStorage(url, 'code')) {
         FHIR.oauth2.ready(onAuthReady, onAuthError);
       }
 
@@ -126,14 +124,14 @@ export default function MainPage() {
     } else {
       sessionStorage.setItem('uiDark', (uiDark).toString());
     }
-    
+
   }, [uiDark, mainDiv]);
 
   function toggleSettingsVisible() {
     setSettingsOverlayVisible(!settingsOverlayVisible);
   }
 
-  function getFromQueryOrStorage(url:URL, key:string, setter:((val:string) => void), save:boolean) {
+  function getFromQueryOrStorage(url:URL, key:string, setter?:((val:string) => void), save?:boolean) {
     if (url.searchParams.has(key)) {
       let val:string = url.searchParams.get(key) ?? '';
 
@@ -141,15 +139,17 @@ export default function MainPage() {
         sessionStorage.setItem(key, val);
       }
 
-      if (setter !== undefined) {
+      if (setter) {
         setter(val);
       }
       return(val);
     }
-    
+
     let val = sessionStorage.getItem(key);
     if (val) {
-      setter(val);
+      if (setter) {
+        setter(val);
+      }
       return(val);
     }
 
@@ -207,7 +207,7 @@ export default function MainPage() {
         Intent.WARNING);
     }
   }
-  
+
   function startAuth(requestedScopes:LaunchScope) {
     if (!aud) {
       showToastMessage('Standalone launch requires an Audience!', IconNames.ERROR);
@@ -269,11 +269,11 @@ export default function MainPage() {
       let updatedData:SingleRequestData[] = authCardData.slice();
       updatedData.push(data);
       setAuthCardData(updatedData);
-  
+
       showToastMessage('Token renewal failed!', IconNames.ERROR, undefined, Intent.DANGER);
     } else {
       setAuthCardData([data]);
-  
+
       showToastMessage('Authorization failed!', IconNames.ERROR, undefined, Intent.DANGER);
     }
   }
@@ -281,7 +281,7 @@ export default function MainPage() {
   function buildAuthCardDataSuccess(isRenewal:boolean, request?:any, stringifyRequest?:boolean) {
     let now:Date = new Date();
     let expires:number = _client?.state.tokenResponse?.expires_in ?? -1;
-    
+
     if (expires < 0) {
       setAuthTimeout(-1);
     } else {
@@ -375,7 +375,7 @@ export default function MainPage() {
 
   return (
     <div ref={mainDiv}>
-      <MainNavigation 
+      <MainNavigation
         toggleSettingsVisible={toggleSettingsVisible}
         />
       <Overlay

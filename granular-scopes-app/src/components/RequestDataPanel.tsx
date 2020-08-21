@@ -59,13 +59,10 @@ export default function RequestDataPanel(props: RequestPanelProps) {
     }
   }, [props.data, selectedTabId, displayedTabId, dataRowIndex]);
 
-  // **** check for no data ****
-
   if ((!props.data) || (props.data.length === 0)) {
     return(null);
   }
 
-  /** Function to get an appropriate Icon based on data type */
   function iconNameForType(dataType: RenderDataAsTypes|undefined) {
     switch (dataType)
     {
@@ -78,12 +75,10 @@ export default function RequestDataPanel(props: RequestPanelProps) {
     }
   }
 
-  /** Function to handle tab selection changes */
   function handleTabChange(navbarTabId: TabId) {
     setSelectedTabId(navbarTabId.toString());
   }
 
-  /** Function to handle copy requests - grab data from the correct pane and forward request */
   function handleCopyClick() {
     switch (displayedTabId)
     {
@@ -117,7 +112,6 @@ export default function RequestDataPanel(props: RequestPanelProps) {
           props.paneProps.copyToClipboard(value);
         }
       });
-
     }
   }
 
