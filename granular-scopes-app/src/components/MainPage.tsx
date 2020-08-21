@@ -224,15 +224,17 @@ export default function MainPage() {
     });
   }
 
-  function refreshAuth(requestedScopes?:LaunchScope) {
+  function refreshAuth() {
     if (!_client) {
       showToastMessage('Refreshing requires an authorication token!', IconNames.ERROR, undefined, Intent.DANGER);
       return;
     }
 
+    let request:string = JwtHelper.getDecodedTokenString(_client?.state.tokenResponse?.refresh_token);
+
     _client.refresh()
       .then((refreshedState:fhirclient.ClientState) => {
-        buildAuthCardDataSuccess(true);
+        buildAuthCardDataSuccess(true, request, false);
       })
       .catch((reason:any) => {
         buildAuthCardDataError(true, reason);
@@ -276,7 +278,7 @@ export default function MainPage() {
     }
   }
 
-  function buildAuthCardDataSuccess(isRenewal:boolean, request?:any) {
+  function buildAuthCardDataSuccess(isRenewal:boolean, request?:any, stringifyRequest?:boolean) {
     let now:Date = new Date();
     let expires:number = _client?.state.tokenResponse?.expires_in ?? -1;
     
@@ -323,7 +325,7 @@ export default function MainPage() {
     }
 
     if (request) {
-      data.requestData = JSON.stringify(request, null, 2);
+      data.requestData = stringifyRequest ? JSON.stringify(request, null, 2) : request;
       data.requestDataType = RenderDataAsTypes.JSON;
     }
 
@@ -359,7 +361,7 @@ export default function MainPage() {
       iss: currentAud,
     }
 
-    buildAuthCardDataSuccess(false, request);
+    buildAuthCardDataSuccess(false, request, true);
   }
 
   function onAuthError(error:Error) {
@@ -424,8 +426,6 @@ export default function MainPage() {
           copyToClipboard: copyToClipboard,
         }}
         />
-      {/* <div id='mainContent'>
-      </div> */}
     </div>
   );
 }
