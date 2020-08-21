@@ -51,3 +51,7 @@ People often use https://jwt.io/ to generate and validate tokens. However, it se
 ```
 docker run -t -p 9009:80 smartonfhir/smart-launcher:latest
 ```
+<!--
+docker build -t smartonfhir/smart-launcher:latest .
+docker push smartonfhir/smart-launcher:latest
+-->
