@@ -106,6 +106,7 @@ module.exports = function (req, res) {
 
     //proxy the request to the real FHIR server
     if (!logTime && process.env.NODE_ENV == "development") {
+        console.log('SCOPE: ', scope);
         console.log("PROXY: " + fhirRequest.url, fhirRequest);
     }
 

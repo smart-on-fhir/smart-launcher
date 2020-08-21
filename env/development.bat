@@ -1,0 +1,12 @@
+set NODE_ENV=development
+set LOG_TIMES=0
+set DISABLE_SANDBOXES=1
+set DISABLE_BACKEND_SERVICES=0
+set FHIR_SERVER_R2=https://r2.smarthealthit.org
+set FHIR_SERVER_R3=https://r3.smarthealthit.org
+set FHIR_SERVER_R4=https://r4.smarthealthit.org
+set PICKER_CONFIG_R2=r2
+set PICKER_CONFIG_R3=r3
+set PICKER_CONFIG_R4=r4
+set CDS_SANDBOX_URL=http://localhost:8080
+REM set SSL_PORT=9443

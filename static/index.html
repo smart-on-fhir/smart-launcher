@@ -395,8 +395,10 @@
             <div class="panel panel-success alert-success">
                 <div class="panel-heading">
                     <a href="#" target="_blank" class="btn btn-sm btn-success pull-right launch launch-bs" style="margin: -4px -10px 0 0" id="download" download="config.json">Download as JSON</a>
-                    <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
-                    <a class="pull-right launch launch-ehr launch-pp text-success" id="ehr-launch-url-test" target="_blank" href="#">Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test" target="_blank" href="#">&nbsp;&nbsp;Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <a class="pull-right launch launch-pt launch-prov text-success" id="standalone-launch-url-test-granular" target="_blank" href="#">Granular Control Test App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <a class="pull-right launch launch-ehr launch-pp text-success" id="ehr-launch-url-test" target="_blank" href="#">&nbsp;&nbsp;Test With Sample App <i class="glyphicon glyphicon-new-window"></i></a>
+                    <a class="pull-right launch launch-ehr launch-pp text-success" id="ehr-launch-url-test-granular" target="_blank" href="#">Granular Control Test App <i class="glyphicon glyphicon-new-window"></i></a>
                     <b class="text-success launch launch-pt launch-ehr launch-pp launch-prov">Launch</b>
                     <b class="text-success launch launch-bs launch-cds">Launch Configuration</b>
                 </div>
@@ -925,16 +927,22 @@
                 var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" +
                     encodeURIComponent(openUrl) + "&launch=" + launchData;
 
+                var granularEhrLaunchUrl = "http://localhost:3000/launch.html?iss=" +
+                    encodeURIComponent(openUrl) + "&launch=" + launchData;
+
                 if (urlParams.sim_ehr) {
                     ehrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(ehrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "");
                     sampleEhrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(sampleEhrLaunchUrl) +
+                        "&user=" + encodeURIComponent(urlParams.provider || "");
+                    granularEhrLaunchUrl = "/ehr.html?app=" + encodeURIComponent(granularEhrLaunchUrl) +
                         "&user=" + encodeURIComponent(urlParams.provider || "");
 
                     if (appLaunchUrl) {
                         var origin = location.protocol + "//" + location.host;
                         ehrLaunchUrl       = origin + ehrLaunchUrl;
                         sampleEhrLaunchUrl = origin + sampleEhrLaunchUrl;
+                        granularEhrLaunchUrl = origin + granularEhrLaunchUrl;
                     }
                 }
 
@@ -956,7 +964,12 @@
                     "href",
                     "/sample-app/index.html?aud=" + encodeURIComponent(standaloneUrl)
                 );
+                $("#standalone-launch-url-test-granular").attr(
+                    "href",
+                    "http://localhost:3000/index.html?aud=" + encodeURIComponent(standaloneUrl)
+                );
                 $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
+                $("#ehr-launch-url-test-granular").attr("href", granularEhrLaunchUrl);
 
                 var cdsSandbox = ENV.CDS_SANDBOX_URL;
                 if (cdsSandbox) {

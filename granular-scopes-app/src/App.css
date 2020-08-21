@@ -1,0 +1,49 @@
+.App {
+  text-align: center;
+}
+
+.bp3-button {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.bp3-card {
+  margin: 10px;
+  /* width: 100%; */
+}
+
+.bp3-switch {
+  margin: 5px;
+}
+
+#main-content {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: calc(100vw - 20px);
+}
+
+.code-tab {
+  overflow: auto !important;
+  max-height: 510px;
+  max-width: calc(100vw - 250px);
+  min-width: 50vw;
+}
+
+.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+}
+
+.nav-logo {
+  width: 32px;
+  margin-right: 4px;
+}
+
+.fixed-checkbox {
+  width: 250px;
+}
