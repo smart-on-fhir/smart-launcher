@@ -159,6 +159,15 @@ function operationOutcome(res, message, {
     });
 }
 
+/**
+ * Given a request object, returns its base URL
+ */
+function getRequestBaseURL(req) {
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    return protocol + "://" + host;
+}
+
 // Sandbox-ify -----------------------------------------------------------------
 
 function buildUrlPath(...segments) {
@@ -301,5 +310,6 @@ module.exports = {
     adjustResponseUrls,
     adjustUrl,
     adjustRequestBody,
+    getRequestBaseURL,
     die
 };
