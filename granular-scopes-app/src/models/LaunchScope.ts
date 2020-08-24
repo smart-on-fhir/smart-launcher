@@ -1,4 +1,9 @@
 
+export interface ScopeComparison {
+  granted:string[];
+  denied:string[];
+}
+
 export class LaunchScope extends Map<string, boolean> {
   getScopes():string {
     let scopeString:string = '';
@@ -19,15 +24,18 @@ export class LaunchScope extends Map<string, boolean> {
   }
 
   save(scopeSetName:string) {
-    sessionStorage.setItem(scopeSetName, this.getScopes());
+    sessionStorage.setItem(scopeSetName, JSON.stringify(Array.from(this.entries())));
   }
 
-  load(scopeSetName:string, allowNewScopes:boolean) {
-    let scopes:string = sessionStorage.getItem(scopeSetName) ?? '';
+  static load(scopeSetName:string):LaunchScope {
+    let val:string = sessionStorage.getItem(scopeSetName) ?? '';
 
-    if (scopes !== '') {
-      this.loadFromScopes(scopes, allowNewScopes);
+    if (!val) {
+      return new LaunchScope();
     }
+
+    let loaded:LaunchScope = new LaunchScope(JSON.parse(val) ?? []);
+    return loaded;
   }
 
   loadFromScopes(scopes:string, allowNewScopes:boolean) {
@@ -50,6 +58,28 @@ export class LaunchScope extends Map<string, boolean> {
       for (let key of saved.keys()) {
         this.set(key, true);
       }
+    }
+  }
+
+  compareToGranted(scopes:string):ScopeComparison {
+    let granted:string[] = [];
+    let denied:string[] = [];
+
+    this.forEach((requested:boolean, key:string) => {
+      if (!requested) {
+        return;
+      }
+
+      if (scopes.indexOf(key) === -1) {
+        denied.push(key);
+      } else {
+        granted.push(key);
+      }
+    });
+
+    return {
+      granted: granted,
+      denied: denied,
     }
   }
 };

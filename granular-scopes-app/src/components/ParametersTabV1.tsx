@@ -38,11 +38,15 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
 
   useEffect(() => {
     if (initialLoadRef.current) {
-      scopes.load(_scopeKey, false);
+      let savedScopes:LaunchScope = LaunchScope.load(_scopeKey);
+
+      if (savedScopes.size > _defaultScopes.size) {
+        setScopes(savedScopes);
+      }
 
       initialLoadRef.current = false;
     }
-  }, [scopes]);
+  }, [scopes, setScopes]);
 
   function handleInputAudChange(event: React.ChangeEvent<HTMLInputElement>) {
     props.setAud(event.target.value);

@@ -20,7 +20,7 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 
 import StandaloneParameters from './StandaloneParameters';
-import { LaunchScope } from '../models/LaunchScope';
+import { LaunchScope, ScopeComparison } from '../models/LaunchScope';
 
 import FHIR from 'fhirclient';
 import Client from 'fhirclient/lib/Client';
@@ -57,6 +57,7 @@ export default function MainPage() {
 
   const [aud, setAud] = useState<string>('');
   // const [code, setCode] = useState<string>('');
+  const [requestedScopes, setRequestedScopes] = useState<LaunchScope>(new LaunchScope());
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -66,6 +67,21 @@ export default function MainPage() {
   }
   const [authCardData, setAuthCardData] = useState<SingleRequestData[]>([]);
   const [authCardStatus, setAuthCardStatus] = useState<DataCardStatus>(_statusAvailable);
+
+  const userCardInfo:DataCardInfo = {
+    id: 'user-info-card',
+    heading: 'User Information',
+    description: '',
+    optional: false,
+  }
+  const [userCardData, setUserCardData] = useState<SingleRequestData[]>([]);
+  const [userCardStatus, setUserCardStatus] = useState<DataCardStatus>(_statusAvailable);
+  const [showUserCard, setShowUserCard] = useState<boolean>(false);
+
+  const [resourcesToShow, setResourcesToShow] = useState<string[]>([]);
+  const [resourceCardsInfo, setResourceCardsInfo] = useState<Map<string,DataCardInfo>>(new Map());
+  const [resourceCardsDataMap, setResourceCardsDataMap] = useState<Map<string,SingleRequestData[]>>(new Map([]));
+  const [resourceCardsStatusMap, setResourceCardsStatusMap] = useState<Map<string,DataCardStatus>>(new Map());
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -208,18 +224,20 @@ export default function MainPage() {
     }
   }
 
-  function startAuth(requestedScopes:LaunchScope) {
+  function startAuth(scopes:LaunchScope) {
     if (!aud) {
       showToastMessage('Standalone launch requires an Audience!', IconNames.ERROR);
       return;
     }
 
-    let scopes:string = requestedScopes.getScopes();
-    sessionStorage.setItem(`r_${aud}`, scopes);
+    setRequestedScopes(scopes);
+    scopes.save('requestedScopes');
+
+    let scopeString:string = scopes.getScopes();
 
     FHIR.oauth2.authorize({
       client_id: _appId,
-      scope: scopes,
+      scope: scopeString,
       iss: aud,
     });
   }
@@ -234,7 +252,8 @@ export default function MainPage() {
 
     _client.refresh()
       .then((refreshedState:fhirclient.ClientState) => {
-        buildAuthCardDataSuccess(true, request, false);
+        buildAuthCardDataSuccess(true, request, false, requestedScopes.compareToGranted(_client!.state.scope ?? ''));
+        loadResourceContents();
       })
       .catch((reason:any) => {
         buildAuthCardDataError(true, reason);
@@ -265,6 +284,12 @@ export default function MainPage() {
       responseDataType: RenderDataAsTypes.Error,
     }
 
+    let scopes:LaunchScope = LaunchScope.load('requestedScopes');
+    if (scopes.size > 0) {
+      data.requestData = JSON.stringify(scopes, null, 2);
+      data.requestDataType = RenderDataAsTypes.JSON;
+    }
+
     if (isRenewal) {
       let updatedData:SingleRequestData[] = authCardData.slice();
       updatedData.push(data);
@@ -278,7 +303,12 @@ export default function MainPage() {
     }
   }
 
-  function buildAuthCardDataSuccess(isRenewal:boolean, request?:any, stringifyRequest?:boolean) {
+  function buildAuthCardDataSuccess(
+    isRenewal:boolean, 
+    request?:any, 
+    stringifyRequest?:boolean, 
+    scopeComparison?:ScopeComparison) 
+    {
     let now:Date = new Date();
     let expires:number = _client?.state.tokenResponse?.expires_in ?? -1;
 
@@ -318,10 +348,21 @@ export default function MainPage() {
       requestUrl: url,
       responseData: JSON.stringify(_client!.state.tokenResponse, null, 2),
       responseDataType: RenderDataAsTypes.JSON,
-      info: `Processed at: ${now.toLocaleString()}`,
-      infoDataType: RenderDataAsTypes.Text,
       extended: extended,
       extendedDataType: RenderDataAsTypes.JSON,
+    }
+
+    if (scopeComparison) {
+      let scopeInfo:any = {
+        processedAt: now.toLocaleString(),
+        scopesGranted: scopeComparison.granted,
+        scopesDenied: scopeComparison.denied,
+      }
+      data.info = JSON.stringify(scopeInfo, null, 2);
+      data.infoDataType = RenderDataAsTypes.JSON;
+    } else {
+      data.info = `Processed at: ${now.toLocaleString()}`;
+      data.infoDataType = RenderDataAsTypes.Text;
     }
 
     if (request) {
@@ -348,7 +389,74 @@ export default function MainPage() {
     _client = client;
 
     let currentAud:string = sessionStorage.getItem('aud') ?? '';
-    let scopes:string = sessionStorage.getItem(`r_${currentAud}`) ?? '';
+
+    let scopes:LaunchScope = LaunchScope.load('requestedScopes');
+    setRequestedScopes(scopes);
+
+    let comparison:ScopeComparison = scopes.compareToGranted(_client!.state.scope ?? '');
+
+    let showUser:boolean = false;
+
+    let resources:string[] = [];
+    scopes.forEach((requested:boolean, name:string) => {
+      if (!name) {
+        return;
+      }
+
+      if (!requested) {
+        return;
+      }
+      
+      switch (name) {
+        case 'openid':
+        case 'fhirUser':
+        case 'offline_access':
+        case 'online_access':
+        case 'smart/orchestrate_launch':
+        case 'profile':
+          // ignore
+        break;
+
+        case 'launch/patient':
+        case 'patient/*.read':
+        case 'patient/*.write':
+        case 'patient/*.*':
+          if (resources.indexOf('Patient') === -1) {
+            resources.push('Patient');
+          }
+        break;
+
+        case 'launch/encounter':
+          if (resources.indexOf('Encounter') === -1) {
+            resources.push('Encounter');
+          }
+        break;
+  
+        case 'user/*.*':
+          showUser = true;
+          if (resources.indexOf('Patient') === -1) {
+            resources.push('Patient');
+          }
+          if (resources.indexOf('Encounter') === -1) {
+            resources.push('Encounter');
+          }
+        break;
+  
+        default:
+          let split:string[] = name.split('?');
+          if (resources.indexOf(split[0]) === -1) {
+            resources.push(split[0]);
+          }
+        break;
+      }
+    });
+
+    setResourcesToShow(resources);
+    setShowUserCard(showUser);
+
+    let scopeString:string = scopes.getScopes();
+
+    //let scopesString:string = sessionStorage.getItem(`r_${currentAud}`) ?? '';
 
     // TODO(gino): remove during normal use - leaving for dev testing
     // if (scopes) {
@@ -357,11 +465,12 @@ export default function MainPage() {
 
     let request:any = {
       client_id: _appId,
-      scopes: scopes,
+      scopes: scopeString,
       iss: currentAud,
     }
 
-    buildAuthCardDataSuccess(false, request, true);
+    buildAuthCardDataSuccess(false, request, true, comparison);
+    loadResourceContents();
   }
 
   function onAuthError(error:Error) {
@@ -371,6 +480,75 @@ export default function MainPage() {
   function setAudAndSave(value:string) {
     sessionStorage.setItem('aud', value);
     setAud(value);
+  }
+
+  function buildResourceDataCardInfo(resourceName:string):DataCardInfo {
+    let id:string = 'resource-card-' + resourceName.toLowerCase();
+
+    return {
+      id: id,
+      heading: resourceName + ' Resource',
+      description: '',
+      optional: false,
+    }
+  }
+
+  function loadResourceContents() {
+  }
+
+  useEffect(() => {
+    let resourceCards:Map<string,DataCardInfo> = new Map([]);
+    resourcesToShow.forEach((resource) => {
+      resourceCards.set(resource, buildResourceDataCardInfo(resource));
+    });
+    setResourceCardsInfo(resourceCards);
+
+  }, [resourcesToShow]);
+
+  function buildContentCards():JSX.Element[] {
+    let cards:JSX.Element[] = [];
+
+    if (showUserCard) {
+      cards.push(
+        <DataCard
+          key={'user-info-card'}
+          info={userCardInfo}
+          data={userCardData}
+          status={userCardStatus}
+          parentProps={{
+            isUiDark: uiDark,
+            aud: aud,
+            setAud: setAudAndSave,
+            startAuth: startAuth,
+            refreshAuth: refreshAuth,
+            toaster: showToastMessage,
+            copyToClipboard: copyToClipboard,
+          }}
+          />
+      );
+    }
+
+    resourceCardsInfo.forEach((info:DataCardInfo, name:string) => {
+      cards.push(
+        <DataCard
+          key={'resource-card-'+name}
+          info={info}
+          data={[]}
+          status={_statusAvailable}
+          parentProps={{
+            isUiDark: uiDark,
+            aud: aud,
+            setAud: setAudAndSave,
+            startAuth: startAuth,
+            refreshAuth: refreshAuth,
+            toaster: showToastMessage,
+            copyToClipboard: copyToClipboard,
+          }}
+          />
+      );
+    });
+
+    return cards;
   }
 
   return (
@@ -426,6 +604,7 @@ export default function MainPage() {
           copyToClipboard: copyToClipboard,
         }}
         />
+      {buildContentCards()}
     </div>
   );
 }
