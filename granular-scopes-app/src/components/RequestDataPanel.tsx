@@ -3,7 +3,7 @@ import React, {useState, useEffect} from 'react';
 import {
   Button, Tabs, Tab, Tooltip, TabId, Icon, Switch, 
 } from '@blueprintjs/core';
-import { ComponentProps } from '../models/ComponentProps';
+import { CommonProps } from '../models/CommonProps';
 import { IconNames, IconName } from '@blueprintjs/icons';
 import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 
@@ -11,7 +11,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'
 
 export interface RequestPanelProps {
-  paneProps: ComponentProps,
+  paneProps: CommonProps,
   data: SingleRequestData[],
   busy?: boolean,
   processRowDelete?: ((index: number) => void),

@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react';
-import { ComponentProps } from '../models/ComponentProps';
+import { CommonProps } from '../models/CommonProps';
 import { 
   Card, 
   Divider, 
@@ -11,7 +11,7 @@ import {
 } from '@blueprintjs/core';
 import { LaunchScope } from '../models/LaunchScope';
 
-export interface ParametersTabV1Props extends ComponentProps {
+export interface ParametersTabV1Props extends CommonProps {
 }
 
 const _defaultScopes:LaunchScope = new LaunchScope([

@@ -12,7 +12,7 @@ import {
 
 import {IconNames} from '@blueprintjs/icons';
 import { DataCardInfo } from '../models/DataCardInfo';
-import { ComponentProps } from '../models/ComponentProps';
+import { CommonProps } from '../models/CommonProps';
 import { SingleRequestData } from '../models/RequestData';
 import RequestDataPanel from './RequestDataPanel';
 import { DataCardStatus } from '../models/DataCardStatus';
@@ -21,7 +21,7 @@ export interface DataCardProps {
   info: DataCardInfo,
   status: DataCardStatus
   data: SingleRequestData[],
-  parentProps: ComponentProps,
+  parentProps: CommonProps,
   children?: React.ReactNode,
   processRowDelete?: ((index: number) => void),
   processRowToggle?: ((index: number) => void),

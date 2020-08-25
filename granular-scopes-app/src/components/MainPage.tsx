@@ -31,6 +31,7 @@ import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 import { DataCardStatus } from '../models/DataCardStatus';
 import { JwtHelper } from '../util/JwtHelper';
 import { fhirclient } from 'fhirclient/lib/types';
+import ResourceComponent from './ResourceComponent';
 
 export interface MainPageProps {}
 
@@ -45,7 +46,6 @@ let _client:Client|undefined = undefined;
 let _authTimeoutCheck:any = undefined;
 
 export default function MainPage() {
-
   const initialLoadRef = useRef<boolean>(true);
   const mainDiv = React.createRef<HTMLDivElement>();
   const toasterRef = useRef<IToaster | null>(null);
@@ -68,20 +68,11 @@ export default function MainPage() {
   const [authCardData, setAuthCardData] = useState<SingleRequestData[]>([]);
   const [authCardStatus, setAuthCardStatus] = useState<DataCardStatus>(_statusAvailable);
 
-  const userCardInfo:DataCardInfo = {
-    id: 'user-info-card',
-    heading: 'User Information',
-    description: '',
-    optional: false,
-  }
-  const [userCardData, setUserCardData] = useState<SingleRequestData[]>([]);
-  const [userCardStatus, setUserCardStatus] = useState<DataCardStatus>(_statusAvailable);
   const [showUserCard, setShowUserCard] = useState<boolean>(false);
+  const [userResourceType, setUserResourceType] = useState<string>('');
 
   const [resourcesToShow, setResourcesToShow] = useState<string[]>([]);
-  const [resourceCardsInfo, setResourceCardsInfo] = useState<Map<string,DataCardInfo>>(new Map());
-  const [resourceCardsDataMap, setResourceCardsDataMap] = useState<Map<string,SingleRequestData[]>>(new Map([]));
-  const [resourceCardsStatusMap, setResourceCardsStatusMap] = useState<Map<string,DataCardStatus>>(new Map());
+  const [resourceCards, setResourceCards] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -253,7 +244,6 @@ export default function MainPage() {
     _client.refresh()
       .then((refreshedState:fhirclient.ClientState) => {
         buildAuthCardDataSuccess(true, request, false, requestedScopes.compareToGranted(_client!.state.scope ?? ''));
-        loadResourceContents();
       })
       .catch((reason:any) => {
         buildAuthCardDataError(true, reason);
@@ -440,6 +430,7 @@ export default function MainPage() {
           if (resources.indexOf('Encounter') === -1) {
             resources.push('Encounter');
           }
+          setUserResourceType(client.user.resourceType ?? '');
         break;
   
         default:
@@ -451,8 +442,8 @@ export default function MainPage() {
       }
     });
 
-    setResourcesToShow(resources);
     setShowUserCard(showUser);
+    setResourcesToShow(resources);
 
     let scopeString:string = scopes.getScopes();
 
@@ -470,7 +461,6 @@ export default function MainPage() {
     }
 
     buildAuthCardDataSuccess(false, request, true, comparison);
-    loadResourceContents();
   }
 
   function onAuthError(error:Error) {
@@ -482,74 +472,99 @@ export default function MainPage() {
     setAud(value);
   }
 
-  function buildResourceDataCardInfo(resourceName:string):DataCardInfo {
-    let id:string = 'resource-card-' + resourceName.toLowerCase();
-
-    return {
-      id: id,
-      heading: resourceName + ' Resource',
-      description: '',
-      optional: false,
-    }
+  function getFhirClient():Client|undefined {
+    return _client;
   }
-
-  function loadResourceContents() {
-  }
-
-  useEffect(() => {
-    let resourceCards:Map<string,DataCardInfo> = new Map([]);
-    resourcesToShow.forEach((resource) => {
-      resourceCards.set(resource, buildResourceDataCardInfo(resource));
-    });
-    setResourceCardsInfo(resourceCards);
-
-  }, [resourcesToShow]);
 
   function buildContentCards():JSX.Element[] {
     let cards:JSX.Element[] = [];
 
-    if (showUserCard) {
+    if ((showUserCard) && (userResourceType)) {
       cards.push(
-        <DataCard
-          key={'user-info-card'}
-          info={userCardInfo}
-          data={userCardData}
-          status={userCardStatus}
-          parentProps={{
-            isUiDark: uiDark,
-            aud: aud,
-            setAud: setAudAndSave,
-            startAuth: startAuth,
-            refreshAuth: refreshAuth,
-            toaster: showToastMessage,
-            copyToClipboard: copyToClipboard,
-          }}
+        <ResourceComponent
+          key='data-user-card'
+          title='User Information'
+          id={_client?.user.id ?? undefined}
+          resourceName={userResourceType}
+          isUiDark={uiDark}
+          aud={aud}
+          setAud={setAudAndSave}
+          startAuth={startAuth}
+          getFhirClient={getFhirClient}
+          refreshAuth={refreshAuth}
+          toaster={showToastMessage}
+          copyToClipboard={copyToClipboard}
           />
       );
     }
 
-    resourceCardsInfo.forEach((info:DataCardInfo, name:string) => {
-      cards.push(
-        <DataCard
-          key={'resource-card-'+name}
-          info={info}
-          data={[]}
-          status={_statusAvailable}
-          parentProps={{
-            isUiDark: uiDark,
-            aud: aud,
-            setAud: setAudAndSave,
-            startAuth: startAuth,
-            refreshAuth: refreshAuth,
-            toaster: showToastMessage,
-            copyToClipboard: copyToClipboard,
-          }}
-          />
-      );
+    resourcesToShow.forEach((resourceName:string) => {
+      switch (resourceName) {
+        case 'Patient':
+          cards.push(
+            <ResourceComponent
+              key={'data-' + resourceName + '-card'}
+              title={resourceName + ' Resource'}
+              id={_client?.patient.id ?? undefined}
+              resourceName={resourceName}
+              isUiDark={uiDark}
+              aud={aud}
+              setAud={setAudAndSave}
+              startAuth={startAuth}
+              getFhirClient={getFhirClient}
+              refreshAuth={refreshAuth}
+              toaster={showToastMessage}
+              copyToClipboard={copyToClipboard}
+              />
+          );
+          break;
+
+        case 'Encounter':
+          cards.push(
+            <ResourceComponent
+              key={'data-' + resourceName + '-card'}
+              title={resourceName + ' Resource'}
+              id={_client?.encounter.id ?? undefined}
+              resourceName={resourceName}
+              isUiDark={uiDark}
+              aud={aud}
+              setAud={setAudAndSave}
+              startAuth={startAuth}
+              getFhirClient={getFhirClient}
+              refreshAuth={refreshAuth}
+              toaster={showToastMessage}
+              copyToClipboard={copyToClipboard}
+              />
+          );
+          break;
+
+        default:
+          cards.push(
+            <ResourceComponent
+              key={'data-' + resourceName + '-card'}
+              title={resourceName + ' Resource'}
+              id={undefined}
+              resourceName={resourceName}
+              isUiDark={uiDark}
+              aud={aud}
+              setAud={setAudAndSave}
+              startAuth={startAuth}
+              getFhirClient={getFhirClient}
+              refreshAuth={refreshAuth}
+              toaster={showToastMessage}
+              copyToClipboard={copyToClipboard}
+              />
+          );
+          break;
+      }
     });
 
     return cards;
   }
+
+  useEffect(() => {
+    setResourceCards(buildContentCards());
+  }, [resourcesToShow]);
 
   return (
     <div ref={mainDiv}>
@@ -587,6 +602,7 @@ export default function MainPage() {
         setAud={setAudAndSave}
         startAuth={startAuth}
         refreshAuth={refreshAuth}
+        getFhirClient={getFhirClient}
         toaster={showToastMessage}
         copyToClipboard={copyToClipboard}
         />
@@ -600,11 +616,12 @@ export default function MainPage() {
           setAud: setAudAndSave,
           startAuth: startAuth,
           refreshAuth: refreshAuth,
+          getFhirClient: getFhirClient,
           toaster: showToastMessage,
           copyToClipboard: copyToClipboard,
         }}
         />
-      {buildContentCards()}
+      {resourceCards}
     </div>
   );
 }

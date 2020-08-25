@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react';
-import { ComponentProps } from '../models/ComponentProps';
+import { CommonProps } from '../models/CommonProps';
 import { 
   Card, 
   Elevation,
@@ -10,7 +10,7 @@ import {
 } from '@blueprintjs/core';
 import ParametersTabV1 from './ParametersTabV1';
 
-export interface StandaloneParametersProps extends ComponentProps {
+export interface StandaloneParametersProps extends CommonProps {
 }
 
 
@@ -55,6 +55,7 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
               setAud={props.setAud}
               startAuth={props.startAuth}
               refreshAuth={props.refreshAuth}
+              getFhirClient={props.getFhirClient}
               toaster={props.toaster}
               copyToClipboard={props.copyToClipboard}
               />
