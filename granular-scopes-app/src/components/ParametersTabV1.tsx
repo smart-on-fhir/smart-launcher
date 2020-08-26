@@ -12,6 +12,7 @@ import {
 import { LaunchScope } from '../models/LaunchScope';
 
 export interface ParametersTabV1Props extends CommonProps {
+  setScopes: ((currentScopes:LaunchScope) => void);
 }
 
 const _defaultScopes:LaunchScope = new LaunchScope([
@@ -42,15 +43,14 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
 
       if (savedScopes.size > _defaultScopes.size) {
         setScopes(savedScopes);
+        props.setScopes(savedScopes);
+      } else {
+        props.setScopes(_defaultScopes);
       }
 
       initialLoadRef.current = false;
     }
   }, [scopes, setScopes]);
-
-  function handleInputAudChange(event: React.ChangeEvent<HTMLInputElement>) {
-    props.setAud(event.target.value);
-  }
 
   function handleScopeChange(name:string) {
     let updated:LaunchScope = new LaunchScope(scopes);
@@ -59,6 +59,7 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
     updated.save(_scopeKey);
 
     setScopes(updated);
+    props.setScopes(updated);
   }
 
   function elementsForScopes() {
@@ -93,40 +94,11 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
       interactive={false}
       >
       <FormGroup
-        label='Audience'
-        helperText='URL requests will be sent to'
-        labelFor='input-aud'
-        >
-        <InputGroup
-          id='input-aud'
-          value={props.aud}
-          onChange={handleInputAudChange}
-          />
-      </FormGroup>
-      <Divider />
-      <FormGroup
         label='Scopes'
         helperText='Scopes based on SMART V1'
         >
         { elementsForScopes() }
       </FormGroup>
-      <Button
-        key='run-request'
-        id='run-request'
-        text='Launch Auth Redirect'
-        onClick={() => props.startAuth(scopes)}
-        />
-      <Tooltip
-        content='Refresh the existing token (does NOT change scopes)'
-        >
-        <Button
-          key='refresh-request'
-          id='refresh-request'
-          text='Refresh Token'
-          disabled={false}
-          onClick={() => props.refreshAuth()}
-          />
-      </Tooltip>
     </Card>
   );
 }
