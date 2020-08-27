@@ -32,6 +32,7 @@ import { DataCardStatus } from '../models/DataCardStatus';
 import { JwtHelper } from '../util/JwtHelper';
 import { fhirclient } from 'fhirclient/lib/types';
 import ResourceComponent from './ResourceComponent';
+import { CommonProps } from '../models/CommonProps';
 
 export interface MainPageProps {}
 
@@ -58,6 +59,8 @@ export default function MainPage() {
   const [aud, setAud] = useState<string>('');
   // const [code, setCode] = useState<string>('');
   const [requestedScopes, setRequestedScopes] = useState<LaunchScope>(new LaunchScope());
+  const [profile, setProfile] = useState<string>('');
+  const [fhirUser, setFhirUser] = useState<string>('');
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -385,6 +388,21 @@ export default function MainPage() {
 
     let comparison:ScopeComparison = scopes.compareToGranted(_client!.state.scope ?? '');
 
+    let tokenParts:any[] = JwtHelper.decodeToken(_client!.state.tokenResponse?.id_token ?? '');
+    if (tokenParts.length === 3) {
+      if (tokenParts[1].profile) {
+        setProfile(tokenParts[1].profile as string);
+      } else {
+        setProfile('');
+      }
+
+      if (tokenParts[1].fhirUser) {
+        setFhirUser(tokenParts[1].fhirUser as string);
+      } else {
+        setFhirUser('');
+      }
+    }
+
     let showUser:boolean = false;
 
     let resources:string[] = [];
@@ -434,9 +452,10 @@ export default function MainPage() {
         break;
   
         default:
-          let split:string[] = name.split('?');
-          if (resources.indexOf(split[0]) === -1) {
-            resources.push(split[0]);
+          let split:string[] = name.split('/');
+          let components:string[] = split[1].split(/[.?/]/);
+          if (resources.indexOf(components[0]) === -1) {
+            resources.push(components[0]);
           }
         break;
       }
@@ -479,6 +498,19 @@ export default function MainPage() {
   function buildContentCards():JSX.Element[] {
     let cards:JSX.Element[] = [];
 
+    let common:CommonProps = {
+      isUiDark: uiDark,
+      aud: aud,
+      setAud: setAudAndSave,
+      profile: profile,
+      fhirUser: fhirUser,
+      startAuth: startAuth,
+      refreshAuth: refreshAuth,
+      getFhirClient: getFhirClient,
+      toaster: showToastMessage,
+      copyToClipboard: copyToClipboard,
+    };
+
     if ((showUserCard) && (userResourceType)) {
       cards.push(
         <ResourceComponent
@@ -486,14 +518,7 @@ export default function MainPage() {
           title='User Information'
           id={_client?.user.id ?? undefined}
           resourceName={userResourceType}
-          isUiDark={uiDark}
-          aud={aud}
-          setAud={setAudAndSave}
-          startAuth={startAuth}
-          getFhirClient={getFhirClient}
-          refreshAuth={refreshAuth}
-          toaster={showToastMessage}
-          copyToClipboard={copyToClipboard}
+          common={common}
           />
       );
     }
@@ -507,14 +532,7 @@ export default function MainPage() {
               title={resourceName + ' Resource'}
               id={_client?.patient.id ?? undefined}
               resourceName={resourceName}
-              isUiDark={uiDark}
-              aud={aud}
-              setAud={setAudAndSave}
-              startAuth={startAuth}
-              getFhirClient={getFhirClient}
-              refreshAuth={refreshAuth}
-              toaster={showToastMessage}
-              copyToClipboard={copyToClipboard}
+              common={common}
               />
           );
           break;
@@ -526,14 +544,7 @@ export default function MainPage() {
               title={resourceName + ' Resource'}
               id={_client?.encounter.id ?? undefined}
               resourceName={resourceName}
-              isUiDark={uiDark}
-              aud={aud}
-              setAud={setAudAndSave}
-              startAuth={startAuth}
-              getFhirClient={getFhirClient}
-              refreshAuth={refreshAuth}
-              toaster={showToastMessage}
-              copyToClipboard={copyToClipboard}
+              common={common}
               />
           );
           break;
@@ -545,14 +556,7 @@ export default function MainPage() {
               title={resourceName + ' Resource'}
               id={undefined}
               resourceName={resourceName}
-              isUiDark={uiDark}
-              aud={aud}
-              setAud={setAudAndSave}
-              startAuth={startAuth}
-              getFhirClient={getFhirClient}
-              refreshAuth={refreshAuth}
-              toaster={showToastMessage}
-              copyToClipboard={copyToClipboard}
+              common={common}
               />
           );
           break;
@@ -565,6 +569,19 @@ export default function MainPage() {
   useEffect(() => {
     setResourceCards(buildContentCards());
   }, [resourcesToShow]);
+
+  const currentCommon:CommonProps = {
+    isUiDark: uiDark,
+    aud: aud,
+    setAud: setAudAndSave,
+    profile: profile,
+    fhirUser: fhirUser,
+    startAuth: startAuth,
+    refreshAuth: refreshAuth,
+    getFhirClient: getFhirClient,
+    toaster: showToastMessage,
+    copyToClipboard: copyToClipboard,
+  }
 
   return (
     <div ref={mainDiv}>
@@ -597,29 +614,13 @@ export default function MainPage() {
         </Card>
       </Overlay>
       <StandaloneParameters
-        isUiDark={uiDark}
-        aud={aud}
-        setAud={setAudAndSave}
-        startAuth={startAuth}
-        refreshAuth={refreshAuth}
-        getFhirClient={getFhirClient}
-        toaster={showToastMessage}
-        copyToClipboard={copyToClipboard}
+        common={currentCommon}
         />
       <DataCard
         info={authCardInfo}
         data={authCardData}
         status={authCardStatus}
-        parentProps={{
-          isUiDark: uiDark,
-          aud: aud,
-          setAud: setAudAndSave,
-          startAuth: startAuth,
-          refreshAuth: refreshAuth,
-          getFhirClient: getFhirClient,
-          toaster: showToastMessage,
-          copyToClipboard: copyToClipboard,
-        }}
+        common={currentCommon}
         />
       {resourceCards}
     </div>

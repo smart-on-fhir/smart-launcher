@@ -7,6 +7,8 @@ export interface CommonProps {
 
   aud: string;
   setAud: ((aud: string) => void);
+  profile:string;
+  fhirUser:string;
 
   startAuth: ((requestedScopes:LaunchScope) => void);
   refreshAuth: ((requestedScopes?:LaunchScope) => void);

@@ -11,7 +11,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'
 
 export interface RequestPanelProps {
-  paneProps: CommonProps,
+  common: CommonProps,
   data: SingleRequestData[],
   busy?: boolean,
   processRowDelete?: ((index: number) => void),
@@ -83,23 +83,23 @@ export default function RequestDataPanel(props: RequestPanelProps) {
     switch (displayedTabId)
     {
       case 'request_url':
-        props.paneProps.copyToClipboard(props.data[dataRowIndex].requestUrl!, 'Request URL');
+        props.common.copyToClipboard(props.data[dataRowIndex].requestUrl!, 'Request URL');
         return;
         // break;
       case 'request_data':
-        props.paneProps.copyToClipboard(props.data[dataRowIndex].requestData!, 'Request Data');
+        props.common.copyToClipboard(props.data[dataRowIndex].requestData!, 'Request Data');
         return;
         // break;
       case 'response_data':
-        props.paneProps.copyToClipboard(props.data[dataRowIndex].responseData!, 'Response Data');
+        props.common.copyToClipboard(props.data[dataRowIndex].responseData!, 'Response Data');
         return;
         // break;
       case 'info':
-        props.paneProps.copyToClipboard(props.data[dataRowIndex].info!, 'Info');
+        props.common.copyToClipboard(props.data[dataRowIndex].info!, 'Info');
         return;
         // break;
       case 'outcome':
-        props.paneProps.copyToClipboard(props.data[dataRowIndex].outcome!, 'OperationOutcome');
+        props.common.copyToClipboard(props.data[dataRowIndex].outcome!, 'OperationOutcome');
         return;
         // break;
     }
@@ -109,7 +109,7 @@ export default function RequestDataPanel(props: RequestPanelProps) {
         let key:string = nameToKey(name);
 
         if (key === displayedTabId) {
-          props.paneProps.copyToClipboard(value);
+          props.common.copyToClipboard(value);
         }
       });
     }
@@ -136,7 +136,7 @@ export default function RequestDataPanel(props: RequestPanelProps) {
           <SyntaxHighlighter
             className='code-tab'
             language={(renderAs === RenderDataAsTypes.Text) ? 'text' : 'json'}
-            style={props.paneProps.isUiDark ? atomOneDark : atomOneLight}
+            style={props.common.isUiDark ? atomOneDark : atomOneLight}
             >
             {content}
           </SyntaxHighlighter>

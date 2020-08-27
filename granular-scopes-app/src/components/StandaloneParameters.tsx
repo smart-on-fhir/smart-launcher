@@ -15,8 +15,10 @@ import {
 } from '@blueprintjs/core';
 import ParametersTabV1 from './ParametersTabV1';
 import { LaunchScope } from '../models/LaunchScope';
+import ParametersTabScenarios from './ParametersTabScenarios';
 
-export interface StandaloneParametersProps extends CommonProps {
+export interface StandaloneParametersProps {
+  common:CommonProps;
 }
 
 
@@ -40,16 +42,16 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
   }
 
   function handleInputAudChange(event: React.ChangeEvent<HTMLInputElement>) {
-    props.setAud(event.target.value);
+    props.common.setAud(event.target.value);
   }
 
   function handleLaunchClick() {
     if (!scopes) {
-      props.toaster('No Scopes Available!');
+      props.common.toaster('No Scopes Available!');
       return;
     }
 
-    props.startAuth(scopes!)
+    props.common.startAuth(scopes!)
   }
 
   return(
@@ -65,7 +67,7 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
         >
         <InputGroup
           id='input-aud'
-          value={props.aud}
+          value={props.common.aud}
           onChange={handleInputAudChange}
           />
       </FormGroup>
@@ -84,14 +86,7 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           title='SMART V1'
           panel={
             <ParametersTabV1
-              isUiDark={props.isUiDark}
-              aud={props.aud}
-              setAud={props.setAud}
-              startAuth={props.startAuth}
-              refreshAuth={props.refreshAuth}
-              getFhirClient={props.getFhirClient}
-              toaster={props.toaster}
-              copyToClipboard={props.copyToClipboard}
+              common={props.common}
               setScopes={setScopes}
               />
           }
@@ -100,14 +95,17 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           id='parameter-tab-scenarios'
           title='Scenarios'
           panel={
-            <Card>Test</Card>
+            <ParametersTabScenarios
+              common={props.common}
+              setScopes={setScopes}
+              />
           }
           />
         <Tab
           id='parameter-tab-playground'
           title='Playground'
           panel={
-            <Card>Playground</Card>
+            <Card>Test</Card>
           }
           />
       </Tabs>
@@ -126,7 +124,7 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           id='refresh-request'
           text='Refresh Token'
           disabled={false}
-          onClick={() => props.refreshAuth()}
+          onClick={() => props.common.refreshAuth()}
           />
       </Tooltip>
     </Card>

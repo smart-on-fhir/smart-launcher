@@ -21,7 +21,7 @@ export interface DataCardProps {
   info: DataCardInfo,
   status: DataCardStatus
   data: SingleRequestData[],
-  parentProps: CommonProps,
+  common: CommonProps,
   children?: React.ReactNode,
   processRowDelete?: ((index: number) => void),
   processRowToggle?: ((index: number) => void),
@@ -102,7 +102,7 @@ export default function DataCard(props: DataCardProps) {
             <br />
           }
           <RequestDataPanel
-            paneProps={props.parentProps}
+            common={props.common}
             data={props.data}
             busy={props.status.busy}
             selectedDataRowIndex={selectedDataIndex}

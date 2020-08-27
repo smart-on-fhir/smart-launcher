@@ -31,7 +31,8 @@ import { CommonProps } from '../models/CommonProps';
 import * as fhir from '../models/fhir_r4';
 import Client from 'fhirclient/lib/Client';
 
-export interface ResourceComponentProps extends CommonProps {
+export interface ResourceComponentProps {
+  common:CommonProps;
   title:string,
   resourceName:string,
   id:string|undefined,
@@ -68,14 +69,23 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     setCardInfo(info);
   }, [props.title, props.resourceName, cardInfo]);
 
+  function buildFilters(client:Client) {
+  }
+
   function loadResource() {
-    if (props.id) {
-      loadResourceById(props.id!);
+    if ((props.resourceName) && (props.id)) {
+      loadResourceById(props.resourceName, props.id!);
+      return;
+    }
+
+    if (props.resourceName) {
+      loadResourceByType(props.resourceName);
+      return;
     }
   }
 
-  async function loadResourceById(id:string) {
-    let client:Client|undefined = props.getFhirClient();
+  async function loadResourceByType(resourceName:string) {
+    let client:Client|undefined = props.common.getFhirClient();
 
     if (!client) {
       console.log('No client');
@@ -93,12 +103,12 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     }
 
     try {
-      var response = await client.request(`${props.resourceName}/${id}`);
+      var response = await client.request(`${resourceName}`);
       
       let data:SingleRequestData = {
         name: dataName,
         id: `request-${cardData.length}`,
-        requestUrl: `${client.state.serverUrl}/${props.resourceName}/${id}`,
+        requestUrl: `${client.state.serverUrl}/${resourceName}`,
         responseData: JSON.stringify(response, null, 2),
         responseDataType: RenderDataAsTypes.FHIR,
       };
@@ -111,7 +121,55 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       let data:SingleRequestData = {
         name: dataName,
         id: `request-${cardData.length}`,
-        requestUrl: `${client.state.serverUrl}/${props.resourceName}/${id}`,
+        requestUrl: `${client.state.serverUrl}/${resourceName}`,
+        responseData: JSON.stringify(err, null, 2),
+        responseDataType: RenderDataAsTypes.Error,
+      };
+
+      let updatedData:SingleRequestData[] = cardData.slice();
+      updatedData.push(data);
+      setCardData(updatedData);
+    }
+  }
+
+  async function loadResourceById(resourceName:string, id:string) {
+    let client:Client|undefined = props.common.getFhirClient();
+
+    if (!client) {
+      console.log('No client');
+      return;
+    }
+
+    let now:Date = new Date();
+
+    let dataName:string;
+
+    if (cardData.length === 0) {
+      dataName = `Initial request: ${now.toLocaleTimeString()}`
+    } else {
+      dataName = `Reload #${cardData.length}: ${now.toLocaleTimeString()}`
+    }
+
+    try {
+      var response = await client.request(`${resourceName}/${id}`);
+      
+      let data:SingleRequestData = {
+        name: dataName,
+        id: `request-${cardData.length}`,
+        requestUrl: `${client.state.serverUrl}/${resourceName}/${id}`,
+        responseData: JSON.stringify(response, null, 2),
+        responseDataType: RenderDataAsTypes.FHIR,
+      };
+
+      let updatedData:SingleRequestData[] = cardData.slice();
+      updatedData.push(data);
+      setCardData(updatedData);
+
+    } catch (err) {
+      let data:SingleRequestData = {
+        name: dataName,
+        id: `request-${cardData.length}`,
+        requestUrl: `${client.state.serverUrl}/${resourceName}/${id}`,
         responseData: JSON.stringify(err, null, 2),
         responseDataType: RenderDataAsTypes.Error,
       };
@@ -133,16 +191,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         info={cardInfo!}
         data={cardData}
         status={_statusAvailable}
-        parentProps={{
-          isUiDark: props.isUiDark,
-          aud: props.aud,
-          setAud: props.setAud,
-          startAuth: props.startAuth,
-          refreshAuth: props.refreshAuth,
-          getFhirClient: props.getFhirClient,
-          toaster: props.toaster,
-          copyToClipboard: props.copyToClipboard,
-        }}
+        common={props.common}
         >
         <Button
           onClick={() => loadResource()}

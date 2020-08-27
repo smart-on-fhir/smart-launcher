@@ -11,7 +11,7 @@ import {
 } from '@blueprintjs/core';
 import { LaunchScope } from '../models/LaunchScope';
 
-export interface ParametersTabV1Props {
+export interface ParametersTabScenariosProps {
   common:CommonProps;
   setScopes: ((currentScopes:LaunchScope) => void);
 }
@@ -24,16 +24,25 @@ const _defaultScopes:LaunchScope = new LaunchScope([
   ['smart/orchestrate_launch', false],
   ['profile', true],
   ['launch/patient', true],
-  ['launch/encounter', true],
-  ['patient/*.read', false],
-  ['patient/*.write', false],
-  ['patient/*.*', true],
-  ['user/*.*', true],
+  ['launch/encounter', false],
+  ['patient/Observation.rs', true],
+  ['patient/Observation.crs', false],
+  ['patient/Observation.rs?category=vital-signs', false],
+  ['patient/Observation.rs?category=http://terminology.hl7.org/CodeSystem/observation-category|vital-signs', false],
+  ['patient/Observation.crs?category=vital-signs', false],
+  ['patient/Observation.rs?_security=L', false],
+  ['patient/Observation.rs?_security=http://terminology.hl7.org/CodeSystem/v3-Confidentiality|L', false],
+  ['patient/Observation.rs?_security=N', false],
+  ['patient/Observation.rs?_security=R', false],
+  ['patient/Observation.rs?_security=V', false],
+  ['patient/Observation.rs?_security=L,N', false],
+  ['patient/Observation.rs?_security=L,N,R', false],
+  ['patient/Observation.rs?_security=L,N,R,V', false],
 ]);
 
-const _scopeKey:string = 'smart-parameters-v1';
+const _scopeKey:string = 'smart-parameters-scenarios';
 
-export default function ParametersTabV1(props: ParametersTabV1Props) {
+export default function ParametersTabScenarios(props: ParametersTabScenariosProps) {
   const initialLoadRef = useRef<boolean>(true);
 
   const [scopes, setScopes] = useState<LaunchScope>(_defaultScopes);
@@ -70,7 +79,9 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
 
     scopes.forEach((value, key) => {
       switch (key) {
-        case 'patient/*.read':
+        case 'patient/Observation.rs':
+        case 'patient/Observation.rs?category=vital-signs':
+        case 'patient/Observation.rs?_security=L':
         case 'launch/patient':
           boxes.push(<br key={`br_${lines++}`} />);
           break;
@@ -101,7 +112,7 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
             onClick={() => handleScopeChange(key)}
             />);
       }
-    })
+    });
 
     return boxes;
   }
@@ -112,7 +123,7 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
       >
       <FormGroup
         label='Scopes'
-        helperText='Scopes based on SMART V1'
+        helperText='Scopes based on Connectathon Scenarios'
         >
         { elementsForScopes() }
       </FormGroup>

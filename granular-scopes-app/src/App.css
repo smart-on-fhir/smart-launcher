@@ -45,5 +45,9 @@
 }
 
 .fixed-checkbox {
-  width: 250px;
+  width: 300px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: top;
 }
