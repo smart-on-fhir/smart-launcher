@@ -17,6 +17,7 @@
     "fhirclient": "^2.3.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-markdown": "^4.3.1",
     "react-scripts": "3.4.3",
     "react-syntax-highlighter": "^13.5.1",
     "typescript": "~3.7.2"

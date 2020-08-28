@@ -7,8 +7,15 @@ import { CommonProps } from '../models/CommonProps';
 import { IconNames, IconName } from '@blueprintjs/icons';
 import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'
+// import SyntaxHighlighter from 'react-syntax-highlighter';
+// import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { 
+  vscDarkPlus as highlightDark, 
+  coy as highlightLight 
+} from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+import ReactMarkdown from 'react-markdown/with-html';
 
 export interface RequestPanelProps {
   common: CommonProps,
@@ -127,7 +134,57 @@ export default function RequestDataPanel(props: RequestPanelProps) {
     props.tabButtonHandler!(dataRowIndex);
   }
 
-  function buildTab(key:string, name:string, content:string, renderAs?:RenderDataAsTypes, iconName?:IconName):JSX.Element {
+  function buildTab(
+    key:string,
+    name:string,
+    content:string,
+    renderAs?:RenderDataAsTypes,
+    iconName?:IconName):JSX.Element 
+    {
+    let lang:string;
+    switch (renderAs) {
+      case RenderDataAsTypes.Text:
+      case RenderDataAsTypes.Error:
+          lang = 'text';
+        break;
+
+      case RenderDataAsTypes.FHIR:
+      case RenderDataAsTypes.JSON:
+        lang = 'json';
+        break;
+
+      case RenderDataAsTypes.Markdown:
+        lang = 'markdown';
+        break;
+  
+      case RenderDataAsTypes.HTML:
+        lang = 'html';
+        break;
+    
+      default:
+        lang = 'text';
+        break;
+    }
+
+    if ((renderAs === RenderDataAsTypes.Markdown) || 
+        (renderAs === RenderDataAsTypes.HTML)) {
+      return (
+        <Tab
+          key={key}
+          id={key}
+          panel={
+            <ReactMarkdown
+              className={props.common.isUiDark ? 'code-md-tab-dark' : 'code-md-tab-light'}
+              source={content}
+              escapeHtml={false}
+              />
+            }
+          >
+        <Icon icon={iconName ?? IconNames.INFO_SIGN} /> {name}
+        </Tab>
+      );
+    }
+
     return (
       <Tab
         key={key}
@@ -135,8 +192,9 @@ export default function RequestDataPanel(props: RequestPanelProps) {
         panel={
           <SyntaxHighlighter
             className='code-tab'
-            language={(renderAs === RenderDataAsTypes.Text) ? 'text' : 'json'}
-            style={props.common.isUiDark ? atomOneDark : atomOneLight}
+            language={lang}
+            // style={props.common.isUiDark ? atomOneDark : atomOneLight}
+            style={props.common.isUiDark ? highlightDark : highlightLight}
             >
             {content}
           </SyntaxHighlighter>

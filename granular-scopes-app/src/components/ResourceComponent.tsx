@@ -3,25 +3,8 @@ import React, {useState, useEffect, useRef} from 'react';
 import MainNavigation from './MainNavigation';
 import { StorageHelper } from '../util/StorageHelper';
 import {
-  Overlay,
-  Classes,
-  Switch,
-  Card,
-  Elevation,
-  H5, H6,
-  Divider,
-  IToaster,
-  IconName,
-  IToasterProps,
-  Position,
-  Toaster,
-  Intent,
   Button
 } from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-
-import StandaloneParameters from './StandaloneParameters';
-import { LaunchScope, ScopeComparison } from '../models/LaunchScope';
 
 import DataCard from './DataCard';
 import { DataCardInfo } from '../models/DataCardInfo';
@@ -39,6 +22,7 @@ export interface ResourceComponentProps {
 }
 
 const _statusAvailable: DataCardStatus = {available: true, complete: false, busy: false};
+const _statusBusy: DataCardStatus = {available: true, complete: false, busy: true};
 
 export default function ResourceComponent(props:ResourceComponentProps) {
   const initialLoadRef = useRef<boolean>(true);
@@ -69,10 +53,33 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     setCardInfo(info);
   }, [props.title, props.resourceName, cardInfo]);
 
-  function buildFilters(client:Client) {
+  function buildTypeParameters(client:Client):string {
+    let count:number = 0;
+    let params:string = '';
+
+    if (props.common.patientId) {
+      params = addParam(params, count++, 'patient', `Patient/${props.common.patientId}`);
+      count++;
+    }
+
+    return params;
+  }
+
+  function addParam(base:string, count:number, key:string, value:string|number|boolean):string {
+    let params:string = '';
+
+    if (count === 0) {
+      params = base + `?${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    } else {
+      params = base + `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    }
+ 
+    return params;
   }
 
   function loadResource() {
+    setCardStatus(_statusBusy);
+
     if ((props.resourceName) && (props.id)) {
       loadResourceById(props.resourceName, props.id!);
       return;
@@ -82,6 +89,23 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       loadResourceByType(props.resourceName);
       return;
     }
+  }
+
+  function getBundleCount(bundle:any):string {
+    if ((!bundle.resourceType) ||
+        (bundle.resourceType !== 'Bundle')) {
+      return '';
+    }
+
+    if (bundle.total) {
+      return `${bundle.total}`;
+    }
+
+    if (bundle.entry) {
+      return `${bundle.entry.length}+...`;
+    }
+
+    return '';
   }
 
   async function loadResourceByType(resourceName:string) {
@@ -102,16 +126,29 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       dataName = `Reload #${cardData.length}: ${now.toLocaleTimeString()}`
     }
 
+    let params:string = buildTypeParameters(client!);
+    let url:string = `${resourceName}/${params}`;
+
     try {
-      var response = await client.request(`${resourceName}`);
+      var response:any = await client.request(url);
       
+      console.log('Response', response);
+
       let data:SingleRequestData = {
         name: dataName,
         id: `request-${cardData.length}`,
-        requestUrl: `${client.state.serverUrl}/${resourceName}`,
+        requestUrl: `${client.state.serverUrl}/${url}`,
         responseData: JSON.stringify(response, null, 2),
         responseDataType: RenderDataAsTypes.FHIR,
       };
+
+      let info:string = 
+      `* Processed at: \`${now.toLocaleString()}\`\n` +
+      `* Items returned: \`${getBundleCount(response)}\`\n`;
+
+      data.info = info;
+      data.infoDataType = RenderDataAsTypes.Markdown;
+
 
       let updatedData:SingleRequestData[] = cardData.slice();
       updatedData.push(data);
@@ -121,7 +158,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       let data:SingleRequestData = {
         name: dataName,
         id: `request-${cardData.length}`,
-        requestUrl: `${client.state.serverUrl}/${resourceName}`,
+        requestUrl: `${client.state.serverUrl}/${url}`,
         responseData: JSON.stringify(err, null, 2),
         responseDataType: RenderDataAsTypes.Error,
       };
@@ -130,6 +167,8 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       updatedData.push(data);
       setCardData(updatedData);
     }
+
+    setCardStatus(_statusAvailable);
   }
 
   async function loadResourceById(resourceName:string, id:string) {
@@ -178,6 +217,8 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       updatedData.push(data);
       setCardData(updatedData);
     }
+
+    setCardStatus(_statusAvailable);
   }
 
   function addCard():JSX.Element {
@@ -190,7 +231,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         key={'resource-card-'+props.resourceName}
         info={cardInfo!}
         data={cardData}
-        status={_statusAvailable}
+        status={cardStatus}
         common={props.common}
         >
         <Button

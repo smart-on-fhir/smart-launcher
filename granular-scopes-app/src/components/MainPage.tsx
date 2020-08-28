@@ -61,6 +61,7 @@ export default function MainPage() {
   const [requestedScopes, setRequestedScopes] = useState<LaunchScope>(new LaunchScope());
   const [profile, setProfile] = useState<string>('');
   const [fhirUser, setFhirUser] = useState<string>('');
+  const [patientId, setPatientId] = useState<string>('');
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -173,15 +174,12 @@ export default function MainPage() {
 
   function getOrCreateToaster():IToaster {
     if (!toasterRef.current) {
-      // **** configure our toaster display ****
-
       var toasterProps: IToasterProps = {
         autoFocus: false,
         canEscapeKeyClear: true,
         position: Position.TOP,
       }
 
-      // **** static create the toaster on the DOM ****
       toasterRef.current = Toaster.create(toasterProps, document.body);
     }
 
@@ -242,11 +240,16 @@ export default function MainPage() {
       return;
     }
 
-    let request:string = JwtHelper.getDecodedTokenString(_client?.state.tokenResponse?.refresh_token);
+    let request:string = _client?.state.tokenResponse?.refresh_token ?? '';
 
     _client.refresh()
       .then((refreshedState:fhirclient.ClientState) => {
-        buildAuthCardDataSuccess(true, request, false, requestedScopes.compareToGranted(_client!.state.scope ?? ''));
+        buildAuthCardDataSuccess(
+            true,
+            request, 
+            RenderDataAsTypes.Text, 
+            false, 
+            requestedScopes.compareToGranted(_client!.state.scope ?? ''));
       })
       .catch((reason:any) => {
         buildAuthCardDataError(true, reason);
@@ -279,8 +282,8 @@ export default function MainPage() {
 
     let scopes:LaunchScope = LaunchScope.load('requestedScopes');
     if (scopes.size > 0) {
-      data.requestData = JSON.stringify(scopes, null, 2);
-      data.requestDataType = RenderDataAsTypes.JSON;
+      data.requestData = scopes.getScopes().split(' ').join('\n');
+      data.requestDataType = RenderDataAsTypes.Markdown;
     }
 
     if (isRenewal) {
@@ -299,6 +302,7 @@ export default function MainPage() {
   function buildAuthCardDataSuccess(
     isRenewal:boolean, 
     request?:any, 
+    requestDataType?:RenderDataAsTypes,
     stringifyRequest?:boolean, 
     scopeComparison?:ScopeComparison) 
     {
@@ -330,7 +334,7 @@ export default function MainPage() {
 
     let extended:Map<string,string> = new Map([
       ['ID Token', JwtHelper.getDecodedTokenString(_client?.state.tokenResponse?.id_token)],
-      ['Refresh Token', JwtHelper.getDecodedTokenString(_client?.state.tokenResponse?.refresh_token)]
+      ['Refresh Token', _client?.state.tokenResponse?.refresh_token ?? '']
     ]);
 
     let url:string = _client?.state.serverUrl.replace(/fhir$/, 'auth/token') ?? aud;
@@ -346,21 +350,36 @@ export default function MainPage() {
     }
 
     if (scopeComparison) {
-      let scopeInfo:any = {
-        processedAt: now.toLocaleString(),
-        scopesGranted: scopeComparison.granted,
-        scopesDenied: scopeComparison.denied,
+      let granted:string;
+      if ((scopeComparison.granted) && (scopeComparison.granted.length > 0)) {
+        granted = '  * `' + scopeComparison.granted.join('`\n  * `') + '`';
+      } else {
+        granted = '  * `NONE`';
       }
-      data.info = JSON.stringify(scopeInfo, null, 2);
-      data.infoDataType = RenderDataAsTypes.JSON;
+
+      let denied:string;
+      if ((scopeComparison.denied) && (scopeComparison.denied.length > 0)) {
+        denied = '  * `' + scopeComparison.denied.join('`\n  * `') + '`';
+      } else {
+        denied = '  * `NONE`';
+      }
+
+      let info:string = 
+        `* Processed at: \`${now.toLocaleString()}\`\n` +
+        '* Scopes Granted:\n' + granted + '\n' +
+        '* Scopes Denied:\n' + denied + '\n' +
+        '';
+
+      data.info = info;
+      data.infoDataType = RenderDataAsTypes.Markdown;
     } else {
-      data.info = `Processed at: ${now.toLocaleString()}`;
+      data.info = `Processed at: \`${now.toLocaleString()}\``;
       data.infoDataType = RenderDataAsTypes.Text;
     }
 
     if (request) {
       data.requestData = stringifyRequest ? JSON.stringify(request, null, 2) : request;
-      data.requestDataType = RenderDataAsTypes.JSON;
+      data.requestDataType = requestDataType ?? RenderDataAsTypes.Text;
     }
 
     let updatedData:SingleRequestData[] = authCardData.slice();
@@ -402,6 +421,9 @@ export default function MainPage() {
         setFhirUser('');
       }
     }
+
+    let pat:string = determinePatientId();
+    setPatientId(pat);
 
     let showUser:boolean = false;
 
@@ -464,7 +486,7 @@ export default function MainPage() {
     setShowUserCard(showUser);
     setResourcesToShow(resources);
 
-    let scopeString:string = scopes.getScopes();
+    let scopeString:string = scopes.buildScopeString('`', '`<br/>`', '`', true, false) ?? '`NONE`';
 
     //let scopesString:string = sessionStorage.getItem(`r_${currentAud}`) ?? '';
 
@@ -473,13 +495,14 @@ export default function MainPage() {
     //   sessionStorage.removeItem(`r_${currentAud}`);
     // }
 
-    let request:any = {
-      client_id: _appId,
-      scopes: scopeString,
-      iss: currentAud,
-    }
+    let request:string = 
+      '| Name | Value |\n' +
+      '|-------|-------|\n' +
+      `|client id|${_appId}|\n` + 
+      `|scopes|${scopeString}|\n` +
+      `|aud|${currentAud}|\n`;
 
-    buildAuthCardDataSuccess(false, request, true, comparison);
+    buildAuthCardDataSuccess(false, request, RenderDataAsTypes.Markdown, false, comparison);
   }
 
   function onAuthError(error:Error) {
@@ -495,6 +518,30 @@ export default function MainPage() {
     return _client;
   }
 
+  function determinePatientId():string {
+    if (!_client) {
+      return '';
+    }
+
+    if (_client!.patient.id) {
+      return _client!.patient.id;
+    }
+
+    if (profile) {
+      if (profile.startsWith('Patient/')) {
+        return profile.substr(8);
+      }
+    }
+
+    if (fhirUser) {
+      if (fhirUser.startsWith('Patient/')) {
+        return fhirUser.substr(8);
+      }
+    }
+
+    return '';
+  }
+
   function buildContentCards():JSX.Element[] {
     let cards:JSX.Element[] = [];
 
@@ -504,6 +551,7 @@ export default function MainPage() {
       setAud: setAudAndSave,
       profile: profile,
       fhirUser: fhirUser,
+      patientId: patientId,
       startAuth: startAuth,
       refreshAuth: refreshAuth,
       getFhirClient: getFhirClient,
@@ -530,7 +578,7 @@ export default function MainPage() {
             <ResourceComponent
               key={'data-' + resourceName + '-card'}
               title={resourceName + ' Resource'}
-              id={_client?.patient.id ?? undefined}
+              id={patientId ?? undefined}
               resourceName={resourceName}
               common={common}
               />
@@ -576,6 +624,7 @@ export default function MainPage() {
     setAud: setAudAndSave,
     profile: profile,
     fhirUser: fhirUser,
+    patientId: patientId,
     startAuth: startAuth,
     refreshAuth: refreshAuth,
     getFhirClient: getFhirClient,

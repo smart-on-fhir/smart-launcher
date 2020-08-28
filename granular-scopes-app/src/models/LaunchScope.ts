@@ -23,6 +23,37 @@ export class LaunchScope extends Map<string, boolean> {
     return scopeString;
   }
 
+  buildScopeString(prefix?:string, joiner?:string, suffix?:string, onlyGranted?:boolean, onlyDenied?:boolean):string {
+    if (this.size === 0) {
+      return '';
+    }
+
+    let scopeString:string = prefix ?? '';
+
+    let first:boolean = true;
+    this.forEach((value:boolean, key:string) => {
+      if ((onlyGranted) && (!value)) {
+        return;
+      }
+
+      if ((onlyDenied) && (value)) {
+        return;
+      }
+
+      if (first) {
+        first = false;
+      } else {
+        scopeString += joiner ?? ' ';
+      }
+
+      scopeString += key;
+    });
+
+    scopeString += suffix ?? '';
+
+    return scopeString;
+  }
+
   save(scopeSetName:string) {
     sessionStorage.setItem(scopeSetName, JSON.stringify(Array.from(this.entries())));
   }

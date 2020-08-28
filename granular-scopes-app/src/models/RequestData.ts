@@ -5,6 +5,8 @@ export enum RenderDataAsTypes {
   JSON,
   Error,
   Text,
+  Markdown,
+  HTML,
 }
 
 export interface SingleRequestData {
