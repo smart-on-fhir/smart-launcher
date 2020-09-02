@@ -113,4 +113,24 @@ export class LaunchScope extends Map<string, boolean> {
       denied: denied,
     }
   }
+
+  getScopeGrants(scopes:string):LaunchScope {
+    let result:LaunchScope = new LaunchScope([]);
+
+    this.forEach((requested:boolean, key:string) => {
+      if (!requested) {
+        return;
+      }
+
+      if (scopes.indexOf(key) === -1) {
+        result.set(key, false);
+      } else {
+        result.set(key, true);
+      }
+    });
+
+    console.log('grants', result);
+    return result;
+  }
+
 };

@@ -1,4 +1,4 @@
-import { LaunchScope } from './LaunchScope';
+import { LaunchScope, ScopeComparison } from './LaunchScope';
 import { IconName } from '@blueprintjs/core';
 import Client from 'fhirclient/lib/Client';
 
@@ -10,9 +10,11 @@ export interface CommonProps {
   profile:string;
   fhirUser:string;
   patientId:string;
+  requestedScopes:LaunchScope;
+  setRequestedScopes:((scopes:LaunchScope) => void);
 
-  startAuth: ((requestedScopes:LaunchScope) => void);
-  refreshAuth: ((requestedScopes?:LaunchScope) => void);
+  startAuth: (() => void);
+  refreshAuth: (() => void);
   getFhirClient: (() => Client|undefined);
 
   toaster: ((message: string, iconName?: IconName, timeout?: number) => void);

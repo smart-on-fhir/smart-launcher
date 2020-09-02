@@ -13,7 +13,6 @@ import { LaunchScope } from '../models/LaunchScope';
 
 export interface ParametersTabV1Props {
   common:CommonProps;
-  setScopes: ((currentScopes:LaunchScope) => void);
 }
 
 const _defaultScopes:LaunchScope = new LaunchScope([
@@ -42,11 +41,11 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
     if (initialLoadRef.current) {
       let savedScopes:LaunchScope = LaunchScope.load(_scopeKey);
 
-      if (savedScopes.size > _defaultScopes.size) {
+      if (savedScopes.size >= _defaultScopes.size) {
         setScopes(savedScopes);
-        props.setScopes(savedScopes);
+        props.common.setRequestedScopes(savedScopes);
       } else {
-        props.setScopes(_defaultScopes);
+        props.common.setRequestedScopes(_defaultScopes);
       }
 
       initialLoadRef.current = false;
@@ -60,7 +59,7 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
     updated.save(_scopeKey);
 
     setScopes(updated);
-    props.setScopes(updated);
+    props.common.setRequestedScopes(updated);
   }
 
   function elementsForScopes() {

@@ -3,7 +3,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import MainNavigation from './MainNavigation';
 import { StorageHelper } from '../util/StorageHelper';
 import {
-  Button
+  Button, Divider, Checkbox, Tooltip
 } from '@blueprintjs/core';
 
 import DataCard from './DataCard';
@@ -13,6 +13,7 @@ import { DataCardStatus } from '../models/DataCardStatus';
 import { CommonProps } from '../models/CommonProps';
 import * as fhir from '../models/fhir_r4';
 import Client from 'fhirclient/lib/Client';
+import { LaunchScope } from '../models/LaunchScope';
 
 export interface ResourceComponentProps {
   common:CommonProps;
@@ -31,12 +32,18 @@ export default function ResourceComponent(props:ResourceComponentProps) {
   const [cardData, setCardData] = useState<SingleRequestData[]>([]);
   const [cardStatus, setCardStatus] = useState<DataCardStatus>(_statusAvailable);
 
+  const [scopeFilters, setScopeFilters] = useState<LaunchScope|undefined>(undefined);
+
+  useEffect(() => {
+    setScopeFilters(props.common.requestedScopes);
+  }, [props.common.requestedScopes]);
+
   useEffect(() => {
     if (initialLoadRef.current) {
-      loadResource(); 
+      loadResource(props.common.requestedScopes);
       initialLoadRef.current = false;
     }
-  }, [loadResource]);
+  }, [props.common.requestedScopes]);
 
   useEffect(() => {
     if (cardInfo !== undefined) {
@@ -53,14 +60,43 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     setCardInfo(info);
   }, [props.title, props.resourceName, cardInfo]);
 
-  function buildTypeParameters(client:Client):string {
+  function buildTypeParameters(scopes:LaunchScope|undefined):string {
     let count:number = 0;
     let params:string = '';
 
     if (props.common.patientId) {
       params = addParam(params, count++, 'patient', `Patient/${props.common.patientId}`);
-      count++;
     }
+
+    if (!scopes) {
+      return params;
+    }
+
+    scopes!.forEach((checked:boolean, key:string) => {
+      if (!checked) {
+        return;
+      }
+
+      if (key.indexOf(`/${props.resourceName}.`) === -1) {
+        return;
+      }
+
+      let paramIndex:number = key.indexOf('?');
+
+      if (paramIndex === -1) {
+        return;
+      }
+
+      let paramShort:string = key.substr(paramIndex + 1);
+
+      let components:string[] = paramShort.split('=');
+
+      if (components.length !== 2) {
+        return;
+      }
+
+      params = addParam(params, count++, components[0], components[1]);
+    });
 
     return params;
   }
@@ -77,16 +113,20 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     return params;
   }
 
-  function loadResource() {
+  function loadResource(scopes?:LaunchScope) {
     setCardStatus(_statusBusy);
 
+    if (!scopes) {
+      scopes = scopeFilters;
+    }
+
     if ((props.resourceName) && (props.id)) {
-      loadResourceById(props.resourceName, props.id!);
+      loadResourceById(scopes, props.resourceName, props.id!);
       return;
     }
 
     if (props.resourceName) {
-      loadResourceByType(props.resourceName);
+      loadResourceByType(scopes, props.resourceName);
       return;
     }
   }
@@ -97,7 +137,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       return '';
     }
 
-    if (bundle.total) {
+    if (bundle.total !== undefined) {
       return `${bundle.total}`;
     }
 
@@ -108,7 +148,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     return '';
   }
 
-  async function loadResourceByType(resourceName:string) {
+  async function loadResourceByType(scopes:LaunchScope|undefined, resourceName:string) {
     let client:Client|undefined = props.common.getFhirClient();
 
     if (!client) {
@@ -121,19 +161,17 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     let dataName:string;
 
     if (cardData.length === 0) {
-      dataName = `Initial request: ${now.toLocaleTimeString()}`
+      dataName = `Initial query: ${now.toLocaleTimeString()}`
     } else {
-      dataName = `Reload #${cardData.length}: ${now.toLocaleTimeString()}`
+      dataName = `Query #${cardData.length}: ${now.toLocaleTimeString()}`
     }
 
-    let params:string = buildTypeParameters(client!);
+    let params:string = buildTypeParameters(scopes);
     let url:string = `${resourceName}/${params}`;
 
     try {
       var response:any = await client.request(url);
       
-      console.log('Response', response);
-
       let data:SingleRequestData = {
         name: dataName,
         id: `request-${cardData.length}`,
@@ -142,13 +180,35 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         responseDataType: RenderDataAsTypes.FHIR,
       };
 
+      let paramMd:string = '';
+      if (params) {
+        paramMd = params.substr(1);
+        let split:string[] = paramMd.split('&');
+        paramMd = 
+          '  | Parameter | Value |\n' + 
+          '  |-----------|-------|\n';
+
+        let lines:string[] = [];
+
+        split.forEach((val:string) => {
+          let components:string[] = val.split('=');
+          if (components.length != 2) {
+            return;
+          }
+          lines.push(`  |${components[0]}|\`${decodeURIComponent(components[1]).replace('|', '\\|')}\`|`);
+        });
+
+        lines.sort();
+        paramMd += lines.join('\n');
+      }
+
       let info:string = 
-      `* Processed at: \`${now.toLocaleString()}\`\n` +
-      `* Items returned: \`${getBundleCount(response)}\`\n`;
+        `* Processed at: \`${now.toLocaleString()}\`\n` +
+        `* Items returned: \`${getBundleCount(response)}\`\n` +
+        `\n${paramMd}\n`;
 
       data.info = info;
       data.infoDataType = RenderDataAsTypes.Markdown;
-
 
       let updatedData:SingleRequestData[] = cardData.slice();
       updatedData.push(data);
@@ -171,7 +231,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     setCardStatus(_statusAvailable);
   }
 
-  async function loadResourceById(resourceName:string, id:string) {
+  async function loadResourceById(scopes:LaunchScope|undefined, resourceName:string, id:string) {
     let client:Client|undefined = props.common.getFhirClient();
 
     if (!client) {
@@ -184,9 +244,9 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     let dataName:string;
 
     if (cardData.length === 0) {
-      dataName = `Initial request: ${now.toLocaleTimeString()}`
+      dataName = `Initial query: ${now.toLocaleTimeString()}`
     } else {
-      dataName = `Reload #${cardData.length}: ${now.toLocaleTimeString()}`
+      dataName = `Query #${cardData.length}: ${now.toLocaleTimeString()}`
     }
 
     try {
@@ -198,6 +258,10 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         requestUrl: `${client.state.serverUrl}/${resourceName}/${id}`,
         responseData: JSON.stringify(response, null, 2),
         responseDataType: RenderDataAsTypes.FHIR,
+        info:
+          `* Processed at: \`${now.toLocaleString()}\`\n` +
+          `* \`${resourceName}/${id}\`\n`,
+        infoDataType: RenderDataAsTypes.Markdown,
       };
 
       let updatedData:SingleRequestData[] = cardData.slice();
@@ -219,6 +283,70 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     }
 
     setCardStatus(_statusAvailable);
+  }
+
+  function handleFilterChange(key:string) {
+    let updated:LaunchScope = new LaunchScope(scopeFilters!);
+
+    updated.set(key, !scopeFilters!.get(key));
+
+    setScopeFilters(updated);
+  }
+
+  function elementsForFilters():JSX.Element[] {
+    if (scopeFilters === undefined) {
+      return([]);
+    }
+
+    let elements:JSX.Element[] = [];
+
+    scopeFilters.forEach((requested:boolean, key:string) => {
+      if (key.indexOf(`/${props.resourceName}.`) === -1) {
+        return;
+      }
+
+      let paramIndex:number = key.indexOf('?');
+
+      if (paramIndex === -1) {
+        return;
+      }
+
+      let paramShort:string = key.substr(paramIndex + 1);
+
+      if (paramShort.length > 25) {
+        elements.push(
+          <Tooltip
+            key={`tt_${key}`}
+            content={paramShort}
+            >
+            <Checkbox
+              key={key}
+              className='fixed-checkbox'
+              label={paramShort}
+              inline={true}
+              checked={requested}
+              onClick={() => handleFilterChange(key)}
+              />
+          </Tooltip>);
+      } else {
+        elements.push(
+          <Checkbox
+            key={key}
+            className='fixed-checkbox'
+            label={paramShort}
+            inline={true}
+            checked={requested}
+            onClick={() => handleFilterChange(key)}
+            />);
+      }
+
+    });
+
+    if (elements.length > 0) {
+      elements.push(<Divider key={'di_' + elements.length} />);
+    }
+
+    return elements;
   }
 
   function addCard():JSX.Element {
@@ -233,12 +361,10 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         data={cardData}
         status={cardStatus}
         common={props.common}
+        tabButtonText='Search'
+        tabButtonHandler={() => loadResource(undefined)}
         >
-        <Button
-          onClick={() => loadResource()}
-          >
-          Load  
-        </Button>
+        {elementsForFilters()}
       </DataCard>
     );
   }

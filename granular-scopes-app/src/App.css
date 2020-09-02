@@ -2,17 +2,16 @@
   text-align: center;
 }
 
-.bp3-button {
-  margin-left: 5px;
-  margin-right: 5px;
-}
-
 .bp3-card {
   margin: 10px;
   /* width: 100%; */
 }
 
 .bp3-switch {
+  margin: 5px;
+}
+
+.bp3-button {
   margin: 5px;
 }
 

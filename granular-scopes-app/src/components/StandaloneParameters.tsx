@@ -12,6 +12,7 @@ import {
   FormGroup,
   InputGroup,
   Divider,
+  Intent,
 } from '@blueprintjs/core';
 import ParametersTabV1 from './ParametersTabV1';
 import { LaunchScope } from '../models/LaunchScope';
@@ -26,7 +27,6 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
   const initialLoadRef = useRef<boolean>(true);
 
   const [selectedTabId, setSelectedTabId] = useState<string>('');
-  const [scopes, setScopes] = useState<LaunchScope|undefined>();
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -46,12 +46,12 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
   }
 
   function handleLaunchClick() {
-    if (!scopes) {
+    if (!props.common.requestedScopes) {
       props.common.toaster('No Scopes Available!');
       return;
     }
 
-    props.common.startAuth(scopes!)
+    props.common.startAuth();
   }
 
   return(
@@ -87,7 +87,6 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           panel={
             <ParametersTabV1
               common={props.common}
-              setScopes={setScopes}
               />
           }
           />
@@ -97,7 +96,6 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           panel={
             <ParametersTabScenarios
               common={props.common}
-              setScopes={setScopes}
               />
           }
           />
@@ -105,7 +103,7 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           id='parameter-tab-playground'
           title='Playground'
           panel={
-            <Card>Test</Card>
+            <Card>Coming soon...</Card>
           }
           />
       </Tabs>

@@ -13,7 +13,6 @@ import { LaunchScope } from '../models/LaunchScope';
 
 export interface ParametersTabScenariosProps {
   common:CommonProps;
-  setScopes: ((currentScopes:LaunchScope) => void);
 }
 
 const _defaultScopes:LaunchScope = new LaunchScope([
@@ -51,11 +50,11 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
     if (initialLoadRef.current) {
       let savedScopes:LaunchScope = LaunchScope.load(_scopeKey);
 
-      if (savedScopes.size > _defaultScopes.size) {
+      if (savedScopes.size >= _defaultScopes.size) {
         setScopes(savedScopes);
-        props.setScopes(savedScopes);
+        props.common.setRequestedScopes(savedScopes);
       } else {
-        props.setScopes(_defaultScopes);
+        props.common.setRequestedScopes(_defaultScopes);
       }
 
       initialLoadRef.current = false;
@@ -69,11 +68,11 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
     updated.save(_scopeKey);
 
     setScopes(updated);
-    props.setScopes(updated);
+    props.common.setRequestedScopes(updated);
   }
 
   function elementsForScopes() {
-    let boxes:JSX.Element[] = [];
+    let elements:JSX.Element[] = [];
 
     let lines:number = 0;
 
@@ -83,12 +82,12 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
         case 'patient/Observation.rs?category=vital-signs':
         case 'patient/Observation.rs?_security=L':
         case 'launch/patient':
-          boxes.push(<br key={`br_${lines++}`} />);
+          elements.push(<br key={`br_${lines++}`} />);
           break;
       }
 
       if (key.length > 25) {
-        boxes.push(
+        elements.push(
           <Tooltip
             content={key}
             >
@@ -102,7 +101,7 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
               />
           </Tooltip>);
       } else {
-        boxes.push(
+        elements.push(
           <Checkbox
             key={key}
             className='fixed-checkbox'
@@ -114,7 +113,7 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
       }
     });
 
-    return boxes;
+    return elements;
   }
 
   return(

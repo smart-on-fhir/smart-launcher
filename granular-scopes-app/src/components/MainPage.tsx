@@ -76,7 +76,6 @@ export default function MainPage() {
   const [userResourceType, setUserResourceType] = useState<string>('');
 
   const [resourcesToShow, setResourcesToShow] = useState<string[]>([]);
-  const [resourceCards, setResourceCards] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
     if (initialLoadRef.current) {
@@ -136,6 +135,7 @@ export default function MainPage() {
       sessionStorage.setItem('uiDark', (uiDark).toString());
     }
 
+    return;
   }, [uiDark, mainDiv]);
 
   function toggleSettingsVisible() {
@@ -216,16 +216,13 @@ export default function MainPage() {
     }
   }
 
-  function startAuth(scopes:LaunchScope) {
+  function startAuth() {
     if (!aud) {
       showToastMessage('Standalone launch requires an Audience!', IconNames.ERROR);
       return;
     }
 
-    setRequestedScopes(scopes);
-    scopes.save('requestedScopes');
-
-    let scopeString:string = scopes.getScopes();
+    let scopeString:string = requestedScopes.getScopes();
 
     FHIR.oauth2.authorize({
       client_id: _appId,
@@ -249,7 +246,7 @@ export default function MainPage() {
             request, 
             RenderDataAsTypes.Text, 
             false, 
-            requestedScopes.compareToGranted(_client!.state.scope ?? ''));
+            requestedScopes.getScopeGrants(_client!.state.scope ?? ''));
       })
       .catch((reason:any) => {
         buildAuthCardDataError(true, reason);
@@ -304,7 +301,7 @@ export default function MainPage() {
     request?:any, 
     requestDataType?:RenderDataAsTypes,
     stringifyRequest?:boolean, 
-    scopeComparison?:ScopeComparison) 
+    scopeGrants?:LaunchScope) 
     {
     let now:Date = new Date();
     let expires:number = _client?.state.tokenResponse?.expires_in ?? -1;
@@ -349,26 +346,20 @@ export default function MainPage() {
       extendedDataType: RenderDataAsTypes.JSON,
     }
 
-    if (scopeComparison) {
-      let granted:string;
-      if ((scopeComparison.granted) && (scopeComparison.granted.length > 0)) {
-        granted = '  * `' + scopeComparison.granted.join('`\n  * `') + '`';
-      } else {
-        granted = '  * `NONE`';
-      }
-
-      let denied:string;
-      if ((scopeComparison.denied) && (scopeComparison.denied.length > 0)) {
-        denied = '  * `' + scopeComparison.denied.join('`\n  * `') + '`';
-      } else {
-        denied = '  * `NONE`';
-      }
-
-      let info:string = 
+    if (scopeGrants) {
+      let info:string =
         `* Processed at: \`${now.toLocaleString()}\`\n` +
-        '* Scopes Granted:\n' + granted + '\n' +
-        '* Scopes Denied:\n' + denied + '\n' +
-        '';
+        '\n' +
+        '  | Scope | State |\n' +
+        '  |-------|-------|\n';
+
+      let lines:string[] = [];
+      scopeGrants.forEach((granted:boolean, key:string) => {
+        lines.push(`|${key.replace('|', '\\|')}|${granted ? 'Accepted' : 'Denied'}|`);
+      });
+      
+      lines.sort();
+      info += lines.join('\n');
 
       data.info = info;
       data.infoDataType = RenderDataAsTypes.Markdown;
@@ -405,7 +396,8 @@ export default function MainPage() {
     let scopes:LaunchScope = LaunchScope.load('requestedScopes');
     setRequestedScopes(scopes);
 
-    let comparison:ScopeComparison = scopes.compareToGranted(_client!.state.scope ?? '');
+    // let comparison:ScopeComparison = scopes.compareToGranted(_client!.state.scope ?? '');
+    let grants:LaunchScope = scopes.getScopeGrants(_client!.state.scope ?? '');
 
     let tokenParts:any[] = JwtHelper.decodeToken(_client!.state.tokenResponse?.id_token ?? '');
     if (tokenParts.length === 3) {
@@ -475,7 +467,7 @@ export default function MainPage() {
   
         default:
           let split:string[] = name.split('/');
-          let components:string[] = split[1].split(/[.?/]/);
+          let components:string[] = split[1].split(/[.?]/);
           if (resources.indexOf(components[0]) === -1) {
             resources.push(components[0]);
           }
@@ -502,7 +494,7 @@ export default function MainPage() {
       `|scopes|${scopeString}|\n` +
       `|aud|${currentAud}|\n`;
 
-    buildAuthCardDataSuccess(false, request, RenderDataAsTypes.Markdown, false, comparison);
+    buildAuthCardDataSuccess(false, request, RenderDataAsTypes.Markdown, false, grants);
   }
 
   function onAuthError(error:Error) {
@@ -512,6 +504,11 @@ export default function MainPage() {
   function setAudAndSave(value:string) {
     sessionStorage.setItem('aud', value);
     setAud(value);
+  }
+
+  function setScopesAndSave(scopes:LaunchScope) {
+    scopes.save('requestedScopes');
+    setRequestedScopes(scopes);
   }
 
   function getFhirClient():Client|undefined {
@@ -552,6 +549,8 @@ export default function MainPage() {
       profile: profile,
       fhirUser: fhirUser,
       patientId: patientId,
+      requestedScopes: requestedScopes,
+      setRequestedScopes: setScopesAndSave,
       startAuth: startAuth,
       refreshAuth: refreshAuth,
       getFhirClient: getFhirClient,
@@ -601,7 +600,7 @@ export default function MainPage() {
           cards.push(
             <ResourceComponent
               key={'data-' + resourceName + '-card'}
-              title={resourceName + ' Resource'}
+              title={resourceName + ' Resources'}
               id={undefined}
               resourceName={resourceName}
               common={common}
@@ -614,10 +613,6 @@ export default function MainPage() {
     return cards;
   }
 
-  useEffect(() => {
-    setResourceCards(buildContentCards());
-  }, [resourcesToShow]);
-
   const currentCommon:CommonProps = {
     isUiDark: uiDark,
     aud: aud,
@@ -625,6 +620,8 @@ export default function MainPage() {
     profile: profile,
     fhirUser: fhirUser,
     patientId: patientId,
+    requestedScopes: requestedScopes,
+    setRequestedScopes: setScopesAndSave,
     startAuth: startAuth,
     refreshAuth: refreshAuth,
     getFhirClient: getFhirClient,
@@ -671,7 +668,7 @@ export default function MainPage() {
         status={authCardStatus}
         common={currentCommon}
         />
-      {resourceCards}
+      {buildContentCards()}
     </div>
   );
 }
