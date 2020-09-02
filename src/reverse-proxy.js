@@ -14,6 +14,7 @@ const RE_RESOURCE_SLASH_ID = new RegExp(
 );
 
 module.exports = function (req, res) {
+    console.log('\n >>>reverse-proxy:', req.url, '\n');
 
     let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
@@ -106,7 +107,6 @@ module.exports = function (req, res) {
 
     //proxy the request to the real FHIR server
     if (!logTime && process.env.NODE_ENV == "development") {
-        console.log('SCOPE: ', scope);
         console.log("PROXY: " + fhirRequest.url, fhirRequest);
     }
 

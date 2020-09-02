@@ -6,11 +6,14 @@ const replStream = require("replacestream");
 const config     = require("./config");
 const patientMap = require("./patient-compartment");
 const Lib        = require("./lib");
+const { stringify } = require("querystring");
+const GranularHelper= require('./GranularHelper');
 
 require("colors");
 
 
 module.exports = (req, res) => {
+    console.log('\n >>>simple-proxy:', req.url);
 
     // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
@@ -20,6 +23,7 @@ module.exports = (req, res) => {
     let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
     let token = null;
+    let scopeMap = null;
 
     // Validate token ----------------------------------------------------------
     if (req.headers.authorization) {
@@ -39,6 +43,15 @@ module.exports = (req, res) => {
         // Simulated errors
         if (token.sim_error) {
             return res.status(401).send(token.sim_error);
+        }
+
+        // check for granular permissions
+        if (token) {
+            scopeMap = GranularHelper.getScopeMap(token);
+
+            // console.log(token);
+            // console.log(token.scope);
+            console.log('Scopes:', scopeMap, '\n');
         }
     }
 
