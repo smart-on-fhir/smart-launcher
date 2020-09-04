@@ -13,7 +13,7 @@ require("colors");
 
 
 module.exports = (req, res) => {
-    console.log('\n >>>simple-proxy:', req.url);
+    // console.log('\n>>>simple-proxy:', req.url);
 
     // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
@@ -23,7 +23,7 @@ module.exports = (req, res) => {
     let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
     let token = null;
-    let scopeMap = null;
+    let granularScopes = null;
 
     // Validate token ----------------------------------------------------------
     if (req.headers.authorization) {
@@ -47,11 +47,9 @@ module.exports = (req, res) => {
 
         // check for granular permissions
         if (token) {
-            scopeMap = GranularHelper.getScopeMap(token);
-
-            // console.log(token);
-            // console.log(token.scope);
-            console.log('Scopes:', scopeMap, '\n');
+            granularScopes = GranularHelper.getGranularScopes(token);
+            // GranularHelper.logGranularScopes(granularScopes);
+            // console.log('\n');
         }
     }
 
@@ -73,6 +71,29 @@ module.exports = (req, res) => {
             error: `FHIR server ${req.params.fhir_release} not found`
         });
     }
+
+    // Check access if we have granular scopes ---------------------------------
+    if (granularScopes) {
+        // console.log('Url:', req.url);
+
+        let url = new URL(req.url, 'http://localhost');
+        let pathSegments = url.pathname.split('/').filter((val) => { return (val);});
+
+        let resourceName = (pathSegments.length > 0) ? pathSegments[0] : '';
+        let id = (pathSegments.length > 1) ? pathSegments[1] : '';
+
+        let allowed = GranularHelper.doParamsPass(resourceName, id, req.method, url.searchParams, granularScopes);
+
+        if (allowed) {
+            console.log('Allowing Granular Request for', resourceName);
+        } else {
+            console.log('Denying Granular Request for', resourceName);
+            return res.status(401).send({
+                error: 'Request too wide for granted scopes'
+            });
+        }
+    }
+    
 
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {

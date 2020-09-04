@@ -26,7 +26,6 @@ const _statusAvailable: DataCardStatus = {available: true, complete: false, busy
 const _statusBusy: DataCardStatus = {available: true, complete: false, busy: true};
 
 export default function ResourceComponent(props:ResourceComponentProps) {
-  const initialLoadRef = useRef<boolean>(true);
 
   const [cardInfo, setCardInfo] = useState<DataCardInfo|undefined>(undefined);
   const [cardData, setCardData] = useState<SingleRequestData[]>([]);
@@ -39,11 +38,8 @@ export default function ResourceComponent(props:ResourceComponentProps) {
   }, [props.common.requestedScopes]);
 
   useEffect(() => {
-    if (initialLoadRef.current) {
-      loadResource(props.common.requestedScopes);
-      initialLoadRef.current = false;
-    }
-  }, [props.common.requestedScopes]);
+    loadResource(props.common.requestedScopes);
+  }, []);
 
   useEffect(() => {
     if (cardInfo !== undefined) {
@@ -170,6 +166,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     let url:string = `${resourceName}/${params}`;
 
     try {
+      console.log('beginning request...');
       var response:any = await client.request(url);
       
       let data:SingleRequestData = {
@@ -361,7 +358,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         data={cardData}
         status={cardStatus}
         common={props.common}
-        tabButtonText='Search'
+        tabButtonText={props.id ? 'Load' : 'Search'} 
         tabButtonHandler={() => loadResource(undefined)}
         >
         {elementsForFilters()}

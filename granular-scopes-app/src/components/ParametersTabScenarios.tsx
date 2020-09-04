@@ -37,6 +37,7 @@ const _defaultScopes:LaunchScope = new LaunchScope([
   ['patient/Observation.rs?_security=L,N', false],
   ['patient/Observation.rs?_security=L,N,R', false],
   ['patient/Observation.rs?_security=L,N,R,V', false],
+  ['patient/Observation.rs?category=vital-signs&_security=L', false],
 ]);
 
 const _scopeKey:string = 'smart-parameters-scenarios';
@@ -78,6 +79,7 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
 
     scopes.forEach((value, key) => {
       switch (key) {
+        case 'patient/Observation.rs?category=vital-signs&_security=L':
         case 'patient/Observation.rs':
         case 'patient/Observation.rs?category=vital-signs':
         case 'patient/Observation.rs?_security=L':

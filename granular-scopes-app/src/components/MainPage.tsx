@@ -15,7 +15,7 @@ import {
   IToasterProps,
   Position,
   Toaster,
-  Intent
+  Intent,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 
@@ -47,7 +47,6 @@ let _client:Client|undefined = undefined;
 let _authTimeoutCheck:any = undefined;
 
 export default function MainPage() {
-  const initialLoadRef = useRef<boolean>(true);
   const mainDiv = React.createRef<HTMLDivElement>();
   const toasterRef = useRef<IToaster | null>(null);
 
@@ -78,22 +77,18 @@ export default function MainPage() {
   const [resourcesToShow, setResourcesToShow] = useState<string[]>([]);
 
   useEffect(() => {
-    if (initialLoadRef.current) {
-      if (localStorage.getItem('uiDark') === 'true') {
-        setUiDark(true);
-      } else if (sessionStorage.getItem('uiDark') === 'true') {
-        setUiDark(true);
-      }
+    if (localStorage.getItem('uiDark') === 'true') {
+      setUiDark(true);
+    } else if (sessionStorage.getItem('uiDark') === 'true') {
+      setUiDark(true);
+    }
 
-      var url = new URL(window.location.href);
+    var url = new URL(window.location.href);
 
-      getFromQueryOrStorage(url, 'aud', setAud, true);
+    getFromQueryOrStorage(url, 'aud', setAud, true);
 
-      if (getFromQueryOrStorage(url, 'code')) {
-        FHIR.oauth2.ready(onAuthReady, onAuthError);
-      }
-
-      initialLoadRef.current = false;
+    if (getFromQueryOrStorage(url, 'code')) {
+      FHIR.oauth2.ready(onAuthReady, onAuthError);
     }
   }, []);
 
@@ -600,7 +595,7 @@ export default function MainPage() {
           cards.push(
             <ResourceComponent
               key={'data-' + resourceName + '-card'}
-              title={resourceName + ' Resources'}
+              title={resourceName + ' Resource'}
               id={undefined}
               resourceName={resourceName}
               common={common}
