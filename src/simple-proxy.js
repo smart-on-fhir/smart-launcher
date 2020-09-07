@@ -84,14 +84,14 @@ module.exports = (req, res) => {
 
         let allowed = GranularHelper.doParamsPass(resourceName, id, req.method, url.searchParams, granularScopes);
 
-        if (allowed) {
-            console.log('Allowing Granular Request for', resourceName);
-        } else {
+        if (!allowed) {
             console.log('Denying Granular Request for', resourceName);
-            return res.status(401).send({
-                error: 'Request too wide for granted scopes'
-            });
+            return res.status(403).send(
+                `{"Error": "Request too wide for granted scopes"}`
+            );
         }
+
+        console.log('Allowing Granular Request for', resourceName);
     }
     
 

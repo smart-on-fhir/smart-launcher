@@ -164,10 +164,11 @@ export default function ResourceComponent(props:ResourceComponentProps) {
 
     let params:string = buildTypeParameters(scopes);
     let url:string = `${resourceName}/${params}`;
+    var response:any;
 
     try {
       console.log('beginning request...');
-      var response:any = await client.request(url);
+      response = await client.request(url);
       
       let data:SingleRequestData = {
         name: dataName,
@@ -295,6 +296,8 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       return([]);
     }
 
+    let addedShortParams:string[] = [];
+
     let elements:JSX.Element[] = [];
 
     scopeFilters.forEach((requested:boolean, key:string) => {
@@ -309,6 +312,12 @@ export default function ResourceComponent(props:ResourceComponentProps) {
       }
 
       let paramShort:string = key.substr(paramIndex + 1);
+
+      if (addedShortParams.indexOf(paramShort) !== -1) {
+        return;
+      }
+
+      addedShortParams.push(paramShort);
 
       if (paramShort.length > 25) {
         elements.push(

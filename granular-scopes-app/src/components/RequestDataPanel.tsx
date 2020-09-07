@@ -144,10 +144,10 @@ export default function RequestDataPanel(props: RequestPanelProps) {
     let lang:string;
     switch (renderAs) {
       case RenderDataAsTypes.Text:
-      case RenderDataAsTypes.Error:
           lang = 'text';
         break;
 
+      case RenderDataAsTypes.Error:
       case RenderDataAsTypes.FHIR:
       case RenderDataAsTypes.JSON:
         lang = 'json';
