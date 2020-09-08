@@ -129,7 +129,7 @@ export class LaunchScope extends Map<string, boolean> {
       }
     });
 
-    console.log('grants', result);
+    // console.log('grants', result);
     return result;
   }
 

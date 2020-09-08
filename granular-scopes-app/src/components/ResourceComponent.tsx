@@ -83,15 +83,20 @@ export default function ResourceComponent(props:ResourceComponentProps) {
         return;
       }
 
-      let paramShort:string = key.substr(paramIndex + 1);
+      let parameters:string[] = key.substr(paramIndex + 1).split('&');
 
-      let components:string[] = paramShort.split('=');
+      parameters.forEach((parameter) => {
+        // let paramShort:string = key.substr(paramIndex + 1);
+        // let components:string[] = paramShort.split('=');
 
-      if (components.length !== 2) {
-        return;
-      }
-
-      params = addParam(params, count++, components[0], components[1]);
+        let components:string[] = parameter.split('=');
+  
+        if (components.length !== 2) {
+          return;
+        }
+  
+        params = addParam(params, count++, components[0], components[1]);
+        });
     });
 
     return params;
@@ -167,7 +172,6 @@ export default function ResourceComponent(props:ResourceComponentProps) {
     var response:any;
 
     try {
-      console.log('beginning request...');
       response = await client.request(url);
       
       let data:SingleRequestData = {

@@ -67,6 +67,8 @@ class GranularHelper {
       return false;
     }
 
+    const debug = false;
+
     let interaction;
 
     // determine the operation (interaction) from the HTTP verb
@@ -147,25 +149,30 @@ class GranularHelper {
       return false;
     }
 
-    // console.log('\n');
-    // console.log('Checking interaction:', interaction)
-    // console.log('Search parameters:', searchParams);
+    if (debug) {
+      this.logGranularScopes(granularScopes);
+
+      console.log('\n');
+      console.log('Checking interaction:', interaction)
+      console.log('Search parameters:', searchParams);
+    }
 
     // check each filter group to see if we can find one that passes
     for (const filterGroup of granularScopes[type][interaction]) {
-      // console.log('\nchecking filter group...');
+      if (debug) console.log('\nchecking filter group...');
       let groupPasses = true;
 
       for (const filter of filterGroup) {
-        // console.log(' checking filter field:', filter.field);
+        if (debug) console.log(' checking filter field:', filter.field);
 
         let filterPasses = false;
 
         for (const [key, value] of searchParams) {
-          // console.log('  checking value field:', key, 'value:', value);
+
+          if (debug) console.log('  checking value field:', key, 'value:', value);
 
           if (filter.field !== key) {
-            // console.log('  skipping - fields do not match');
+            if (debug) console.log('  skipping - fields do not match');
             continue;
           }
 
@@ -185,30 +192,30 @@ class GranularHelper {
 
           let fieldPassCount = 0;
 
-          // console.log('  Have value system:', valueSystem, 'codes:', valueCodes);
+          if (debug) console.log('  Have value system:', valueSystem, 'codes:', valueCodes);
 
           for (const valueCode of valueCodes) {
-            // console.log('   Checking value system:', valueSystem, 'code:', valueCode);
+            if (debug) console.log('   Checking value system:', valueSystem, 'code:', valueCode);
 
             for (const prop of filter.props) {
               // console.log('    Prop:', prop);
   
-              // console.log('    Validating against filter system:', prop.system, 'code:', prop.code);
+              if (debug) console.log('    Validating against filter system:', prop.system, 'code:', prop.code);
               if ((prop.system) &&
                   (prop.system !== '*') &&
                   (valueSystem !== prop.system)) {
-                // console.log('    systems do not match');
+                    if (debug) console.log('    systems do not match');
                 continue;
               }
               
               if (valueCode === prop.code) {
-                // console.log('    match found, incrementing passes');
+                if (debug) console.log('    match found, incrementing passes');
                 filterPasses = true;
                 fieldPassCount++;
                 break;
               }
   
-              // console.log('    values do not match');
+              if (debug) console.log('    values do not match');
             }
   
             if ((filterPasses) && (fieldPassCount === valueCodes.length)) {
@@ -219,10 +226,10 @@ class GranularHelper {
 
 
           if (fieldPassCount === valueCodes.length) {
-            // console.log('  Matched:', fieldPassCount, 'of', valueCodes.length, '--PASS--');
+            if (debug) console.log('  Matched:', fieldPassCount, 'of', valueCodes.length, '--PASS--');
             filterPasses = true;
           } else {
-            // console.log('  Matched:', fieldPassCount, 'of', valueCodes.length, '--FAIL--');
+            if (debug) console.log('  Matched:', fieldPassCount, 'of', valueCodes.length, '--FAIL--');
             filterPasses = false;
           }
 
@@ -230,7 +237,7 @@ class GranularHelper {
         }
 
         if (!filterPasses) {
-          // console.log('Filter group failed!');
+          if (debug) console.log('Filter group failed!');
           groupPasses = false;
           break;
         }
@@ -240,10 +247,10 @@ class GranularHelper {
         return true;
       }
 
-      // console.log('Group failed');
+      if (debug) console.log('Group failed');
     }
 
-    // console.log('All groups failed');
+    if (debug) console.log('All groups failed');
 
     // // check each parameter for failing
     // for (const [key, value] of searchParams) {
