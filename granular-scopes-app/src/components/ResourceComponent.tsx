@@ -1,9 +1,7 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 
-import MainNavigation from './MainNavigation';
-import { StorageHelper } from '../util/StorageHelper';
 import {
-  Button, Divider, Checkbox, Tooltip
+  Divider, Checkbox, Tooltip
 } from '@blueprintjs/core';
 
 import DataCard from './DataCard';
@@ -11,7 +9,6 @@ import { DataCardInfo } from '../models/DataCardInfo';
 import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 import { DataCardStatus } from '../models/DataCardStatus';
 import { CommonProps } from '../models/CommonProps';
-import * as fhir from '../models/fhir_r4';
 import Client from 'fhirclient/lib/Client';
 import { LaunchScope } from '../models/LaunchScope';
 
@@ -194,7 +191,7 @@ export default function ResourceComponent(props:ResourceComponentProps) {
 
         split.forEach((val:string) => {
           let components:string[] = val.split('=');
-          if (components.length != 2) {
+          if (components.length !== 2) {
             return;
           }
           lines.push(`  |${components[0]}|\`${decodeURIComponent(components[1]).replace('|', '\\|')}\`|`);

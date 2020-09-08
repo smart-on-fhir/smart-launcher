@@ -1,11 +1,8 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import { CommonProps } from '../models/CommonProps';
 import { 
   Card, 
-  Divider, 
-  Button, 
   FormGroup, 
-  InputGroup, 
   Checkbox, 
   Tooltip,
 } from '@blueprintjs/core';
@@ -33,24 +30,18 @@ const _defaultScopes:LaunchScope = new LaunchScope([
 const _scopeKey:string = 'smart-parameters-v1';
 
 export default function ParametersTabV1(props: ParametersTabV1Props) {
-  const initialLoadRef = useRef<boolean>(true);
-
   const [scopes, setScopes] = useState<LaunchScope>(_defaultScopes);
 
   useEffect(() => {
-    if (initialLoadRef.current) {
-      let savedScopes:LaunchScope = LaunchScope.load(_scopeKey);
+    let savedScopes:LaunchScope = LaunchScope.load(_scopeKey);
 
-      if (savedScopes.size >= _defaultScopes.size) {
-        setScopes(savedScopes);
-        props.common.setRequestedScopes(savedScopes);
-      } else {
-        props.common.setRequestedScopes(_defaultScopes);
-      }
-
-      initialLoadRef.current = false;
+    if (savedScopes.size >= _defaultScopes.size) {
+      setScopes(savedScopes);
+      props.common.setRequestedScopes(savedScopes);
+    } else {
+      props.common.setRequestedScopes(_defaultScopes);
     }
-  }, [scopes, setScopes]);
+  }, []);
 
   function handleScopeChange(name:string) {
     let updated:LaunchScope = new LaunchScope(scopes);

@@ -12,10 +12,8 @@ import {
   FormGroup,
   InputGroup,
   Divider,
-  Intent,
 } from '@blueprintjs/core';
 import ParametersTabV1 from './ParametersTabV1';
-import { LaunchScope } from '../models/LaunchScope';
 import ParametersTabScenarios from './ParametersTabScenarios';
 
 export interface StandaloneParametersProps {

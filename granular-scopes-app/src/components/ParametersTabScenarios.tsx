@@ -2,10 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import { CommonProps } from '../models/CommonProps';
 import { 
   Card, 
-  Divider, 
-  Button, 
   FormGroup, 
-  InputGroup, 
   Checkbox, 
   Tooltip,
 } from '@blueprintjs/core';

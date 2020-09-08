@@ -20,7 +20,7 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 
 import StandaloneParameters from './StandaloneParameters';
-import { LaunchScope, ScopeComparison } from '../models/LaunchScope';
+import { LaunchScope } from '../models/LaunchScope';
 
 import FHIR from 'fhirclient';
 import Client from 'fhirclient/lib/Client';
@@ -56,7 +56,6 @@ export default function MainPage() {
   const [authTimeout, setAuthTimeout] = useState<number>(-1);
 
   const [aud, setAud] = useState<string>('');
-  // const [code, setCode] = useState<string>('');
   const [requestedScopes, setRequestedScopes] = useState<LaunchScope>(new LaunchScope());
   const [profile, setProfile] = useState<string>('');
   const [fhirUser, setFhirUser] = useState<string>('');
@@ -69,7 +68,6 @@ export default function MainPage() {
     optional: false,
   }
   const [authCardData, setAuthCardData] = useState<SingleRequestData[]>([]);
-  const [authCardStatus, setAuthCardStatus] = useState<DataCardStatus>(_statusAvailable);
 
   const [showUserCard, setShowUserCard] = useState<boolean>(false);
   const [userResourceType, setUserResourceType] = useState<string>('');
@@ -660,7 +658,7 @@ export default function MainPage() {
       <DataCard
         info={authCardInfo}
         data={authCardData}
-        status={authCardStatus}
+        status={_statusAvailable}
         common={currentCommon}
         />
       {buildContentCards()}
