@@ -1,4 +1,4 @@
-name: Deploy Health Wallet Demo master branch to ci
+name: Deploy SMART Launcher master branch to argo.run ci
 # Basics from https://docs.microsoft.com/en-us/azure/dev-spaces/how-to/github-actions
 on:
   push:

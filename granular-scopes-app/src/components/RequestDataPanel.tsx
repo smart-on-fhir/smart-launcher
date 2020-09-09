@@ -11,7 +11,7 @@ import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 // import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { 
-  vscDarkPlus as highlightDark, 
+  atomDark as highlightDark, 
   coy as highlightLight 
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 

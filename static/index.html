@@ -927,7 +927,7 @@
                 var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" +
                     encodeURIComponent(openUrl) + "&launch=" + launchData;
 
-                var granularEhrLaunchUrl = "http://localhost:3000/launch.html?iss=" +
+                var granularEhrLaunchUrl = "/granular/launch.html?iss=" +
                     encodeURIComponent(openUrl) + "&launch=" + launchData;
 
                 if (urlParams.sim_ehr) {
@@ -966,7 +966,7 @@
                 );
                 $("#standalone-launch-url-test-granular").attr(
                     "href",
-                    "http://localhost:3000/index.html?aud=" + encodeURIComponent(standaloneUrl)
+                    "/granular/index.html?aud=" + encodeURIComponent(standaloneUrl)
                 );
                 $("#ehr-launch-url-test").attr("href", sampleEhrLaunchUrl);
                 $("#ehr-launch-url-test-granular").attr("href", granularEhrLaunchUrl);

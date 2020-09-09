@@ -43,7 +43,7 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 9009
+    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,7 +67,7 @@ spec:
       - name: ui
         image: argonautcontainerregistry.azurecr.io/smart:latest
         ports:
-        - containerPort: 9009
+        - containerPort: 80
         env:
         - name: SERVER_BASE
           value: "https://smart.argo.run/"
