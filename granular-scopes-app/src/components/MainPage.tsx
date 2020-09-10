@@ -221,6 +221,7 @@ export default function MainPage() {
       client_id: _appId,
       scope: scopeString,
       iss: aud,
+      redirect_uri: process.env.REACT_APP_REDIRECT_URL || undefined
     });
   }
 
