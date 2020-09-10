@@ -25,14 +25,13 @@ module.exports = (req, res) => {
     let token = null;
     let granularScopes = null;
 
-    // Require token for Connectathon ------------------------------------------
-
-    if (!req.headers.authorization) {
-        console.log('No authorization header present!');
-        return res.status(403).send(
-            `{"Error": "Authorization is required during the Connectathon!"}`
-        );
-    }
+    // // Require token for Connectathon ------------------------------------------
+    // if (!req.headers.authorization) {
+    //     console.log('No authorization header present!');
+    //     return res.status(403).send(
+    //         `{"Error": "Authorization is required during the Connectathon!"}`
+    //     );
+    // }
 
     // Validate token ----------------------------------------------------------
     if (req.headers.authorization) {
