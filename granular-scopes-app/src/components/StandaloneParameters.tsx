@@ -43,6 +43,11 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
     props.common.setAud(event.target.value);
   }
 
+  function handleInputAppIdChange(event: React.ChangeEvent<HTMLInputElement>) {
+    props.common.setAppId(event.target.value);
+  }
+
+
   function handleLaunchClick() {
     if (!props.common.requestedScopes) {
       props.common.toaster('No Scopes Available!');
@@ -67,6 +72,17 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           id='input-aud'
           value={props.common.aud}
           onChange={handleInputAudChange}
+          />
+      </FormGroup>
+      <FormGroup
+        label='Client ID'
+        helperText='OAuth client ID'
+        labelFor='input-appId'
+        >
+        <InputGroup
+          id='input-appId'
+          value={props.common.appId}
+          onChange={handleInputAppIdChange}
           />
       </FormGroup>
       <Divider />
