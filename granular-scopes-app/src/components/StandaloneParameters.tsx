@@ -59,8 +59,8 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
       >
       <H5>Standalone Launch</H5>
       <FormGroup
-        label='Audience'
-        helperText='URL requests will be sent to'
+        label='FHIR Server'
+        helperText='Base URL for FHIR Server to connect to'
         labelFor='input-aud'
         >
         <InputGroup
