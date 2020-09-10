@@ -25,6 +25,8 @@ const _defaultScopes:LaunchScope = new LaunchScope([
   ['patient/*.write', false],
   ['patient/*.*', true],
   ['user/*.*', true],
+  ['patient/Patient.read', false],
+  ['patient/Observation.read', false],
 ]);
 
 const _scopeKey:string = 'smart-parameters-v1';
@@ -60,6 +62,7 @@ export default function ParametersTabV1(props: ParametersTabV1Props) {
 
     scopes.forEach((value, key) => {
       switch (key) {
+        case 'patient/Patient.read':
         case 'patient/*.read':
         case 'launch/patient':
           boxes.push(<br key={`br_${lines++}`} />);
