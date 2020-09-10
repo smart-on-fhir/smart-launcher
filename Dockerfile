@@ -8,7 +8,7 @@ WORKDIR /app
 
 ENV NODE_ENV      "production"
 ENV LAUNCHER_PORT "80"
-ENV BASE_URL      "http://localhost:9009"
+ENV BASE_URL      "https://smart.argo.run/"
 
 # Which FHIR servers to use
 ENV FHIR_SERVER_R2 "https://r2.smarthealthit.org"
