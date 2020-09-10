@@ -67,7 +67,7 @@ class GranularHelper {
       return false;
     }
 
-    const debug = false;
+    const debug = true;
 
     let interaction;
 
@@ -208,7 +208,8 @@ class GranularHelper {
                 continue;
               }
               
-              if (valueCode === prop.code) {
+              if ((valueCode === prop.code) ||
+                  (prop.code.endsWith('/' + valueCode))) {
                 if (debug) console.log('    match found, incrementing passes');
                 filterPasses = true;
                 fieldPassCount++;

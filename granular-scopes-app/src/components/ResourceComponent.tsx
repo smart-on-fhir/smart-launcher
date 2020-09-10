@@ -314,9 +314,9 @@ export default function ResourceComponent(props:ResourceComponentProps) {
 
       let paramShort:string = key.substr(paramIndex + 1);
 
-      if (addedShortParams.indexOf(paramShort) !== -1) {
-        return;
-      }
+      // if (addedShortParams.indexOf(paramShort) !== -1) {
+      //   return;
+      // }
 
       addedShortParams.push(paramShort);
 
