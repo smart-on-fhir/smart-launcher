@@ -7,6 +7,8 @@ export interface CommonProps {
 
   aud: string;
   setAud: ((aud: string) => void);
+  appId: string;
+  setAppId: ((appId: string) => void);
   profile:string;
   fhirUser:string;
   patientId:string;

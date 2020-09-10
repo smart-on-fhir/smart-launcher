@@ -55,6 +55,7 @@ export default function MainPage() {
 
   const [authTimeout, setAuthTimeout] = useState<number>(-1);
 
+  const [appId, setAppId] = useState<string>(_appId);
   const [aud, setAud] = useState<string>('');
   const [requestedScopes, setRequestedScopes] = useState<LaunchScope>(new LaunchScope());
   const [profile, setProfile] = useState<string>('');
@@ -84,6 +85,7 @@ export default function MainPage() {
     var url = new URL(window.location.href);
 
     getFromQueryOrStorage(url, 'aud', setAud, true);
+    getFromQueryOrStorage(url, 'appId', setAppId, true);
 
     if (getFromQueryOrStorage(url, 'code')) {
       FHIR.oauth2.ready(onAuthReady, onAuthError);
@@ -218,7 +220,7 @@ export default function MainPage() {
     let scopeString:string = requestedScopes.getScopes();
 
     FHIR.oauth2.authorize({
-      client_id: _appId,
+      client_id: appId,
       scope: scopeString,
       iss: aud,
       redirect_uri: process.env.REACT_APP_REDIRECT_URL || undefined
@@ -484,7 +486,7 @@ export default function MainPage() {
     let request:string = 
       '| Name | Value |\n' +
       '|-------|-------|\n' +
-      `|client id|${_appId}|\n` + 
+      `|client id|${appId}|\n` + 
       `|scopes|${scopeString}|\n` +
       `|aud|${currentAud}|\n`;
 
@@ -498,6 +500,11 @@ export default function MainPage() {
   function setAudAndSave(value:string) {
     sessionStorage.setItem('aud', value);
     setAud(value);
+  }
+
+  function setAppIdAndSave(value:string) {
+    sessionStorage.setItem('appId', value);
+    setAppId(value);
   }
 
   function setScopesAndSave(scopes:LaunchScope) {
@@ -540,6 +547,8 @@ export default function MainPage() {
       isUiDark: uiDark,
       aud: aud,
       setAud: setAudAndSave,
+      appId: appId,
+      setAppId: setAppIdAndSave,
       profile: profile,
       fhirUser: fhirUser,
       patientId: patientId,
@@ -611,6 +620,8 @@ export default function MainPage() {
     isUiDark: uiDark,
     aud: aud,
     setAud: setAudAndSave,
+    appId: appId,
+    setAppId: setAppIdAndSave,
     profile: profile,
     fhirUser: fhirUser,
     patientId: patientId,
