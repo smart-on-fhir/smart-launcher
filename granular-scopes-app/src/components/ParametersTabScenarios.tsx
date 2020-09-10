@@ -21,6 +21,7 @@ const _defaultScopes:LaunchScope = new LaunchScope([
   ['profile', true],
   ['launch/patient', true],
   ['launch/encounter', false],
+  ['patient/Observation.r', false],
   ['patient/Observation.rs', true],
   ['patient/Observation.crs', false],
   ['patient/Observation.rs?category=vital-signs', false],
@@ -77,7 +78,7 @@ export default function ParametersTabScenarios(props: ParametersTabScenariosProp
     scopes.forEach((value, key) => {
       switch (key) {
         case 'patient/Observation.rs?category=vital-signs&_security=L':
-        case 'patient/Observation.rs':
+        case 'patient/Observation.r':
         case 'patient/Observation.rs?category=vital-signs':
         case 'patient/Observation.rs?_security=L':
         case 'launch/patient':
