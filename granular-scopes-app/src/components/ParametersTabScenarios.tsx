@@ -25,6 +25,7 @@ const _defaultScopes:LaunchScope = new LaunchScope([
   ['patient/Observation.rs', true],
   ['patient/Observation.crs', false],
   ['patient/Observation.rs?category=vital-signs', false],
+  ['patient/Observation.rs?category=laboratory', false],
   ['patient/Observation.rs?category=http://terminology.hl7.org/CodeSystem/observation-category|vital-signs', false],
   ['patient/Observation.crs?category=vital-signs', false],
   ['patient/Observation.rs?_security=L', false],
