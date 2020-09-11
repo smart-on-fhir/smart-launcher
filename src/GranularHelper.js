@@ -67,7 +67,7 @@ class GranularHelper {
       return false;
     }
 
-    const debug = true;
+    const debug = false;
 
     let interaction;
 
