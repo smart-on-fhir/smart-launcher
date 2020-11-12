@@ -238,7 +238,7 @@
 
                 function submit(id) {
                     id = id || "-1";
-                    try { parent.setEncounterID(id); } catch(ex) {}
+                    try { window.parent.postMessage({ command: "setEncounterID", id}); } catch(ex) {}
                     var url = window.location.href
                         .replace("/encounter", "/" + state.authUrlSegment)
                         .replace(/(&?)encounter=[^&]*(&|$)/, "$2") + 
@@ -433,7 +433,7 @@
                         var id = ""
                         if (encounters.total) {
                             id = encounters.entry[0].resource.id
-                            try {parent.setEncounterID(id);} catch(ex) {}
+                            try { window.parent.postMessage({ command: "setEncounterID", id}); } catch(ex) {}
                         }
                         var url = window.location.href
                         .replace("/encounter", "/" + state.authUrlSegment)

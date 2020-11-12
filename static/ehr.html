@@ -250,24 +250,15 @@
                 console.error(error);
             }
 
-            window.setPatient = function(patient) {
+            function setPatient(patient) {
                 $(".patient-name").text(Lib.humanName(patient));
                 $(".patient-age").text(Lib.formatAge(patient.birthDate, patient.deceasedDateTime));
                 $(".patient-gender").text(Lib.toCamelCase(patient.gender || "unknown", true));
                 $(".patient-id").text("Patient ID: " + patient.id);
                 $(".header .patient, .status-bar .patient div").css({ opacity: 1 });
-            };
+            }
 
-            window.setEncounterID = function(id) {
-                if (!id || id == "none" || id == "-1") {
-                    $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
-                }
-                else {
-                    $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
-                }
-            };
-
-            window.setUser = function(user) {
+            function setUser(user) {
                 if (!user) {
                     $(".user-id").html('User ID: <b style="color:#900">none</b>').css({ opacity: 1 });
                 }
@@ -280,11 +271,32 @@
                         setPatient(user);
                     }
                 }
-            };
+            }
 
-            // console.dir("appParams: ", appParams)
-            // console.log("launch: ", launch)
-            // console.log("state: ", state)
+            window.addEventListener("message", function(event) {
+                if(event.data.command === "setPatient") {
+                   setPatient(event.data.patient)
+                }
+            })
+
+            window.addEventListener("message", function(event) {
+                if(event.data.command === "setEncounterID") {
+                    var id = event.data.id;
+                    if (!id || id == "none" || id == "-1") {
+                        $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
+                    }
+                    else {
+                        $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
+                    }
+                }
+            })
+            
+            window.addEventListener("message", function(event) {
+                if(event.data.command === "setUser") {
+                    setUser(event.data.user);
+                }
+            })
+
             // Set frame location
             if (state.app) {
                 $("#frame").prop("src", state.app).css("background", "#FFF");
