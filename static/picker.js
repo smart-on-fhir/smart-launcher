@@ -47,7 +47,7 @@ var SmartPicker = (function() {
                 if (pt.resource.id === patientId) {
                     window.parent.postMessage({
                         command: 'setPatient',
-                        patient: pt.resource
+                        args: [ pt.resource ]
                     });
                     break;
                 }

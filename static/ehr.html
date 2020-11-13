@@ -273,27 +273,33 @@
                 }
             }
 
-            window.addEventListener("message", function(event) {
-                if(event.data.command === "setPatient") {
-                   setPatient(event.data.patient)
+            function setEncounterID(id) {
+                if (!id || id == "none" || id == "-1") {
+                    $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
                 }
-            })
+                else {
+                    $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
+                }
+            }
+
+            var commands = {
+                setPatient: setPatient,
+                setUser: setUser,
+                setEncounterID: setEncounterID
+            }
 
             window.addEventListener("message", function(event) {
-                if(event.data.command === "setEncounterID") {
-                    var id = event.data.id;
-                    if (!id || id == "none" || id == "-1") {
-                        $(".encounter-id").html('Encounter ID: <b style="color:#900">none</b>').css({ opacity: 1 });
-                    }
-                    else {
-                        $(".encounter-id").text("Encounter ID: " + id).css({ opacity: 1 });
-                    }
+                var handler = commands[event.data.command];
+
+                if(event.origin !== window.location.origin) {
+                    console.warn('Ignoring message from a different origin.')
+                    return
                 }
-            })
-            
-            window.addEventListener("message", function(event) {
-                if(event.data.command === "setUser") {
-                    setUser(event.data.user);
+                
+                if(typeof handler === 'function') {
+                    handler.apply({}, event.data.args)
+                } else {
+                    console.warn('No such command supported. (Cmd: %s)', event.data.command)
                 }
             })
 
