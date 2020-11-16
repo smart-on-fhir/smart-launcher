@@ -48,7 +48,7 @@ var SmartPicker = (function() {
                     window.parent.postMessage({
                         command: 'setPatient',
                         args: [ pt.resource ]
-                    });
+                    }, window.location.origin);
                     break;
                 }
             }
