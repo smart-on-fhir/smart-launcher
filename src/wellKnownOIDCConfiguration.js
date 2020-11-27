@@ -32,6 +32,9 @@ module.exports = (req, res) => {
         // REQUIRED, URL to the OAuth2 token endpoint.
         token_endpoint: `${prefix}/token`,
 
+        // OPTIONAL, URL of the authorization server's introspection endpoint.	
+        introspection_endpoint: `${prefix}/introspect`,
+
         // REQUIRED. JSON array containing a list of the Subject Identifier types that this OP supports. Valid types include pairwise and public. 
         "subject_types_supported": [
             "public"
