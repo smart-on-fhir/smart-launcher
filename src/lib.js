@@ -212,6 +212,10 @@ function augmentConformance(bodyText, authBaseUrl) {
             {
                 "url": "token",
                 "valueUri": buildUrlPath(authBaseUrl, "/token")
+            },
+            {
+                "url": "introspect",
+                "valueUri": buildUrlPath("/introspect")
             }
         ]
     }];
