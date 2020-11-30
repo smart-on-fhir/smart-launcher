@@ -40,7 +40,7 @@ function introspectionHandler(req, res) {
     let response;
 
     try {
-        const token = jwt.decode(req.body.token, config.jwtSecret)
+        const token = jwt.verify(req.body.token, config.jwtSecret)
     
         response = {
     
