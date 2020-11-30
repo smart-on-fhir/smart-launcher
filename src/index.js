@@ -12,7 +12,7 @@ const lib            = require("./lib");
 const launcher       = require("./launcher");
 const wellKnownOIDC  = require("./wellKnownOIDCConfiguration");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
-
+const { introspectionHandler } = require("./introspect")
 
 const handleParseError = function(err, req, res, next) {
     if (err instanceof SyntaxError && err.status === 400) {
@@ -132,6 +132,13 @@ app.get(buildRoutePermutations("/authorize"), (req, res) => {
 
 // auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
+
+// introspect
+app.post(
+    buildRoutePermutations("/introspect"),
+    express.urlencoded({ limit: '64kb', extended: false }),
+    introspectionHandler
+);
 
 // Provide launch_id if the CDS Sandbox asks for it
 app.post(buildRoutePermutations("/fhir/_services/smart/launch"), bodyParser.json(), (req, res) => {
