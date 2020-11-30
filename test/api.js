@@ -909,6 +909,38 @@ describe('Auth', function() {
             });
         });
     });
+
+    describe('Introspection', () => {
+
+        buildRoutePermutations().forEach(path => {
+            it(`can introspect ${path}`, (done) => {
+                authorize({
+                    scope  : "offline_access",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                    }
+                }).then(token => {
+                    request(app)
+                        .post(`${path}introspect`)
+                        .set('Authorization', `Bearer ${token.access_token}`)
+                        .set('Accept', 'application/json')
+                        .set('Content-Type', 'application/x-www-form-urlencoded')
+                        .send({ token: token.access_token })
+                        .expect(200)
+                        .expect(res => {
+                            if(res.body?.active !== true) throw new Error("Token is not active." + JSON.stringify(res.body))
+                        })
+                        .end(done)
+
+                }).catch(done)
+            })
+        })
+    })
 });
 
 describe('Generator', () => {
