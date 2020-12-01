@@ -215,7 +215,7 @@ function augmentConformance(bodyText, authBaseUrl) {
             },
             {
                 "url": "introspect",
-                "valueUri": buildUrlPath("/introspect")
+                "valueUri": buildUrlPath(authBaseUrl, "/introspect")
             }
         ]
     }];

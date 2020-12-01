@@ -130,15 +130,15 @@ app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendFile("authorize.html", {root: './static'});
 });
 
-// auth request
-app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
-
 // introspect
 app.post(
-    buildRoutePermutations("/introspect"),
+    buildRoutePermutations(`${config.authBaseUrl}/introspect`),
     express.urlencoded({ limit: '64kb', extended: false }),
     introspectionHandler
 );
+
+// auth request
+app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
 
 // Provide launch_id if the CDS Sandbox asks for it
 app.post(buildRoutePermutations("/fhir/_services/smart/launch"), bodyParser.json(), (req, res) => {

@@ -926,7 +926,7 @@ describe('Auth', function() {
                     }
                 }).then(token => {
                     request(app)
-                        .post(`${path}introspect`)
+                        .post(`${path}auth/introspect`)
                         .set('Authorization', `Bearer ${token.access_token}`)
                         .set('Accept', 'application/json')
                         .set('Content-Type', 'application/x-www-form-urlencoded')
