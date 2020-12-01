@@ -15,17 +15,10 @@ function introspectionHandler(req, res) {
     }
 
     try {
-        let token = null;
-        
         jwt.verify(
             req.headers.authorization.split(" ")[1],
             config.jwtSecret
         );
-
-        // Simulated errors
-        if (token?.sim_error) {
-            return res.status(401).send(token.sim_error);
-        }
     } catch (e) {
         return res.status(401).send(
             `${e.name || "Error"}: ${e.message || "Invalid token"}`
