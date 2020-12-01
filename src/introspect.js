@@ -67,7 +67,7 @@ function introspectionHandler(req, res) {
     
             /* OPTIONAL.  Human-readable identifier for the resource owner who
             authorized this token. */
-            // username: undefined, 
+            username: token.username, 
     
             /*   OPTIONAL.  Type of the token as defined in Section 5.1 of OAuth
             2.0 [RFC6749]. */
@@ -86,7 +86,25 @@ function introspectionHandler(req, res) {
             /* OPTIONAL.  Integer timestamp, measured in the number of seconds
             since January 1 1970 UTC, indicating when this token is not to be
             used before, as defined in JWT [RFC7519]. */
-            // nbf: undefined
+            nbf: token.nbf,
+
+            // OPTIONAL.  Subject of the token, as defined in JWT [RFC7519].
+            // Usually a machine-readable identifier of the resource owner who
+            // authorized this token.
+            sub: token.sub,
+      
+            // OPTIONAL.  Service-specific string identifier or list of string
+            // identifiers representing the intended audience for this token, as
+            // defined in JWT [RFC7519].
+            aud: token.aud,
+            
+            // OPTIONAL.  String representing the issuer of this token, as
+            // defined in JWT [RFC7519].
+            iss: token.iss,
+      
+            // OPTIONAL.  String identifier for the token, as defined in JWT
+            // [RFC7519].
+            jti: token.jti,
         }
     } catch {
         response = { active: false }
