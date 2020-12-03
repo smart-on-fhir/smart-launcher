@@ -10,7 +10,7 @@ function introspectionHandler(req, res) {
 
     // Validate authorization token ----------------------------------------------------------
     if(!req.headers.authorization) {
-        res.status(401).send("Invalid token");
+        res.status(401).send("Authorization is required");
         return
     }
 
