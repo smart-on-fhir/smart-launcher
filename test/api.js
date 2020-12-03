@@ -1005,6 +1005,43 @@ describe('Introspection', () => {
                     .end(done);
             })
         })
+
+        it(`gets active: false for authorized request with an expired introspection token at ${path}`, (done) => {
+
+            const expiredTokenPayload = {
+                context: {
+                    need_patient_banner: true,
+                    smart_style_url    : config.baseUrl + "/smart-style.json",
+                },
+                client_id: "mocked",
+                scope    : "Patient/*.read",
+                exp: Math.floor(Date.now() / 1000) - (60 * 60) // token expired one hour ago
+            }
+
+            const expiredToken = jwt.sign(expiredTokenPayload, config.jwtSecret)
+
+            authorize({
+                scope  : "offline_access",
+                baseUrl: config.baseUrl + path,
+                launch : {
+                    launch_pt : 1,
+                    skip_login: 1,
+                    skip_auth : 1,
+                    patient   : "abc",
+                    encounter : "bcd",
+                }
+            }).then(auth => {
+                request(app)
+                    .post(`${path}auth/introspect`)
+                    .set('Authorization', `Bearer ${auth.access_token}`)
+                    .set('Accept', 'application/json')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send({ token: expiredToken })
+                    .expect(200)
+                    .expect({ active: false })
+                    .end(done);
+            })
+        })
     })
 })
 
