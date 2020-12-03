@@ -30,6 +30,11 @@ function introspectionHandler(req, res) {
     // that the JWT is valid, which an un-authorized user could determine by using it as the authorization token.
 
     // Perform introspection
+
+    if (!req.body.token) {
+        return res.status(400).send("No token provided");
+    }
+
     let response;
 
     try {
