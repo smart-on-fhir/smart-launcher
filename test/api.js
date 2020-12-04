@@ -911,6 +911,140 @@ describe('Auth', function() {
     });
 });
 
+describe('Introspection', () => {
+    buildRoutePermutations().forEach(path => {
+        it(`gets correct FHIR conformance for ${path}`, () => {
+            return request(app)
+            .get(`${path}fhir/metadata`)
+            .expect(200)
+            .then(response => {
+                const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
+                expect(oauthUris);
+                const introspection = oauthUris.extension.find(e => e.url === "introspect");
+                expect(introspection);
+                expect(new URL(introspection.valueUri).pathname).equal(`${path}auth/introspect`);
+            })
+        })
+
+        it(`can introspect an access token ${path}`, (done) => {
+            authorize({
+                scope  : "offline_access",
+                baseUrl: config.baseUrl + path,
+                launch : {
+                    launch_pt : 1,
+                    skip_login: 1,
+                    skip_auth : 1,
+                    patient   : "abc",
+                    encounter : "bcd",
+                }
+            }).then(token => {
+                request(app)
+                    .post(`${path}auth/introspect`)
+                    .set('Authorization', `Bearer ${token.access_token}`)
+                    .set('Accept', 'application/json')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send({ token: token.access_token })
+                    .expect(200)
+                    .expect(res => {
+                        if(res.body?.active !== true) throw new Error("Token is not active.");
+                    })
+                    .end(done);
+
+            }).catch(done)
+        })
+
+        it(`can introspect a refresh token ${path}`, (done) => {
+            authorize({
+                scope  : "offline_access",
+                baseUrl: config.baseUrl + path,
+                launch : {
+                    launch_pt : 1,
+                    skip_login: 1,
+                    skip_auth : 1,
+                    patient   : "abc",
+                    encounter : "bcd",
+                }
+            }).then(token => {
+                request(app)
+                    .post(`${path}auth/introspect`)
+                    .set('Authorization', `Bearer ${token.access_token}`)
+                    .set('Accept', 'application/json')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send({ token: token.refresh_token })
+                    .expect(200)
+                    .expect(res => {
+                        if(res.body?.active !== true) throw new Error("Token is not active.");
+                    })
+                    .end(done);
+
+            }).catch(done)
+        })
+
+        it(`gets active: false for authorized request with invalid token at ${path}`, (done) => {
+            const introspectionToken = 'invalid';
+            
+            authorize({
+                scope  : "offline_access",
+                baseUrl: config.baseUrl + path,
+                launch : {
+                    launch_pt : 1,
+                    skip_login: 1,
+                    skip_auth : 1,
+                    patient   : "abc",
+                    encounter : "bcd",
+                }
+            }).then(auth => {
+                request(app)
+                    .post(`${path}auth/introspect`)
+                    .set('Authorization', `Bearer ${auth.access_token}`)
+                    .set('Accept', 'application/json')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send({ token: introspectionToken })
+                    .expect(200)
+                    .expect({ active: false })
+                    .end(done);
+            })
+        })
+
+        it(`gets active: false for authorized request with an expired introspection token at ${path}`, (done) => {
+
+            const expiredTokenPayload = {
+                context: {
+                    need_patient_banner: true,
+                    smart_style_url    : config.baseUrl + "/smart-style.json",
+                },
+                client_id: "mocked",
+                scope    : "Patient/*.read",
+                exp: Math.floor(Date.now() / 1000) - (60 * 60) // token expired one hour ago
+            }
+
+            const expiredToken = jwt.sign(expiredTokenPayload, config.jwtSecret)
+
+            authorize({
+                scope  : "offline_access",
+                baseUrl: config.baseUrl + path,
+                launch : {
+                    launch_pt : 1,
+                    skip_login: 1,
+                    skip_auth : 1,
+                    patient   : "abc",
+                    encounter : "bcd",
+                }
+            }).then(auth => {
+                request(app)
+                    .post(`${path}auth/introspect`)
+                    .set('Authorization', `Bearer ${auth.access_token}`)
+                    .set('Accept', 'application/json')
+                    .set('Content-Type', 'application/x-www-form-urlencoded')
+                    .send({ token: expiredToken })
+                    .expect(200)
+                    .expect({ active: false })
+                    .end(done);
+            })
+        })
+    })
+})
+
 describe('Generator', () => {
     describe('RSA Generator', function() {
         this.timeout(20000);
