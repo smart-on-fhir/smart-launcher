@@ -34,7 +34,7 @@ module.exports = (req, res) => {
 
         // RECOMMENDED, URL to a server’s introspection endpoint that can be
         // used to validate a token.
-        "introspection_endpoint": undefined,
+        "introspection_endpoint": `${prefix}/introspect`,
 
         // RECOMMENDED, URL to a server’s revoke endpoint that can be used to
         // revoke a token.
