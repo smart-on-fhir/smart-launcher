@@ -261,6 +261,7 @@ function refreshSession(options) {
     }).then(res => res.body);
 }
 
+
 function authorize(options) {
     return getAuthCode(options).then(
         code => getAuthToken({ code, baseUrl: options.baseUrl })

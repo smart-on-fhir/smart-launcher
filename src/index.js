@@ -11,6 +11,7 @@ const generator      = require("./generator");
 const lib            = require("./lib");
 const launcher       = require("./launcher");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
+const tokenIntrospection = require("./tokenIntrospection");
 
 
 const handleParseError = function(err, req, res, next) {
@@ -109,6 +110,11 @@ const buildRoutePermutations = (lastSegment) => {
 app.get(buildRoutePermutations(
     `${config.fhirBaseUrl}/.well-known/smart-configuration`),
     wellKnownSmart
+);
+
+app.post(buildRoutePermutations(`/introspect`),
+    bodyParser.urlencoded(),
+    tokenIntrospection
 );
 
 // picker
