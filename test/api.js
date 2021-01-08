@@ -217,7 +217,6 @@ function getAuthCode(options) {
 }
 
 function getAuthToken(options) {
-    console.log("Gethat", options.code);
     return new Promise((resolve, reject) => {
         Request({
             url      : `${options.baseUrl}auth/token`,
@@ -913,7 +912,6 @@ describe('Auth', function() {
                         accessToken: tokenResponse.access_token
                     })
                 }).then(result => {
-                    console.log("R", result);
                     expect(result.active).to.be.true;
                     expect(result.exp).to.exist;
                     expect(result.scope).to.exist;
