@@ -12,6 +12,12 @@ router.get(
 );
 
 router.post(
+    "/authorize",
+    bodyParser.urlencoded({ extended: false }),
+    AuthorizeHandler.handleRequest
+);
+
+router.post(
     "/token",
     bodyParser.urlencoded({ extended: false }),
     TokenHandler.handleRequest

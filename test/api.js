@@ -177,10 +177,11 @@ function encodeSim(object = {}) {
 function getAuthCode(options) {
     return new Promise((resolve, reject) => {
         Request({
+            method: options.post ? "POST" : "GET",
             url      : `${options.baseUrl}auth/authorize`,
             strictSSL: false,
             followRedirect: false,
-            qs: {
+            [options.post ? "form" : "qs"]: {
                 response_type: "code",
                 patient      : options.patient   || "x",
                 client_id    : options.client_id || "x",
@@ -556,6 +557,26 @@ describe('Proxy', function() {
 
 describe('Auth', function() {
     describe('authorize', function() {
+        buildRoutePermutations().forEach(path => {
+            it(`POST ${path}`, done => {
+                getAuthCode({
+                    post: true,
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                }).then(code => {
+                    expect(code).to.have.length.greaterThan(10);
+                    done()
+                });
+            });
+        });
+
 
         // auth/authorize Checks for required params
         buildRoutePermutations("auth/authorize").forEach(path => {
@@ -579,7 +600,6 @@ describe('Auth', function() {
                     });
                 });
             });
-
             // it(`${path} with missing "client_id" param`, done => {
             //     request(app)
             //     .get(path + "?response_type=code&client_id=&redirect_uri=http%3A%2F%2Fx&aud=x&state=abc")
@@ -599,7 +619,9 @@ describe('Auth', function() {
                 .expect(400)
                 .end(done);
             });
+
         });
+
 
         // can simulate invalid redirect_uri error
         {

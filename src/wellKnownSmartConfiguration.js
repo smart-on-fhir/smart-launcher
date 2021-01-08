@@ -148,8 +148,9 @@ module.exports = (req, res) => {
 
             // support for SMARTv2 scopes (e.g., `patient/Observation.rs`)
             "permission-v2",
-            
 
+            // support for POST-based authorization
+            "authorize-post",
         ]
     };
 
