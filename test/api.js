@@ -407,11 +407,11 @@ describe('Proxy', function() {
         .expect(401, done);
     });
 
-    it ("Can simulate custom token errors", null);
-    it ("Keeps protected data-sets read-only", null);
-    it ("Inject sandbox tag into POST and PUT requests", null);
-    it ("Make urls conditional and if exists, change /id to ?_id=", null);
-    it ("Apply patient scope to GET requests", null);
+    // xit ("Can simulate custom token errors", null);
+    // xit ("Keeps protected data-sets read-only", null);
+    // xit ("Inject sandbox tag into POST and PUT requests", null);
+    // xit ("Make urls conditional and if exists, change /id to ?_id=", null);
+    // xit ("Apply patient scope to GET requests", null);
 
     it ("Adjust urls in the fhir response", done => {
         request(app)
@@ -1342,7 +1342,8 @@ describe('Backend Services', () => {
         });
     });
 
-    describe('Fhir Requests', () => {
-        it ("TODO...");
-    });
+    //TODO
+    // describe('Fhir Requests', () => {
+    //     it ("TODO...");
+    // });
 });
