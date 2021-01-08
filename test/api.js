@@ -272,7 +272,7 @@ function authorize(options) {
 
 function introspect(options) {
     return requestPromise({
-        url           : `${options.baseUrl}introspect`,
+        url           : `${options.baseUrl}auth/introspect`,
         method        : "POST",
         followRedirect: false,
         json          : true,
@@ -893,7 +893,7 @@ describe('Auth', function() {
     
     describe('token introspection', function() {
         buildRoutePermutations().forEach(path => {
-            it(`${path}introspect yields a valid introspection response`, done => {
+            it(`${path}auth/introspect yields a valid introspection response`, done => {
                 authorize({
                     scope  : "offline_access launch launch/patient openid fhirUser",
                     baseUrl: config.baseUrl + path,
