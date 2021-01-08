@@ -144,7 +144,12 @@ module.exports = (req, res) => {
             "permission-patient",
 
             // support for user-level scopes (e.g. user/Appointment.read).
-            "permission-user"
+            "permission-user",
+
+            // support for SMARTv2 scopes (e.g., `patient/Observation.rs`)
+            "permission-v2",
+            
+
         ]
     };
 
