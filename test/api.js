@@ -271,6 +271,18 @@ function authorize(options) {
     );
 }
 
+function introspect(options) {
+    return requestPromise({
+        url           : `${options.baseUrl}auth/introspect`,
+        method        : "POST",
+        followRedirect: false,
+        json          : true,
+        form: {
+            token: options.accessToken
+        }
+    }).then(res => res.body);
+}
+
 function buildRoutePermutations(suffix = "", fhirVersion) {
     suffix = suffix.replace(/^\//, "");
     let out = [];
@@ -900,6 +912,40 @@ describe('Auth', function() {
             });
         });
     });
+    
+    describe('token introspection', function() {
+        buildRoutePermutations().forEach(path => {
+            it(`${path}auth/introspect yields a valid introspection response`, done => {
+                authorize({
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                    client_id: "example-client",
+                    patient   : "abc",
+                }).then(tokenResponse => {
+                    return introspect({
+                        baseUrl: config.baseUrl + path,
+                        accessToken: tokenResponse.access_token
+                    })
+                }).then(result => {
+                    expect(result.active).to.be.true;
+                    expect(result.exp).to.exist;
+                    expect(result.scope).to.exist;
+                    expect(result.patient).to.equal("abc");
+                    expect(result.client_id).to.equal("example-client");
+                    done();
+                })
+            })
+        });
+
+    });
+
 
     describe('token', function() {
         buildRoutePermutations().forEach(path => {

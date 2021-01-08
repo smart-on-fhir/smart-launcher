@@ -265,7 +265,7 @@ class TokenHandler extends SMARTHandler {
             var token = Object.assign({}, clientDetailsToken.context, {
                 token_type: "bearer",
                 scope     : clientDetailsToken.scope,
-                client_id : req.body.client_id,
+                client_id : clientDetailsToken.client_id || req.body.client_id,
                 expires_in: expiresIn
             });
         
