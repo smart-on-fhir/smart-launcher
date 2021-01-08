@@ -112,11 +112,6 @@ app.get(buildRoutePermutations(
     wellKnownSmart
 );
 
-app.post(buildRoutePermutations(`/introspect`),
-    bodyParser.urlencoded(),
-    tokenIntrospection
-);
-
 // picker
 app.get(buildRoutePermutations("/picker"), (req, res) => {
     res.sendFile("picker.html", {root: './static'});
