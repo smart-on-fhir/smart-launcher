@@ -11,7 +11,6 @@ const base64url = require("base64-url");
 const Lib       = require("../src/lib");
 const crypto    = require("crypto");
 const expect    = require("chai").expect;
-const { convertCompilerOptionsFromJson } = require('typescript');
 
 
 const ENABLE_FHIR_VERSION_2  = true;
