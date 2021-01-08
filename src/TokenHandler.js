@@ -135,6 +135,14 @@ class TokenHandler extends SMARTHandler {
         let token;
         try {
             token = jwt.verify(this.request.body.code, config.jwtSecret);
+            if (token.code_challenge_method === 'S256') {
+                const hash = crypto.createHash('sha256');
+                hash.update(this.request.body.code_verifier || "");
+                const code_challenge = base64url.encode(hash.digest());
+                if (code_challenge !== token.code_challenge) {
+                    return Lib.replyWithError(this.response, "invalid_grant", 401, code_challenge, token.code_challenge);
+                }
+            }
         } catch (e) {
             return Lib.replyWithError(this.response, "invalid_token", 401, e.message);
         }

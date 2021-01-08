@@ -173,6 +173,8 @@ class AuthorizeHandler extends SMARTHandler {
                     smart_style_url    : config.baseUrl + "/smart-style.json",
                 }),
                 client_id: this.inputs.client_id,
+                code_challenge_method: this.inputs.code_challenge_method,
+                code_challenge: this.inputs.code_challenge,
                 scope    : this.inputs.scope,
                 sde      : sim.sde
             };
@@ -225,7 +227,7 @@ class AuthorizeHandler extends SMARTHandler {
 
     redirect(to, query = {}) {
         let redirectUrl = Url.parse(this.request.originalUrl, true);
-        redirectUrl.query = Object.assign(redirectUrl.query, query, {
+        redirectUrl.query = Object.assign(redirectUrl.query, this.inputs, query, {
             aud_validated: this.sim.aud_validated,
             aud          : ""
         });
@@ -297,6 +299,17 @@ class AuthorizeHandler extends SMARTHandler {
             sim.aud_validated = "1";
         }
 
+        if (this.inputs.code_challenge_method && this.inputs.code_challenge_method !== 'S256') {
+            Lib.redirectWithError(req, res, "invalid_code_challenge_method");
+            return false;
+        }
+
+        if (this.inputs.code_challenge_method && !this.inputs.code_challenge) {
+            Lib.redirectWithError(req, res, "missing_code_challenge");
+            return false;
+        }
+
+
         return true;
     }
 
@@ -334,7 +347,7 @@ class AuthorizeHandler extends SMARTHandler {
             return Lib.redirectWithError(req, res, "sim_invalid_scope");
         }
 
-        // Validate query parameters
+        // Validate input parameters
         if (!this.validateParams()) {
             return;
         }
