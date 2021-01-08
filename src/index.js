@@ -11,7 +11,6 @@ const generator      = require("./generator");
 const lib            = require("./lib");
 const launcher       = require("./launcher");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
-const tokenIntrospection = require("./tokenIntrospection");
 
 
 const handleParseError = function(err, req, res, next) {
