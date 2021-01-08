@@ -12,6 +12,12 @@ router.get(
     AuthorizeHandler.handleRequest
 );
 
+router.post(
+    "/authorize",
+    bodyParser.urlencoded({ extended: false }),
+    AuthorizeHandler.handleRequest
+);
+
 router.post("/introspect",
     bodyParser.urlencoded({ extended: false }),
     tokenIntrospection
