@@ -13,7 +13,7 @@ router.get(
 );
 
 router.post("/introspect",
-    bodyParser.urlencoded( extended: false ),
+    bodyParser.urlencoded({ extended: false }),
     tokenIntrospection
 );
 

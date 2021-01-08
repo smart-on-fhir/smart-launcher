@@ -11,6 +11,7 @@ const base64url = require("base64-url");
 const Lib       = require("../src/lib");
 const crypto    = require("crypto");
 const expect    = require("chai").expect;
+const { convertCompilerOptionsFromJson } = require('typescript');
 
 
 const ENABLE_FHIR_VERSION_2  = true;
@@ -158,7 +159,8 @@ function encodeSim(object = {}) {
  * @param {String} options.patient 0 or more comma-separated patient IDs.
  * Defaults to "x" because we ignore it.
  * @param {String} options.client_id The client_id of the app. Defaults to "x"
- * because we ignore it.
+ * @param {String} options.code_challenge_method PKCE option; no PKCE request if omitted
+ * @param {String} options.code_challenge PKCE option; no PKCE request if omitted
  * @param {String} options.redirect_uri The uri to redirect to. Defaults to
  * "http://x.y" because we ignore it but still require it to be valid URL.
  * @param {String} options.scope
@@ -183,6 +185,8 @@ function getAuthCode(options) {
             followRedirect: false,
             [options.post ? "form" : "qs"]: {
                 response_type: "code",
+                code_challenge_method: options.code_challenge_method || undefined,
+                code_challenge: options.code_challenge || undefined,
                 patient      : options.patient   || "x",
                 client_id    : options.client_id || "x",
                 redirect_uri : options.redirect_uri || "http://x.y",
@@ -203,11 +207,10 @@ function getAuthCode(options) {
                     throw new Error(`auth/authorize did not redirect to the redirect_uri`)
                 }
                 let url = Url.parse(res.headers.location, true);
-                let code = url.query.code + "";
-                if (!code) {
-                    console.log(res.headers)
+                if (!url.query.code) {
                     throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
                 }
+                let code = url.query.code + "";
                 // console.log("code: ", JSON.parse(base64url.decode(code.split(".")[1])));
                 resolve(code);
             } catch(ex) {
@@ -227,7 +230,8 @@ function getAuthToken(options) {
             json: true,
             form: {
                 grant_type: "authorization_code",
-                code      : options.code
+                code      : options.code,
+                code_verifier: options.code_verifier,
             }
         }, (error, res, body) => {
             if (error) {
@@ -267,7 +271,7 @@ function refreshSession(options) {
 
 function authorize(options) {
     return getAuthCode(options).then(
-        code => getAuthToken({ code, baseUrl: options.baseUrl })
+        code => getAuthToken({ code, baseUrl: options.baseUrl, code_verifier: options.code_verifier})
     );
 }
 
@@ -623,6 +627,74 @@ describe('Auth', function() {
         });
 
         // auth/authorize validates the redirect_uri parameter
+        buildRoutePermutations("auth/authorize").forEach(path => {
+            it(`${path} - validates the redirect_uri parameter`, done => {
+                request(app)
+                .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
+                .expect(/^Invalid redirect_uri parameter/)
+                .expect(400)
+                .end(done);
+            });
+
+        });
+
+        // auth/authorize validates pkce challenge method
+        buildRoutePermutations().forEach(path => {
+            it(`${path}auth/authorize - validates the code_challenge_method parameter`, done => {
+                request(app)
+                .get(path + `auth/authorize?code_challenge_method=plain&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=${encodeURIComponent(config.baseUrl + path)}fhir`)
+                .expect(/Invalid%20code_challenge_method%20parameter/)
+                .expect(302)
+                .end(done);
+            });
+
+            it(`${path}auth/authorize - validates the code_challenge parameter`, done => {
+                request(app)
+                .get(path + `auth/authorize?code_challenge_method=S256&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=${encodeURIComponent(config.baseUrl + path)}fhir`)
+                .expect(/Missing%20code_challenge%20parameter/)
+                .expect(302)
+                .end(done);
+            });
+
+            const code_verifier = base64url.encode(crypto.randomBytes(32));
+            const hash = crypto.createHash('sha256');
+            hash.update(code_verifier);
+            const code_challenge = base64url.encode(hash.digest());
+            const authorizePayload = {
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    code_challenge_method: 'S256',
+                    code_challenge: code_challenge,
+                    code_verifier: code_verifier,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                };
+
+            it(`POST ${path} - fails with PKCE S256 and an invalid code_verifier`, done => {
+                authorize({...authorizePayload, code_verifier: 'bad-verifier'}).catch(()=> {
+                    done()
+                });
+            });
+ 
+            it(`POST ${path} - succeeds with PKCE S256 and an valid code_verifier`, done => {
+                authorize(authorizePayload).then(()=> {
+                    done()
+                });
+            });
+       
+
+
+
+        });
+
+
+
+
         buildRoutePermutations("auth/authorize").forEach(path => {
             it(`${path} - validates the redirect_uri parameter`, done => {
                 request(app)
