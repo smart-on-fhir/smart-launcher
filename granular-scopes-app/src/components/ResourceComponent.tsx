@@ -9,7 +9,7 @@ import { DataCardInfo } from '../models/DataCardInfo';
 import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 import { DataCardStatus } from '../models/DataCardStatus';
 import { CommonProps } from '../models/CommonProps';
-import Client from 'fhirclient/lib/Client';
+import Client from '../fhirclient/lib/Client';
 import { LaunchScope } from '../models/LaunchScope';
 
 export interface ResourceComponentProps {

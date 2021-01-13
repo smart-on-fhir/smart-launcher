@@ -1,12 +1,11 @@
 import { LaunchScope, ScopeComparison } from './LaunchScope';
 import { IconName } from '@blueprintjs/core';
-import Client from 'fhirclient/lib/Client';
+import Client from '../fhirclient/lib/Client';
 import { SmartConfiguration } from './SmartConfiguration';
 
 export interface CommonProps {
   isUiDark: boolean;
 
-  smartConfig: SmartConfiguration|undefined;
   loadSmartConfig: (() => void);
 
   usePKCE:boolean;

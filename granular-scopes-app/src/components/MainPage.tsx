@@ -22,15 +22,19 @@ import {IconNames} from '@blueprintjs/icons';
 import StandaloneParameters from './StandaloneParameters';
 import { LaunchScope } from '../models/LaunchScope';
 
-import FHIR from 'fhirclient';
-import Client from 'fhirclient/lib/Client';
+import FHIR from '../fhirclient/';
+import Client from '../fhirclient/lib/Client';
+import { fhirclient } from '../fhirclient/lib/types';
+
+// import FHIR from 'fhirclient';
+// import Client from 'fhirclient/lib/Client';
+// import { fhirclient } from 'fhirclient/lib/types';
 import { CopyHelper } from '../util/CopyHelper';
 import DataCard from './DataCard';
 import { DataCardInfo } from '../models/DataCardInfo';
 import { SingleRequestData, RenderDataAsTypes } from '../models/RequestData';
 import { DataCardStatus } from '../models/DataCardStatus';
 import { JwtHelper } from '../util/JwtHelper';
-import { fhirclient } from 'fhirclient/lib/types';
 import ResourceComponent from './ResourceComponent';
 import { CommonProps } from '../models/CommonProps';
 import { SmartConfiguration } from '../models/SmartConfiguration';
@@ -65,7 +69,6 @@ export default function MainPage() {
 
   const [intropectionIsPossible, setIntrospectionIsPossible] = useState<boolean>(false);
 
-  const [smartConfig, setSmartConfig] = useState<SmartConfiguration|undefined>(undefined);
   const smartConfigCardInfo:DataCardInfo = {
     id: 'smart-config-card',
     heading: 'SMART Configuration',
@@ -75,8 +78,6 @@ export default function MainPage() {
   const [smartConfigCardData, setSmartConfigCardData] = useState<SingleRequestData[]>([]);
 
   const [usePKCE, setUsePKCE] = useState<boolean>(true);
-  const [codeChallenge, setCodeChallenge] = useState<string>('');
-  const [codeVerifier, setCodeVerifier] = useState<string>('');
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -104,6 +105,12 @@ export default function MainPage() {
       setUiDark(true);
     } else if (sessionStorage.getItem('uiDark') === 'true') {
       setUiDark(true);
+    }
+
+    if (localStorage.getItem('usePKCE') === 'false') {
+      setUsePKCE(false);
+    } else if (sessionStorage.getItem('usePKCE') === 'false') {
+      setUsePKCE(false);
     }
 
     var url = new URL(window.location.href);
@@ -252,17 +259,10 @@ export default function MainPage() {
 
     try {
       let response:Response = await fetch(url, { method: 'GET' });
-
       let body:string = await response.text();
       let config:SmartConfiguration = JSON.parse(body);
-      setSmartConfig(config);
 
       let lines:string[] = [];
-
-      if ((config.introspection_endpoint) && 
-          (_client?.state.tokenResponse?.id_token)) {
-        setIntrospectionIsPossible(true);
-      }
 
       let data:SingleRequestData = {
         id: `smart-${smartConfigCardData.length}`,
@@ -353,6 +353,12 @@ export default function MainPage() {
   }
 
   function togglePKCE() {
+    if (StorageHelper.isLocalStorageAvailable) {
+      localStorage.setItem('usePKCE', (!usePKCE).toString());
+    } else {
+      sessionStorage.setItem('usePKCE', (!usePKCE).toString());
+    }
+
     setUsePKCE(!usePKCE);
   }
 
@@ -362,7 +368,7 @@ export default function MainPage() {
       return;
     }
 
-    let url:string = smartConfig!.introspection_endpoint;
+    let url:string = _client?.state.introspectionUri || '';
 
     let requestBody:string = 
       encodeURIComponent('token') + '=' +
@@ -424,7 +430,8 @@ export default function MainPage() {
       client_id: appId,
       scope: scopeString,
       iss: aud,
-      redirect_uri: process.env.REACT_APP_REDIRECT_URL || undefined
+      redirect_uri: process.env.REACT_APP_REDIRECT_URL || undefined,
+      usePKCE: usePKCE
     });
   }
 
@@ -465,8 +472,8 @@ export default function MainPage() {
     }
 
     let url:string;
-    if ((smartConfig) && (smartConfig.authorization_endpoint)) {
-      url = smartConfig.authorization_endpoint;
+    if ((_client?.state) && (_client?.state.authorizeUri)) {
+      url = _client?.state.authorizeUri;
     } else {
       url = _client?.state.serverUrl.replace(/fhir$/, 'auth/token') ?? aud;
     }
@@ -593,7 +600,8 @@ export default function MainPage() {
     console.log('SMART Ready:', client);
     _client = client;
 
-    if (smartConfig?.introspection_endpoint) {
+    if ((_client.state.introspectionUri) && 
+        (_client.state.tokenResponse?.access_token)) {
       setIntrospectionIsPossible(true);
     }
 
@@ -698,7 +706,9 @@ export default function MainPage() {
       '|-------|-------|\n' +
       `|client id|${appId}|\n` +
       `|scopes|${scopeString}|\n` +
-      `|aud|${currentAud}|\n`;
+      `|aud|${currentAud}|\n` +
+      `|PKCE:Challenge|${client.state.codeChallenge}|\n` +
+      `|PKCE:Verifier|${client.state.codeVerifier}|\n`;
 
     buildAuthCardDataSuccess(false, request, RenderDataAsTypes.Markdown, false, grants);
   }
@@ -755,7 +765,6 @@ export default function MainPage() {
 
     let common:CommonProps = {
       isUiDark: uiDark,
-      smartConfig: smartConfig,
       loadSmartConfig: loadSmartConfig,
       usePKCE: usePKCE,
       togglePKCE: togglePKCE,
@@ -834,7 +843,6 @@ export default function MainPage() {
 
   const currentCommon:CommonProps = {
     isUiDark: uiDark,
-    smartConfig: smartConfig,
     loadSmartConfig: loadSmartConfig,
     usePKCE: usePKCE,
     togglePKCE: togglePKCE,
