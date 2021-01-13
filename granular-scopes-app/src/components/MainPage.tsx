@@ -33,6 +33,7 @@ import { JwtHelper } from '../util/JwtHelper';
 import { fhirclient } from 'fhirclient/lib/types';
 import ResourceComponent from './ResourceComponent';
 import { CommonProps } from '../models/CommonProps';
+import { SmartConfiguration } from '../models/SmartConfiguration';
 
 export interface MainPageProps {}
 
@@ -62,6 +63,21 @@ export default function MainPage() {
   const [fhirUser, setFhirUser] = useState<string>('');
   const [patientId, setPatientId] = useState<string>('');
 
+  const [intropectionIsPossible, setIntrospectionIsPossible] = useState<boolean>(false);
+
+  const [smartConfig, setSmartConfig] = useState<SmartConfiguration|undefined>(undefined);
+  const smartConfigCardInfo:DataCardInfo = {
+    id: 'smart-config-card',
+    heading: 'SMART Configuration',
+    description: '',
+    optional: false,
+  }
+  const [smartConfigCardData, setSmartConfigCardData] = useState<SingleRequestData[]>([]);
+
+  const [usePKCE, setUsePKCE] = useState<boolean>(true);
+  const [codeChallenge, setCodeChallenge] = useState<string>('');
+  const [codeVerifier, setCodeVerifier] = useState<string>('');
+
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
     heading: 'Authorization Information',
@@ -69,6 +85,14 @@ export default function MainPage() {
     optional: false,
   }
   const [authCardData, setAuthCardData] = useState<SingleRequestData[]>([]);
+
+  const introspectionCardInfo:DataCardInfo = {
+    id: 'introspection-card',
+    heading: 'Token Introspection',
+    description: '',
+    optional: false,
+  }
+  const [introspectionCardData, setIntrospectionCardData] = useState<SingleRequestData[]>([]);
 
   const [showUserCard, setShowUserCard] = useState<boolean>(false);
   const [userResourceType, setUserResourceType] = useState<string>('');
@@ -211,6 +235,183 @@ export default function MainPage() {
     }
   }
 
+  async function loadSmartConfig() {
+    if (!aud) {
+      showToastMessage('A FHIR Server is required to fetch SMART Configuration', IconNames.ERROR);
+      return;
+    }
+
+    let now:Date = new Date();
+    let url:string;
+
+    if (aud.endsWith('/')) {
+      url = `${aud}.well-known/smart-configuration`;
+    } else {
+      url = `${aud}/.well-known/smart-configuration`;
+    }
+
+    try {
+      let response:Response = await fetch(url, { method: 'GET' });
+
+      let body:string = await response.text();
+      let config:SmartConfiguration = JSON.parse(body);
+      setSmartConfig(config);
+
+      let lines:string[] = [];
+
+      if ((config.introspection_endpoint) && 
+          (_client?.state.tokenResponse?.id_token)) {
+        setIntrospectionIsPossible(true);
+      }
+
+      let data:SingleRequestData = {
+        id: `smart-${smartConfigCardData.length}`,
+        name: `SMART Config Load #${smartConfigCardData.length}`,
+        requestUrl: url,
+        responseData: JSON.stringify(config, null, 2),
+        responseDataType: RenderDataAsTypes.JSON,
+      }
+
+      let info:string =
+        `* Processed at: \`${now.toLocaleString()}\`\n\n`;
+
+      info +=
+        '  | Endpoint | URL |\n' +
+        '  |-------|-------|\n' +
+        `  | Authorization | ${config.authorization_endpoint} |\n` +
+        `  | Introspection | ${config.introspection_endpoint} |\n` +
+        `  | Management | ${config.management_endpoint} |\n` +
+        `  | Revocation | ${config.revocation_endpoint} |\n` +
+        `  | Token | ${config.token_endpoint} |\n` + 
+        '\n';
+
+      lines = [];
+      if (config.code_challenge_methods_supported.length > 0) {
+        config.code_challenge_methods_supported.forEach((value:string) => {
+          lines.push(`  * \`${value}\``);
+        });
+        lines.sort();
+        info += '* Code Challenge Methods Supported\n';
+        info += lines.join('\n');
+        info += '\n\n\n';
+      }
+
+      lines = [];
+      if (config.capabilities.length > 0) {
+        config.capabilities.forEach((value:string) => {
+          lines.push(`  * \`${value}\``);
+        });
+        lines.sort();
+        info += '* Capabilities\n';
+        info += lines.join('\n');
+        info += '\n\n\n';
+      }
+
+      lines = [];
+      if (config.scopes_supported.length > 0) {
+        config.scopes_supported.forEach((value:string) => {
+          lines.push(`  * \`${value}\``);
+        });
+        lines.sort();
+        info += '* Scopes Supported\n';
+        info += lines.join('\n');
+        info += '\n\n\n';
+      }
+
+      lines = [];
+      if (config.response_types_supported.length > 0) {
+        config.response_types_supported.forEach((value:string) => {
+          lines.push(`  * \`${value}\``);
+        });
+        lines.sort();
+        info += '* Response Types Supported\n';
+        info += lines.join('\n');
+        info += '\n\n\n';
+      }
+
+      data.info = info;
+      data.infoDataType = RenderDataAsTypes.Markdown;
+
+      let updatedData:SingleRequestData[] = smartConfigCardData.slice();
+      updatedData.push(data);
+      setSmartConfigCardData(updatedData);
+
+    } catch (error) {
+
+      let data:SingleRequestData = {
+        id: `smart-${smartConfigCardData.length}`,
+        name: `SMART Config Load #${smartConfigCardData.length}`,
+        requestUrl: url,
+        responseData: JSON.stringify(error, null, 2),
+        responseDataType: RenderDataAsTypes.Error,
+      }
+
+      let updatedData:SingleRequestData[] = smartConfigCardData.slice();
+      updatedData.push(data);
+      setSmartConfigCardData(updatedData);
+    }
+  }
+
+  function togglePKCE() {
+    setUsePKCE(!usePKCE);
+  }
+
+  async function introspectToken() {
+    if (!intropectionIsPossible) {
+      showToastMessage('Introspection is currently NOT available', IconNames.ERROR);
+      return;
+    }
+
+    let url:string = smartConfig!.introspection_endpoint;
+
+    let requestBody:string = 
+      encodeURIComponent('token') + '=' +
+      encodeURIComponent(_client?.state.tokenResponse?.access_token || '');
+
+    try {
+      let headers:Headers = new Headers();
+      headers.append('Content-Type', 'application/x-www-form-urlencoded');
+
+      let response:Response = await fetch(url, { 
+        method: 'POST',
+        headers: headers,
+        body: requestBody,
+      });
+
+      let body:string = await response.text();
+      let parsed = JSON.parse(body);
+
+      let data:SingleRequestData = {
+        id: `introspection-${introspectionCardData.length}`,
+        name: `Token Introspection #${introspectionCardData.length}`,
+        requestUrl: url,
+        requestData: requestBody,
+        requestDataType: RenderDataAsTypes.Text,
+        responseData: JSON.stringify(parsed, null, 2),
+        responseDataType: RenderDataAsTypes.JSON,
+      }
+
+      let updatedData:SingleRequestData[] = introspectionCardData.slice();
+      updatedData.push(data);
+      setIntrospectionCardData(updatedData);
+    } catch (error) {
+
+      let data:SingleRequestData = {
+        id: `introspection-${introspectionCardData.length}`,
+        name: `Token Introspection #${introspectionCardData.length}`,
+        requestUrl: url,
+        requestData: requestBody,
+        requestDataType: RenderDataAsTypes.Text,
+        responseData: JSON.stringify(error, null, 2),
+        responseDataType: RenderDataAsTypes.Error,
+      }
+
+      let updatedData:SingleRequestData[] = introspectionCardData.slice();
+      updatedData.push(data);
+      setIntrospectionCardData(updatedData);
+    }
+  }
+
   function startAuth() {
     if (!aud) {
       showToastMessage('Standalone launch requires an Audience!', IconNames.ERROR);
@@ -239,9 +440,9 @@ export default function MainPage() {
       .then((refreshedState:fhirclient.ClientState) => {
         buildAuthCardDataSuccess(
             true,
-            request, 
-            RenderDataAsTypes.Text, 
-            false, 
+            request,
+            RenderDataAsTypes.Text,
+            false,
             requestedScopes.getScopeGrants(_client!.state.scope ?? ''));
       })
       .catch((reason:any) => {
@@ -263,7 +464,12 @@ export default function MainPage() {
       name = `SMART Launch - ${now.toLocaleString()}`;
     }
 
-    let url:string = _client?.state.serverUrl.replace(/fhir$/, 'auth/token') ?? aud;
+    let url:string;
+    if ((smartConfig) && (smartConfig.authorization_endpoint)) {
+      url = smartConfig.authorization_endpoint;
+    } else {
+      url = _client?.state.serverUrl.replace(/fhir$/, 'auth/token') ?? aud;
+    }
 
     let data:SingleRequestData = {
       id: id,
@@ -293,11 +499,11 @@ export default function MainPage() {
   }
 
   function buildAuthCardDataSuccess(
-    isRenewal:boolean, 
-    request?:any, 
+    isRenewal:boolean,
+    request?:any,
     requestDataType?:RenderDataAsTypes,
-    stringifyRequest?:boolean, 
-    scopeGrants?:LaunchScope) 
+    stringifyRequest?:boolean,
+    scopeGrants?:LaunchScope)
     {
     let now:Date = new Date();
     let expires:number = _client?.state.tokenResponse?.expires_in ?? -1;
@@ -353,7 +559,7 @@ export default function MainPage() {
       scopeGrants.forEach((granted:boolean, key:string) => {
         lines.push(`|${key.replace('|', '\\|')}|${granted ? 'Accepted' : 'Denied'}|`);
       });
-      
+
       lines.sort();
       info += lines.join('\n');
 
@@ -386,6 +592,10 @@ export default function MainPage() {
     // log the client in the console for those who want to inspect it
     console.log('SMART Ready:', client);
     _client = client;
+
+    if (smartConfig?.introspection_endpoint) {
+      setIntrospectionIsPossible(true);
+    }
 
     let currentAud:string = sessionStorage.getItem('aud') ?? '';
 
@@ -424,7 +634,7 @@ export default function MainPage() {
       if (!requested) {
         return;
       }
-      
+
       switch (name) {
         case 'openid':
         case 'fhirUser':
@@ -449,7 +659,7 @@ export default function MainPage() {
             resources.push('Encounter');
           }
         break;
-  
+
         case 'user/*.*':
           showUser = true;
           if (resources.indexOf('Patient') === -1) {
@@ -460,7 +670,7 @@ export default function MainPage() {
           }
           setUserResourceType(client.user.resourceType ?? '');
         break;
-  
+
         default:
           let split:string[] = name.split('/');
           let components:string[] = split[1].split(/[.?]/);
@@ -483,10 +693,10 @@ export default function MainPage() {
     //   sessionStorage.removeItem(`r_${currentAud}`);
     // }
 
-    let request:string = 
+    let request:string =
       '| Name | Value |\n' +
       '|-------|-------|\n' +
-      `|client id|${appId}|\n` + 
+      `|client id|${appId}|\n` +
       `|scopes|${scopeString}|\n` +
       `|aud|${currentAud}|\n`;
 
@@ -545,6 +755,12 @@ export default function MainPage() {
 
     let common:CommonProps = {
       isUiDark: uiDark,
+      smartConfig: smartConfig,
+      loadSmartConfig: loadSmartConfig,
+      usePKCE: usePKCE,
+      togglePKCE: togglePKCE,
+      intropectionIsPossible: intropectionIsPossible,
+      introspectToken: introspectToken,
       aud: aud,
       setAud: setAudAndSave,
       appId: appId,
@@ -618,6 +834,12 @@ export default function MainPage() {
 
   const currentCommon:CommonProps = {
     isUiDark: uiDark,
+    smartConfig: smartConfig,
+    loadSmartConfig: loadSmartConfig,
+    usePKCE: usePKCE,
+    togglePKCE: togglePKCE,
+    intropectionIsPossible: intropectionIsPossible,
+    introspectToken: introspectToken,
     aud: aud,
     setAud: setAudAndSave,
     appId: appId,
@@ -668,8 +890,20 @@ export default function MainPage() {
         common={currentCommon}
         />
       <DataCard
+        info={smartConfigCardInfo}
+        data={smartConfigCardData}
+        status={_statusAvailable}
+        common={currentCommon}
+        />
+      <DataCard
         info={authCardInfo}
         data={authCardData}
+        status={_statusAvailable}
+        common={currentCommon}
+        />
+      <DataCard
+        info={introspectionCardInfo}
+        data={introspectionCardData}
         status={_statusAvailable}
         common={currentCommon}
         />

@@ -27,7 +27,7 @@ module.exports = (req, res) => {
             fhirUser:  id_claims.fhirUser,
         });
 
-    } catch {
-        res.json({active: false})
+    } catch (err) {
+        res.json({active: false, error: err})
     }
 };

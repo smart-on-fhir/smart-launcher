@@ -12,6 +12,7 @@ import {
   FormGroup,
   InputGroup,
   Divider,
+  Checkbox,
 } from '@blueprintjs/core';
 import ParametersTabV1 from './ParametersTabV1';
 import ParametersTabScenarios from './ParametersTabScenarios';
@@ -85,6 +86,18 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           onChange={handleInputAppIdChange}
           />
       </FormGroup>
+      <Tooltip
+        content='Use PKCE'
+        >
+        <Checkbox
+          key='enable-pkce'
+          className='fixed-checkbox'
+          label='Use PKCE'
+          inline={true}
+          checked={props.common.usePKCE}
+          onClick={() => props.common.togglePKCE()}
+          />
+      </Tooltip>
       <Divider />
       <Tabs
         id='standalone-parameter-tabs'
@@ -137,6 +150,28 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
           text='Refresh Token'
           disabled={false}
           onClick={() => props.common.refreshAuth()}
+          />
+      </Tooltip>
+      <Tooltip
+        content='Fetch the current .well-known/smart-configuration data'
+        >
+        <Button
+          key='load-smart-config'
+          id='load-smart-config'
+          text='Get SMART Config'
+          disabled={false}
+          onClick={() => props.common.loadSmartConfig()}
+          />
+      </Tooltip>
+      <Tooltip
+        content='Ask the server to perform token introspection'
+        >
+        <Button
+          key='introspect-token'
+          id='introspect-token'
+          text='Introspect Token'
+          disabled={!props.common.intropectionIsPossible}
+          onClick={() => props.common.introspectToken()}
           />
       </Tooltip>
     </Card>
