@@ -1,8 +1,8 @@
-"use strict";
+// "use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
 
 const smart_1 = require("../smart");
 
@@ -16,7 +16,7 @@ const cjs_ponyfill_1 = require("abortcontroller-polyfill/dist/cjs-ponyfill");
  */
 
 
-class NodeAdapter {
+export default class NodeAdapter {
   /**
    * @param options Environment-specific options
    */
@@ -150,4 +150,4 @@ class NodeAdapter {
 
 }
 
-exports.default = NodeAdapter;
+// exports.default = NodeAdapter;

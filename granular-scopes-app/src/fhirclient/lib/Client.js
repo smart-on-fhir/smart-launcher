@@ -4,9 +4,9 @@ require("core-js/modules/es.array.flat");
 
 require("core-js/modules/es.array.unscopables.flat");
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
 
 const lib_1 = require("./lib");
 
@@ -20,7 +20,7 @@ const settings_1 = require("./settings"); // $lab:coverage:off$
 //   Response
 // } = typeof FHIRCLIENT_PURE !== "undefined" ? window : require("cross-fetch"); // $lab:coverage:on$
 
-const debug = lib_1.debug.extend("client");
+// const debug = lib_1.debug.extend("client");
 /**
  * Adds patient context to requestOptions object to be used with [[Client.request]]
  * @param requestOptions Can be a string URL (relative to the serviceUrl), or an
@@ -195,7 +195,7 @@ function resolveRefs(obj, fhirOptions, cache, client, signal) {
  */
 
 
-class Client {
+export default class Client {
   /**
    * Validates the parameters, creates an instance and tries to connect it to
    * FhirJS, if one is available globally.
@@ -975,5 +975,3 @@ class Client {
   }
 
 }
-
-exports.default = Client;

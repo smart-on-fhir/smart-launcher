@@ -1,14 +1,14 @@
-"use strict";
+// "use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
 
 const NodeAdapter_1 = require("./NodeAdapter");
 
 const ServerStorage_1 = require("../storage/ServerStorage");
 
-class HapiAdapter extends NodeAdapter_1.default {
+export default class HapiAdapter extends NodeAdapter_1.default {
   /**
    * @param options Environment-specific options
    */
@@ -86,4 +86,4 @@ class HapiAdapter extends NodeAdapter_1.default {
 
 }
 
-exports.default = HapiAdapter;
+// exports.default = HapiAdapter;

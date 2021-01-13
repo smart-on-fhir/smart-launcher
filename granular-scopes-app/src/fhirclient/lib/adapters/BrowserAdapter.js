@@ -1,8 +1,8 @@
 /* eslint-disable */
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
 
 const smart_1 = require("../smart");
 
@@ -14,7 +14,7 @@ const BrowserStorage_1 = require("../storage/BrowserStorage");
  */
 
 
-class BrowserAdapter {
+export default class BrowserAdapter {
   /**
    * @param options Environment-specific options
    */
@@ -158,4 +158,4 @@ class BrowserAdapter {
 
 }
 
-exports.default = BrowserAdapter;
+// exports.default = BrowserAdapter;

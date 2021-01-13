@@ -4,10 +4,10 @@
  * are defined here so that tests can import this library and test them.
  */
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getTargetWindow = exports.getPatientParam = exports.byCodes = exports.byCode = exports.getAccessTokenExpiration = exports.jwtDecode = exports.randomString = exports.absolute = exports.makeArray = exports.setPath = exports.getPath = exports.humanizeError = exports.fetchConformanceStatement = exports.getAndCache = exports.request = exports.responseToJSON = exports.checkResponse = exports.units = exports.debug = void 0;
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
+// exports.getTargetWindow = exports.getPatientParam = exports.byCodes = exports.byCode = exports.getAccessTokenExpiration = exports.jwtDecode = exports.randomString = exports.absolute = exports.makeArray = exports.setPath = exports.getPath = exports.humanizeError = exports.fetchConformanceStatement = exports.getAndCache = exports.request = exports.responseToJSON = exports.checkResponse = exports.units = exports.debug = void 0;
 
 const HttpError_1 = require("./HttpError");
 
@@ -23,7 +23,7 @@ const debug = require("debug"); // $lab:coverage:off$
 
 const _debug = debug("FHIR");
 
-exports.debug = _debug;
+// exports.debug = _debug;
 /**
  * The cache for the `getAndCache` function
  */
@@ -33,7 +33,7 @@ const cache = {};
  * A namespace with functions for converting between different measurement units
  */
 
-exports.units = {
+export const units = {
   cm({
     code,
     value
@@ -90,7 +90,7 @@ function ensureNumerical({
  */
 
 
-async function checkResponse(resp) {
+export async function checkResponse(resp) {
   if (!resp.ok) {
     throw await humanizeError(resp);
   }
@@ -98,18 +98,18 @@ async function checkResponse(resp) {
   return resp;
 }
 
-exports.checkResponse = checkResponse;
+// exports.checkResponse = checkResponse;
 /**
  * Used in fetch Promise chains to return the JSON version of the response.
  * Note that `resp.json()` will throw on empty body so we use resp.text()
  * instead.
  */
 
-function responseToJSON(resp) {
+export function responseToJSON(resp) {
   return resp.text().then(text => text.length ? JSON.parse(text) : "");
 }
 
-exports.responseToJSON = responseToJSON;
+// exports.responseToJSON = responseToJSON;
 /**
  * This is our built-in request function. It does a few things by default
  * (unless told otherwise):
@@ -121,7 +121,7 @@ exports.responseToJSON = responseToJSON;
  * - Otherwise return the response object on which we call stuff like `.blob()`
  */
 
-function request(url, options = {}) {
+export function request(url, options = {}) {
   return fetch(url, Object.assign(Object.assign({
     mode: "cors"
   }, options), {
@@ -178,7 +178,7 @@ function request(url, options = {}) {
   });
 }
 
-exports.request = request;
+// exports.request = request;
 /**
  * Makes a request using `fetch` and stores the result in internal memory cache.
  * The cache is cleared when the page is unloaded.
@@ -188,7 +188,7 @@ exports.request = request;
  * already been cached.
  */
 
-function getAndCache(url, requestOptions, force = process.env.NODE_ENV === "test") {
+export function getAndCache(url, requestOptions, force = process.env.NODE_ENV === "test") {
   if (force || !cache[url]) {
     cache[url] = request(url, requestOptions);
     return cache[url];
@@ -197,7 +197,7 @@ function getAndCache(url, requestOptions, force = process.env.NODE_ENV === "test
   return Promise.resolve(cache[url]);
 }
 
-exports.getAndCache = getAndCache;
+// exports.getAndCache = getAndCache;
 /**
  * Fetches the conformance statement from the given base URL.
  * Note that the result is cached in memory (until the page is reloaded in the
@@ -206,20 +206,20 @@ exports.getAndCache = getAndCache;
  * @param [requestOptions] Any options passed to the fetch call
  */
 
-function fetchConformanceStatement(baseUrl = "/", requestOptions) {
+export function fetchConformanceStatement(baseUrl = "/", requestOptions) {
   const url = String(baseUrl).replace(/\/*$/, "/") + "metadata";
   return getAndCache(url, requestOptions).catch(ex => {
     throw new Error(`Failed to fetch the conformance statement from "${url}". ${ex}`);
   });
 }
 
-exports.fetchConformanceStatement = fetchConformanceStatement;
+// exports.fetchConformanceStatement = fetchConformanceStatement;
 /**
  * Given a response object, generates and throws detailed HttpError.
  * @param resp The `Response` object of a failed `fetch` request
  */
 
-async function humanizeError(resp) {
+export async function humanizeError(resp) {
   let msg = `${resp.status} ${resp.statusText}\nURL: ${resp.url}`;
   let body = null;
 
@@ -251,7 +251,7 @@ async function humanizeError(resp) {
   throw new HttpError_1.default(msg, resp.status, resp.statusText, body);
 }
 
-exports.humanizeError = humanizeError;
+// exports.humanizeError = humanizeError;
 /**
  * Walks through an object (or array) and returns the value found at the
  * provided path. This function is very simple so it intentionally does not
@@ -262,7 +262,7 @@ exports.humanizeError = humanizeError;
  * @returns {*} Whatever is found in the path or undefined
  */
 
-function getPath(obj, path = "") {
+export function getPath(obj, path = "") {
   path = path.trim();
 
   if (!path) {
@@ -285,7 +285,7 @@ function getPath(obj, path = "") {
   return result;
 }
 
-exports.getPath = getPath;
+// exports.getPath = getPath;
 /**
  * Like getPath, but if the node is found, its value is set to @value
  * @param obj The object (or Array) to walk through
@@ -295,7 +295,7 @@ exports.getPath = getPath;
  * @returns The modified object
  */
 
-function setPath(obj, path, value, createEmpty = false) {
+export function setPath(obj, path, value, createEmpty = false) {
   path.trim().split(".").reduce((out, key, idx, arr) => {
     if (out && idx === arr.length - 1) {
       out[key] = value;
@@ -310,7 +310,7 @@ function setPath(obj, path, value, createEmpty = false) {
   return obj;
 }
 
-exports.setPath = setPath;
+// exports.setPath = setPath;
 /**
  * If the argument is an array returns it as is. Otherwise puts it in an array
  * (`[arg]`) and returns the result
@@ -318,7 +318,7 @@ exports.setPath = setPath;
  * @category Utility
  */
 
-function makeArray(arg) {
+export function makeArray(arg) {
   if (Array.isArray(arg)) {
     return arg;
   }
@@ -326,7 +326,7 @@ function makeArray(arg) {
   return [arg];
 }
 
-exports.makeArray = makeArray;
+// exports.makeArray = makeArray;
 /**
  * Given a path, converts it to absolute url based on the `baseUrl`. If baseUrl
  * is not provided, the result would be a rooted path (one that starts with `/`).
@@ -334,13 +334,13 @@ exports.makeArray = makeArray;
  * @param baseUrl The base URL
  */
 
-function absolute(path, baseUrl) {
+export function absolute(path, baseUrl) {
   if (path.match(/^http/)) return path;
   if (path.match(/^urn/)) return path;
   return String(baseUrl || "").replace(/\/+$/, "") + "/" + path.replace(/^\/+/, "");
 }
 
-exports.absolute = absolute;
+// exports.absolute = absolute;
 /**
  * Generates random strings. By default this returns random 8 characters long
  * alphanumeric strings.
@@ -350,7 +350,7 @@ exports.absolute = absolute;
  * @category Utility
  */
 
-function randomString(strLength = 8, charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") {
+export function randomString(strLength = 8, charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") {
   const result = [];
   const len = charSet.length;
 
@@ -361,7 +361,7 @@ function randomString(strLength = 8, charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
   return result.join("");
 }
 
-exports.randomString = randomString;
+// exports.randomString = randomString;
 /**
  * Decodes a JWT token and returns it's body.
  * @param token The token to read
@@ -369,12 +369,12 @@ exports.randomString = randomString;
  * @category Utility
  */
 
-function jwtDecode(token, env) {
+export function jwtDecode(token, env) {
   const payload = token.split(".")[1];
   return payload ? JSON.parse(env.atob(payload)) : null;
 }
 
-exports.jwtDecode = jwtDecode;
+// exports.jwtDecode = jwtDecode;
 /**
  * Given a token response, computes and returns the expiresAt timestamp.
  * Note that this should only be used immediately after an access token is
@@ -383,7 +383,7 @@ exports.jwtDecode = jwtDecode;
  * @param env
  */
 
-function getAccessTokenExpiration(tokenResponse, env) {
+export function getAccessTokenExpiration(tokenResponse, env) {
   const now = Math.floor(Date.now() / 1000); // Option 1 - using the expires_in property of the token response
 
   if (tokenResponse.expires_in) {
@@ -403,7 +403,7 @@ function getAccessTokenExpiration(tokenResponse, env) {
   return now + 300;
 }
 
-exports.getAccessTokenExpiration = getAccessTokenExpiration;
+// exports.getAccessTokenExpiration = getAccessTokenExpiration;
 /**
  * Groups the observations by code. Returns a map that will look like:
  * ```js
@@ -417,7 +417,7 @@ exports.getAccessTokenExpiration = getAccessTokenExpiration;
  * @param property The name of a CodeableConcept property to group by
  */
 
-function byCode(observations, property) {
+export function byCode(observations, property) {
   const ret = {};
 
   function handleCodeableConcept(concept, observation) {
@@ -445,7 +445,7 @@ function byCode(observations, property) {
   return ret;
 }
 
-exports.byCode = byCode;
+// exports.byCode = byCode;
 /**
  * First groups the observations by code using `byCode`. Then returns a function
  * that accepts codes as arguments and will return a flat array of observations
@@ -460,18 +460,18 @@ exports.byCode = byCode;
  * @param property The name of a CodeableConcept property to group by
  */
 
-function byCodes(observations, property) {
+export function byCodes(observations, property) {
   const bank = byCode(observations, property);
   return (...codes) => codes.filter(code => code + "" in bank).reduce((prev, code) => prev.concat(bank[code + ""]), []);
 }
 
-exports.byCodes = byCodes;
+// exports.byCodes = byCodes;
 /**
  * Given a conformance statement and a resource type, returns the name of the
  * URL parameter that can be used to scope the resource type by patient ID.
  */
 
-function getPatientParam(conformance, resourceType) {
+export function getPatientParam(conformance, resourceType) {
   // Find what resources are supported by this server
   const resources = getPath(conformance, "rest.0.resource") || []; // Check if this resource is supported
 
@@ -501,7 +501,7 @@ function getPatientParam(conformance, resourceType) {
   return out;
 }
 
-exports.getPatientParam = getPatientParam;
+// exports.getPatientParam = getPatientParam;
 /**
  * Resolves a reference to target window. It may also open new window or tab if
  * the `target = "popup"` or `target = "_blank"`.
@@ -510,7 +510,7 @@ exports.getPatientParam = getPatientParam;
  * @param height Only used when `target = "popup"`
  */
 
-async function getTargetWindow(target, width = 800, height = 720) {
+export async function getTargetWindow(target, width = 800, height = 720) {
   // The target can be a function that returns the target. This can be
   // used to open a layer pop-up with an iframe and then return a reference
   // to that iframe (or its name)
@@ -605,4 +605,4 @@ async function getTargetWindow(target, width = 800, height = 720) {
   return self;
 }
 
-exports.getTargetWindow = getTargetWindow;
+// exports.getTargetWindow = getTargetWindow;

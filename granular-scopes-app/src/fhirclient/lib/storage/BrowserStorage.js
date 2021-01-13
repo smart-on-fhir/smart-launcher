@@ -1,10 +1,10 @@
-"use strict";
+// "use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
 
-class Storage {
+export default class Storage {
   /**
    * Gets the value at `key`. Returns a promise that will be resolved
    * with that value (or undefined for missing keys).
@@ -46,4 +46,4 @@ class Storage {
 
 }
 
-exports.default = Storage;
+// exports.default = Storage;

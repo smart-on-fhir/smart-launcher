@@ -1,9 +1,9 @@
 /* eslint-disable */
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.init = exports.ready = exports.buildTokenRequest = exports.completeAuth = exports.onMessage = exports.isInPopUp = exports.isInFrame = exports.authorize = exports.getSecurityExtensions = exports.fetchWellKnownJson = exports.KEY = void 0;
+// Object.defineProperty(exports, "__esModule", {
+//   value: true
+// });
+// exports.init = exports.ready = exports.buildTokenRequest = exports.completeAuth = exports.onMessage = exports.isInPopUp = exports.isInFrame = exports.authorize = exports.getSecurityExtensions = exports.fetchWellKnownJson = exports.KEY = void 0;
 /* global window */
 
 const lib_1 = require("./lib");
@@ -12,13 +12,13 @@ const Client_1 = require("./Client");
 
 const settings_1 = require("./settings");
 
-Object.defineProperty(exports, "KEY", {
-  enumerable: true,
-  get: function () {
-    return settings_1.SMART_KEY;
-  }
-});
-const debug = lib_1.debug.extend("oauth2");
+// Object.defineProperty(exports, "KEY", {
+//   enumerable: true,
+//   get: function () {
+//     return settings_1.SMART_KEY;
+//   }
+// });
+// const debug = lib_1.debug.extend("oauth2");
 
 function isBrowser() {
   return typeof window === "object";
@@ -31,14 +31,14 @@ function isBrowser() {
  */
 
 
-function fetchWellKnownJson(baseUrl = "/", requestOptions) {
+export function fetchWellKnownJson(baseUrl = "/", requestOptions) {
   const url = String(baseUrl).replace(/\/*$/, "/") + ".well-known/smart-configuration";
   return lib_1.getAndCache(url, requestOptions).catch(ex => {
     throw new Error(`Failed to fetch the well-known json "${url}". ${ex.message}`);
   });
 }
 
-exports.fetchWellKnownJson = fetchWellKnownJson;
+// exports.fetchWellKnownJson = fetchWellKnownJson;
 /**
  * Fetch a "WellKnownJson" and extract the SMART endpoints from it
  */
@@ -212,7 +212,7 @@ function base64urlEncode(value) {
  */
 
 
-function getSecurityExtensions(env, baseUrl = "/") {
+export function getSecurityExtensions(env, baseUrl = "/") {
   const AbortController = env.getAbortController();
   const abortController1 = new AbortController();
   const abortController2 = new AbortController(); // v2 fields are NOT available via the conformance statement, so ONLY use well-known.
@@ -236,7 +236,7 @@ function getSecurityExtensions(env, baseUrl = "/") {
   }]);
 }
 
-exports.getSecurityExtensions = getSecurityExtensions;
+// exports.getSecurityExtensions = getSecurityExtensions;
 /**
  * Starts the SMART Launch Sequence.
  * > **IMPORTANT**:
@@ -249,7 +249,7 @@ exports.getSecurityExtensions = getSecurityExtensions;
  * @param [_noRedirect] If true, resolve with the redirect url without trying to redirect to it
  */
 
-async function authorize(env, params = {}, _noRedirect = false) {
+export async function authorize(env, params = {}, _noRedirect = false) {
   // Obtain input
   const {
     redirect_uri,
@@ -468,7 +468,7 @@ async function authorize(env, params = {}, _noRedirect = false) {
   }
 }
 
-exports.authorize = authorize;
+// exports.authorize = authorize;
 
 function redirectPost(target, url, params) {
   var form = target.document.createElement('form');
@@ -501,7 +501,7 @@ function redirectPost(target, url, params) {
  */
 
 
-function isInFrame() {
+export function isInFrame() {
   try {
     return self !== top && parent !== self;
   } catch (e) {
@@ -509,7 +509,7 @@ function isInFrame() {
   }
 }
 
-exports.isInFrame = isInFrame;
+// exports.isInFrame = isInFrame;
 /**
  * Checks if called within another window (popup or tab). Only works in browsers!
  * To consider itself called in a new window, this function verifies that:
@@ -518,7 +518,7 @@ exports.isInFrame = isInFrame;
  * 3. `!!window.name` The window has a `name` set
  */
 
-function isInPopUp() {
+export function isInPopUp() {
   try {
     return self === top && !!opener && opener !== self && !!window.name;
   } catch (e) {
@@ -526,28 +526,28 @@ function isInPopUp() {
   }
 }
 
-exports.isInPopUp = isInPopUp;
+// exports.isInPopUp = isInPopUp;
 /**
  * Another window can send a "completeAuth" message to this one, making it to
  * navigate to e.data.url
  * @param e The message event
  */
 
-function onMessage(e) {
+export function onMessage(e) {
   if (e.data.type == "completeAuth" && e.origin === new URL(self.location.href).origin) {
     window.removeEventListener("message", onMessage);
     window.location.href = e.data.url;
   }
 }
 
-exports.onMessage = onMessage;
+// exports.onMessage = onMessage;
 /**
  * The completeAuth function should only be called on the page that represents
  * the redirectUri. We typically land there after a redirect from the
  * authorization server..
  */
 
-async function completeAuth(env) {
+export async function completeAuth(env) {
   var _a, _b;
 
   const url = env.getUrl();
@@ -706,13 +706,13 @@ async function completeAuth(env) {
   return client;
 }
 
-exports.completeAuth = completeAuth;
+// exports.completeAuth = completeAuth;
 /**
  * Builds the token request options. Does not make the request, just
  * creates it's configuration and returns it in a Promise.
  */
 
-function buildTokenRequest(env, code, state) {
+export function buildTokenRequest(env, code, state) {
   const {
     redirectUri,
     clientSecret,
@@ -764,14 +764,14 @@ function buildTokenRequest(env, code, state) {
   return requestOptions;
 }
 
-exports.buildTokenRequest = buildTokenRequest;
+// exports.buildTokenRequest = buildTokenRequest;
 /**
  * @param env
  * @param [onSuccess]
  * @param [onError]
  */
 
-async function ready(env, onSuccess, onError) {
+export async function ready(env, onSuccess, onError) {
   let task = completeAuth(env);
 
   if (onSuccess) {
@@ -785,7 +785,7 @@ async function ready(env, onSuccess, onError) {
   return task;
 }
 
-exports.ready = ready;
+// exports.ready = ready;
 /**
  * This function can be used when you want to handle everything in one page
  * (no launch endpoint needed). You can think of it as if it does:
@@ -817,7 +817,7 @@ exports.ready = ready;
  * @param options The authorize options
  */
 
-async function init(env, options) {
+export async function init(env, options) {
   const url = env.getUrl();
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state"); // if `code` and `state` params are present we need to complete the auth flow
@@ -850,4 +850,4 @@ async function init(env, options) {
   });
 }
 
-exports.init = init;
+// exports.init = init;
