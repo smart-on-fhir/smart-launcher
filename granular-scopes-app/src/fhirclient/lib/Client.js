@@ -21,6 +21,8 @@ const settings_1 = require("./settings"); // $lab:coverage:off$
 // } = typeof FHIRCLIENT_PURE !== "undefined" ? window : require("cross-fetch"); // $lab:coverage:on$
 
 // const debug = lib_1.debug.extend("client");
+const debug = console.log;
+
 /**
  * Adds patient context to requestOptions object to be used with [[Client.request]]
  * @param requestOptions Can be a string URL (relative to the serviceUrl), or an

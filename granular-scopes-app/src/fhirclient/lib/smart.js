@@ -20,6 +20,8 @@ const settings_1 = require("./settings");
 // });
 // const debug = lib_1.debug.extend("oauth2");
 
+const debug = console.log;
+
 function isBrowser() {
   return typeof window === "object";
 }

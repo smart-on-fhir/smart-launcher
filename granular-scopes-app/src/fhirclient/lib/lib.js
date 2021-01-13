@@ -21,7 +21,8 @@ const debug = require("debug"); // $lab:coverage:off$
 //   fetch
 // } = typeof FHIRCLIENT_PURE !== "undefined" ? window : require("cross-fetch"); // $lab:coverage:on$
 
-const _debug = debug("FHIR");
+// const _debug = debug("FHIR");
+const _debug = console.log;
 
 // exports.debug = _debug;
 /**
