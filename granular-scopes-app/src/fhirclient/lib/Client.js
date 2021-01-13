@@ -598,7 +598,8 @@ export default class Client {
   async request(requestOptions, fhirOptions = {}, _resolvedRefs = {}) {
     var _a;
 
-    const debugRequest = lib_1.debug.extend("client:request");
+    // const debugRequest = lib_1.debug.extend("client:request");
+    const debugRequest = console.log;
 
     if (!requestOptions) {
       throw new Error("request requires an url or request options as argument");
