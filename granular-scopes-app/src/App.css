@@ -94,3 +94,11 @@
   text-overflow: ellipsis;
   vertical-align: top;
 }
+
+.narrow-fixed-checkbox {
+  width: 150px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}

@@ -1,5 +1,4 @@
 /* eslint-disable */
-"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -434,29 +433,73 @@ async function authorize(env, params = {}, _noRedirect = false) {
 
     if (win !== self) {
       try {
-        win.location.href = redirectUrl;
+        if (usePost) {
+          redirectPost(win, state.authorizeUri, redirectParams);
+        } else {
+          win.location.href = redirectUrl;
+        }
+
         self.addEventListener("message", onMessage);
       } catch (ex) {
         lib_1.debug(`Failed to modify window.location. Perhaps it is from different origin?. Failing back to "_self". %s`, ex);
-        self.location.href = redirectUrl;
+
+        if (usePost) {
+          redirectPost(self, state.authorizeUri, redirectParams);
+        } else {
+          self.location.href = redirectUrl;
+        }
       }
     } else {
-      self.location.href = redirectUrl;
+      if (usePost) {
+        redirectPost(self, state.authorizeUri, redirectParams);
+      } else {
+        self.location.href = redirectUrl;
+      }
     }
 
     return;
   } else {
+    if (usePost && isBrowser()) {
+      redirectPost(self, state.authorizeUri, redirectParams);
+      return;
+    }
+
     return await env.redirect(redirectUrl);
   }
 }
 
 exports.authorize = authorize;
+
+function redirectPost(target, url, params) {
+  var form = target.document.createElement('form');
+  target.document.body.appendChild(form);
+  form.method = 'POST';
+  form.action = url;
+  params.forEach(param => {
+    let split = param.split('=');
+
+    if (split.length < 2) {
+      return;
+    } // skip the name and the '=', but grab the rest as a single string
+    // in case there are additional '=' characters in the string
+
+
+    let value = param.substr(split[0].length + 1);
+    var input = target.document.createElement('input');
+    input.type = 'hidden';
+    input.name = split[0];
+    input.value = decodeURIComponent(value);
+    form.appendChild(input);
+  });
+  form.submit();
+}
 /**
  * Checks if called within a frame. Only works in browsers!
  * If the current window has a `parent` or `top` properties that refer to
  * another window, returns true. If trying to access `top` or `parent` throws an
  * error, returns true. Otherwise returns `false`.
  */
+
 
 function isInFrame() {
   try {

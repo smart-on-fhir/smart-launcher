@@ -78,6 +78,7 @@ export default function MainPage() {
   const [smartConfigCardData, setSmartConfigCardData] = useState<SingleRequestData[]>([]);
 
   const [usePKCE, setUsePKCE] = useState<boolean>(true);
+  const [usePost, setUsePost] = useState<boolean>(true);
 
   const authCardInfo:DataCardInfo = {
     id: 'auth-info-card',
@@ -111,6 +112,12 @@ export default function MainPage() {
       setUsePKCE(false);
     } else if (sessionStorage.getItem('usePKCE') === 'false') {
       setUsePKCE(false);
+    }
+
+    if (localStorage.getItem('usePost') === 'false') {
+      setUsePost(false);
+    } else if (sessionStorage.getItem('usePost') === 'false') {
+      setUsePost(false);
     }
 
     var url = new URL(window.location.href);
@@ -362,6 +369,16 @@ export default function MainPage() {
     setUsePKCE(!usePKCE);
   }
 
+  function togglePost() {
+    if (StorageHelper.isLocalStorageAvailable) {
+      localStorage.setItem('usePost', (!usePost).toString());
+    } else {
+      sessionStorage.setItem('usePost', (!usePost).toString());
+    }
+
+    setUsePost(!usePost);
+  }
+
   async function introspectToken() {
     if (!intropectionIsPossible) {
       showToastMessage('Introspection is currently NOT available', IconNames.ERROR);
@@ -431,7 +448,8 @@ export default function MainPage() {
       scope: scopeString,
       iss: aud,
       redirect_uri: process.env.REACT_APP_REDIRECT_URL || undefined,
-      usePKCE: usePKCE
+      usePKCE: usePKCE,
+      usePost: usePost,
     });
   }
 
@@ -620,7 +638,7 @@ export default function MainPage() {
       } else {
         setProfile('');
       }
-
+      
       if (tokenParts[1].fhirUser) {
         setFhirUser(tokenParts[1].fhirUser as string);
       } else {
@@ -768,6 +786,8 @@ export default function MainPage() {
       loadSmartConfig: loadSmartConfig,
       usePKCE: usePKCE,
       togglePKCE: togglePKCE,
+      usePost: usePost,
+      togglePost: togglePost,
       intropectionIsPossible: intropectionIsPossible,
       introspectToken: introspectToken,
       aud: aud,
@@ -846,7 +866,9 @@ export default function MainPage() {
     loadSmartConfig: loadSmartConfig,
     usePKCE: usePKCE,
     togglePKCE: togglePKCE,
-    intropectionIsPossible: intropectionIsPossible,
+    usePost: usePost,
+    togglePost: togglePost,
+  intropectionIsPossible: intropectionIsPossible,
     introspectToken: introspectToken,
     aud: aud,
     setAud: setAudAndSave,

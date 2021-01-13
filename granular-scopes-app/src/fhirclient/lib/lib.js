@@ -1,5 +1,4 @@
 /* eslint-disable */
-"use strict";
 /*
  * This file contains some shared functions. They are used by other modules, but
  * are defined here so that tests can import this library and test them.

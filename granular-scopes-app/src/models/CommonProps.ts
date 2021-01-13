@@ -11,6 +11,9 @@ export interface CommonProps {
   usePKCE:boolean;
   togglePKCE: (() => void);
 
+  usePost:boolean;
+  togglePost: (() => void);
+
   intropectionIsPossible: boolean;
   introspectToken: (() => void);
 

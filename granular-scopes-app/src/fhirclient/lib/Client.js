@@ -1,5 +1,4 @@
 /* eslint-disable */
-"use strict";
 
 require("core-js/modules/es.array.flat");
 

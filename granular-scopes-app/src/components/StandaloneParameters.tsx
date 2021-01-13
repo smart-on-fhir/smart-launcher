@@ -91,11 +91,23 @@ export default function StandaloneParameters(props: StandaloneParametersProps) {
         >
         <Checkbox
           key='enable-pkce'
-          className='fixed-checkbox'
+          className='narrow-fixed-checkbox'
           label='Use PKCE'
           inline={true}
           checked={props.common.usePKCE}
           onClick={() => props.common.togglePKCE()}
+          />
+      </Tooltip>
+      <Tooltip
+        content='Use HTTP POST Auth workflow'
+        >
+        <Checkbox
+          key='enable-post'
+          className='narrow-fixed-checkbox'
+          label='Use POST'
+          inline={true}
+          checked={props.common.usePost}
+          onClick={() => props.common.togglePost()}
           />
       </Tooltip>
       <Divider />
