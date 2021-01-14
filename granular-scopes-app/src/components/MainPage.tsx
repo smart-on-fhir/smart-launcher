@@ -396,6 +396,7 @@ export default function MainPage() {
     try {
       let headers:Headers = new Headers();
       headers.append('Content-Type', 'application/x-www-form-urlencoded');
+      headers.append('Authorization', `Bearer ${_client?.state.tokenResponse?.access_token}`);
 
       let response:Response = await fetch(url, { 
         method: 'POST',
