@@ -265,7 +265,9 @@ export default function MainPage() {
     }
 
     try {
-      let response:Response = await fetch(url, { method: 'GET' });
+      let headers:Headers = new Headers();
+      headers.append('Accept', 'application/json');
+      let response:Response = await fetch(url, { method: 'GET', headers: headers });
       let body:string = await response.text();
       let config:SmartConfiguration = JSON.parse(body);
 
