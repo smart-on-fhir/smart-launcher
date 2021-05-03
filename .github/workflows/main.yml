@@ -14,13 +14,13 @@ jobs:
     - uses: azure/docker-login@v1
       with:
         login-server: ${{ secrets.CONTAINER_REGISTRY }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
+        username: ${{ fromJSON(secrets.AZURE_CREDENTIALS_21).clientId }}
+        password: ${{ fromJSON(secrets.AZURE_CREDENTIALS_21).clientSecret }}
 
     - uses: azure/aks-set-context@v1
       with:
-        creds: '${{ secrets.AZURE_CREDENTIALS }}'
-        cluster-name: ${{ secrets.CLUSTER_NAME }}
+        creds: '${{ secrets.AZURE_CREDENTIALS_21 }}'
+        cluster-name: ${{ secrets.CLUSTER_NAME_21 }}
         resource-group: ${{ secrets.RESOURCE_GROUP }}
 
     - name: Build and rollout to CI
