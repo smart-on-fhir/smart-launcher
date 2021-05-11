@@ -36,7 +36,7 @@ COPY . .
 # RUN ls -dl ../*
 # RUN ls -dl ../app
 # RUN ls -al ../tmp
-RUN cd granular-scopes-app && npm install --production
+RUN cd granular-scopes-app && npm ci
 RUN cd granular-scopes-app && npm run-script build
 RUN mv granular-scopes-app/build static/granular
 
