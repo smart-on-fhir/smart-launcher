@@ -1,4 +1,3 @@
-const { exception } = require("console");
 const jwkToPem     = require("jwk-to-pem");
 const jwt        = require("jsonwebtoken");
 

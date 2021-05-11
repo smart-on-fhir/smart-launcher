@@ -12,7 +12,6 @@ const lib            = require("./lib");
 const launcher       = require("./launcher");
 const wellKnownOIDC  = require("./wellKnownOIDCConfiguration");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
-const { introspectionHandler } = require("./introspect")
 
 const handleParseError = function(err, req, res, next) {
     if (err instanceof SyntaxError && err.status === 400) {
@@ -129,13 +128,6 @@ app.get(buildRoutePermutations("/login"), (req, res) => {
 app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendFile("authorize.html", {root: './static'});
 });
-
-// introspect
-app.post(
-    buildRoutePermutations(`${config.authBaseUrl}/introspect`),
-    express.urlencoded({ limit: '64kb', extended: false }),
-    introspectionHandler
-);
 
 // auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)
