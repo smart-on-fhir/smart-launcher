@@ -4,7 +4,6 @@ const bodyParser     = require('body-parser');
 const fs             = require("fs");
 const base64url      = require("base64-url");
 const smartAuth      = require("./smart-auth");
-const reverseProxy   = require("./reverse-proxy");
 const simpleProxy    = require("./simple-proxy");
 const config         = require("./config");
 const generator      = require("./generator");
@@ -97,8 +96,6 @@ app.get("/keys", (req, res) => {
 
 const buildRoutePermutations = (lastSegment) => {
     return [
-        "/v/:fhir_release/sb/:sandbox/sim/:sim" + lastSegment,
-        "/v/:fhir_release/sb/:sandbox" + lastSegment,
         "/v/:fhir_release/sim/:sim" + lastSegment,
         "/v/:fhir_release" + lastSegment
     ];
@@ -147,17 +144,6 @@ app.post(buildRoutePermutations("/fhir/_services/smart/launch"), bodyParser.json
     });
 });
 
-// fhir request using sandboxes (tags)
-app.use(
-    [
-        `/v/:fhir_release/sb/:sandbox/sim/:sim${config.fhirBaseUrl}`,
-        `/v/:fhir_release/sb/:sandbox${config.fhirBaseUrl}`
-    ],
-    bodyParser.text({ type: "*/*", limit: 1e6 }),
-    handleParseError,
-    reverseProxy
-);
-
 // fhir request - no sandboxes - fast streaming proxy
 app.use(
     [
@@ -174,17 +160,15 @@ app.use("/generator", generator);
 
 app.use("/env.js", (req, res) => {
     const out = {
-        DISABLE_SANDBOXES: true, // No sandbox support by default
-        PICKER_ORIGIN    : "https://patient-browser.smarthealthit.org",
-        STU2_ENABLED     : true,
-        STU3_ENABLED     : true,
-        STU4_ENABLED     : true
+        PICKER_ORIGIN: "https://patient-browser.smarthealthit.org",
+        STU2_ENABLED : true,
+        STU3_ENABLED : true,
+        STU4_ENABLED : true
     };
 
     const whitelist = {
         "NODE_ENV"                : String,
         "LOG_TIMES"               : lib.bool,
-        "DISABLE_SANDBOXES"       : lib.bool,
         "DISABLE_BACKEND_SERVICES": lib.bool,
         "GOOGLE_ANALYTICS_ID"     : String,
         "CDS_SANDBOX_URL"         : String,

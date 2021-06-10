@@ -276,8 +276,6 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
     
     if (ENABLE_FHIR_VERSION_3 && (!fhirVersion || fhirVersion == 3)) {
         out.push(
-            `/v/r3/sb/abc/sim/whatever/${suffix}`, 
-            `/v/r3/sb/abc/${suffix}`,
             `/v/r3/sim/whatever/${suffix}`,
             `/v/r3/${suffix}`
         );
@@ -285,8 +283,6 @@ function buildRoutePermutations(suffix = "", fhirVersion) {
 
     if (ENABLE_FHIR_VERSION_2 && (!fhirVersion || fhirVersion == 2)) {
         out.push(
-            `/v/r2/sb/abc/sim/whatever/${suffix}`, 
-            `/v/r2/sb/abc/${suffix}`,
             `/v/r2/sim/whatever/${suffix}`,
             `/v/r2/${suffix}`
         );    
@@ -390,11 +386,10 @@ describe('Proxy', function() {
         .expect(401, done);
     });
 
-    it ("Can simulate custom token errors", null);
-    it ("Keeps protected data-sets read-only", null);
-    it ("Inject sandbox tag into POST and PUT requests", null);
-    it ("Make urls conditional and if exists, change /id to ?_id=", null);
-    it ("Apply patient scope to GET requests", null);
+    it ("Can simulate custom token errors");
+    it ("Keeps protected data-sets read-only");
+    it ("Make urls conditional and if exists, change /id to ?_id=");
+    it ("Apply patient scope to GET requests");
 
     it ("Adjust urls in the fhir response", done => {
         request(app)

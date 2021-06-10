@@ -106,48 +106,6 @@
             <button type="submit" style="position: fixed; top: -100px">Submit</button>
             <div class="container" id="content" style="display:none;">
 
-            <!-- Sandboxes ================================================= -->
-            <div class="panel panel-info alert-info sandbox-panel" style="display:none">
-                <div class="panel-heading">
-                    <b class="text-primary">My Sandbox</b>
-                </div>
-                <div class="panel-body navbar-default" style="padding-bottom: 0">
-                    <div class="form-group col-sm-6">
-                        <label for="sb">Name</label>
-                        <input type="text" id="sb" class="form-control">
-                        <p class="help-block small">
-                            Launch with this randomly generated sandbox name,
-                            or enter a previously used name to use an existing
-                            sandbox.
-                        </p>
-                    </div>
-                
-                    <div class="form-group col-sm-6">
-                        <label for="fhir-version-1">Version</label>
-                        <select id="fhir-version-1" class="form-control fhir-version"></select>
-                        <p class="help-block small">&nbsp;</p>
-                    </div>
-
-                    <br clear="all" />
-                    <div class="form-group col-sm-6">
-                        <p><label>Also include read access to these pre-defined datasets</label></p>
-                        <div class="fhir-tags"></div>
-                    </div>
-
-                    <div class="form-group col-sm-6">
-                        <a href="#" target="_blank" class="btn btn-sm btn-default pull-right open-url-preview" style="padding: 2px 3em;margin: -5px 0 0">Test</a>
-                        <label for="open-url">
-                            Open FHIR Server Endpoint
-                        </label>
-                        <div class="alert alert-info" style="margin: 0">
-                            <div>
-                                <a class="form-control-static open-url"></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <br />
 
             <div class="panel panel-default">
@@ -381,7 +339,7 @@
                                 <br class="hidden-sm"/>
                             </div>
                             <div class="col-sm-6">
-                                <label for="sb">Simulate Authentication Error for Testing</label>
+                                <label for="auth-error">Simulate Authentication Error for Testing</label>
                                 <select id="auth-error" class="form-control"></select>
                                 <br/>
                             </div>
@@ -556,34 +514,11 @@
 
             // Getters ---------------------------------------------------------
             function getFhirVersion() {
-                return $(ENV.DISABLE_SANDBOXES ?
-                    "#fhir-version-2" :
-                    "#fhir-version-1"
-                ).val() || CONFIG.fhirVersions[0].name;
-            }
-
-            function getSandboxName() {
-                return !ENV.DISABLE_SANDBOXES ?
-                    $("#sb").val() || "public" :
-                    "public";
+                return $("#fhir-version-2").val() || CONFIG.fhirVersions[0].name;
             }
 
             function getLaunchType() {
                 return $("input[name=launch-type]:checked").attr("id");
-            }
-
-            function getTags() {
-                var tags = [], sb = getSandboxName();
-                if (!ENV.DISABLE_SANDBOXES) {
-                    tags = $(".sb :checked").filter(":visible").map(
-                        function () { return $(this).val() }
-                    ).get();
-
-                    if (sb) {
-                        tags.unshift(sb);
-                    }
-                }
-                return tags;
             }
 
             function getLaunchUrl() {
@@ -624,28 +559,6 @@
 
                 if (!ENV.STU3_ENABLED) {
                     $(".disabled-server-stu3").show();
-                }
-
-                // Build the FHIR tag checkboxes
-                if (!ENV.DISABLE_SANDBOXES) {
-                    $(".sandbox-panel").show();
-                    $("#fhir-version-2").closest(".col-sm-6").remove();
-                    $(".fhir-tags").html(
-                        $.map(CONFIG.fhirVersions, function(v) {
-                            return v.tags && v.tags.length ?
-                                $.map(v.tags, function(t) {
-                                    return '<div class="checkbox sb ' + v.name + '">' +
-                                        '<label>' +
-                                            '<input class="tag" type="checkbox" id="' + t.id + '" value="' + t.value +
-                                            '"' + (t.selected ? ' checked' : '') + '>' +
-                                                '<b>' + t.displayName + '</b> <small class="text-muted">(' +
-                                                    t.description + ')</small>' +
-                                            '</label>' +
-                                        '</div>';
-                                }).join("") :
-                                '<span class="text-muted">No tags defined on the selected server</span>';
-                        }).join("")
-                    );
                 }
 
                 if (ENV.CDS_SANDBOX_URL) {
@@ -736,30 +649,11 @@
                         server: {
                             url : getBaseUrl() + "/fhir",
                             type: fhirVersion
-                        },
-                        hideTagSelector: !ENV.DISABLE_SANDBOXES
+                        }
                     };
                     
                     if (!fhirServer) {
                         pickerSettings.server.conditions = []
-                    }
-
-                    if (!ENV.DISABLE_SANDBOXES) {
-                        tags = $("input:checkbox.tag:checked:visible").map(function(i, cb) {
-                            return {
-                                key  : cb.value,
-                                label: $(cb).parent().text(),
-                                selected: true
-                            };
-                        }).get();
-
-                        tags.unshift({
-                            key: $("#sb").val(),
-                            label: "My Own Data",
-                            selected: true
-                        });
-
-                        pickerSettings.server.tags = tags
                     }
 
                     Lib.selectPatients(input.val(), {
@@ -837,13 +731,7 @@
             }
 
             function getBaseUrl() {
-                var baseUrl = window.location.href.split("?")[0].replace(/index\.html/, "");
-                var sandboxes = getTags();
-                baseUrl += "v/" + getFhirVersion();
-                if (sandboxes.length) {
-                    baseUrl += "/sb/" + sandboxes.join(",");
-                }
-                return baseUrl;
+                return window.location.href.split("?")[0].replace(/index\.html/, "") + "v/" + getFhirVersion();
             }
 
             function bookmark() {
@@ -1029,10 +917,6 @@
                     toggles.filter("." + launchType + ":not(:visible)").show();
                 }
 
-                if (!ENV.DISABLE_SANDBOXES) {
-                    $(".sb").hide().filter(".sb." + getFhirVersion()).show();
-                }
-
                 switch (launchType) {
                     case "launch-ehr":
                         $("#sim-ehr-label").appendTo("#launch-ehr-radio")
@@ -1091,9 +975,7 @@
             }
 
             $(function init() {
-                $("body")
-                    .toggleClass("no-sandboxes", ENV.DISABLE_SANDBOXES)
-                    .toggleClass("no-backend-services", ENV.DISABLE_BACKEND_SERVICES);
+                $("body").toggleClass("no-backend-services", ENV.DISABLE_BACKEND_SERVICES);
 
                 if (ENV.DISABLE_BACKEND_SERVICES) {
                     $("#launch-bs-radio").hide();
@@ -1103,9 +985,6 @@
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
-                if (!ENV.DISABLE_SANDBOXES && !$("#sb").val()) {
-                    $("#sb").val(Lib.generateUID());
-                }
                 bindEventHandlers();
                 // if (!$("#launch-url").val()) {
                 //     $("#launch-url").val(

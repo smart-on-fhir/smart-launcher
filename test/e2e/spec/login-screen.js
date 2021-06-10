@@ -1,5 +1,5 @@
 const CFG = require("../config.js");
-const BASE = `${CFG.PICKER_URL}/v/r3/sb/a6yzhl,smart-7-2017/login`;
+const BASE = `${CFG.PICKER_URL}/v/r3/login`;
 
 // ?client_id=growth_chart
 // &response_type=code
