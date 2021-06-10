@@ -5,7 +5,7 @@ const { getRequestBaseURL } = require("./lib");
 module.exports = (req, res) => {
     const prefix = `${getRequestBaseURL(req)}${
         (req.originalUrl || req.originalUrl)
-        .replace(/\/fhir\/\.well-known\/smart-configuration$/, "")
+        .replace(/\/fhir\/\.well-known\/smart-configuration\/?$/, "")
         }${config.authBaseUrl}`;
     
     const json = {
