@@ -37,7 +37,7 @@ var SmartPicker = (function() {
         loadFhir();
     }
 
-    function handlePatientClick(e) {
+    function handlePatientClick() {
         if (state.launchUrl == "") return;
 
         var patientId = $(this).attr("id").replace("patient-", ""), i, l, pt;
@@ -45,7 +45,9 @@ var SmartPicker = (function() {
             for (i = 0, l = state.data.entry.length; i < l; i++) {
                 pt = state.data.entry[i];
                 if (pt.resource.id === patientId) {
-                    parent.setPatient(pt.resource);
+                    if (parent && parent !== self && parent.setPatient) {
+                        parent.setPatient(pt.resource);
+                    }
                     break;
                 }
             }
