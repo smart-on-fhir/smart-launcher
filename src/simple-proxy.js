@@ -119,7 +119,7 @@ module.exports = (req, res) => {
     }
 
     // Proxy -------------------------------------------------------------------
-    let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
+    let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}/fhir`;
     let stream = request(fhirRequestOptions)
         .on('error', function(error) {
             console.error(error);

@@ -115,10 +115,10 @@ module.exports = function (req, res) {
 
         // special handler for metadata requests - inject the SMART information
         if (req.url.match(/^\/metadata/) && response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
-            let authBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace(config.fhirBaseUrl, config.authBaseUrl));
+            let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
             let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
-            authBaseUrl = authBaseUrl.replace(/^https?/, secure ? "https" : "http");
-            body = Lib.augmentConformance(body, authBaseUrl);
+            baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
+            body = Lib.augmentConformance(body, baseUrl);
             if (!body) {
                 res.status(404);
                 body = fhirError(`Error reading server metadata`);

@@ -1,142 +1,61 @@
+const request    = require('supertest');
+const jwt        = require("jsonwebtoken");
+const Url        = require("url");
+const jwkToPem   = require("jwk-to-pem");
+const crypto     = require("crypto");
+const { expect } = require("chai");
+const jose       = require("node-jose")
+const { Server } = require('http');
+const app        = require("../src/index.js");
+const config     = require("../src/config");
+const Codec      = require("../static/codec.js");
+const Lib        = require("../src/lib");
 
-const Request   = require('request');
-const request   = require('supertest');
-const app       = require("../src/index.js");
-const config    = require("../src/config");
-const jwt       = require("jsonwebtoken");
-const Url       = require("url");
-const jwkToPem  = require("jwk-to-pem");
-const Codec     = require("../static/codec.js");
-const base64url = require("base64-url");
-const Lib       = require("../src/lib");
-const crypto    = require("crypto");
-const expect    = require("chai").expect;
-
-
-const ENABLE_FHIR_VERSION_2  = true;
-const ENABLE_FHIR_VERSION_3  = true;
-const ENABLE_FHIR_VERSION_4  = true;
-const PREFERRED_FHIR_VERSION = ENABLE_FHIR_VERSION_4 ? "r4" : ENABLE_FHIR_VERSION_3 ? "r3" : "r2";
-const PUBLIC_KEY  = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFyTmx6RlFwbzRIZWY5dkVPYkdPUQpqc0RtelhyWFY4aDd3bVFxaFdhRkh0cCtLZW14ZmplOU02YkNrdjFsQ2RkajNFU3ZqeTkrd3lHTFlXQXJIdFYrCitGVVA5NjJPTVI5L2lNakpGZ0RDQjM5bnY0MGZLaTJBajRseCt6cE1XUnJZdVN3ZWdiYnNtT0hrL2t5RXUrSlgKTGgzNDlOZlZQSGdaRlhNUno5bUhXNk9hT21PVEVVYlY1RWJ0TnIxUFpCQVNYSGhpZ3VBTXZGcFl5Z2I3blFzQgo4OTBUOXVWcmM4bDB1OWpwc2J2OU10ZXZFeGZCTFlGSDQ4LzFrOUovWk5aalhBY281U2E3QTFlVXZGaSt0b01oCnBPL0lpVCs0L1BQaVRmYU9naXkrd3piNEFhUnF0MVMvWWx5RExIeVJuV3hlNThkMTdWZGY0Y0EzclVpVll0ZEEKWVFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==";
-const PRIVATE_KEY = "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBck5sekZRcG80SGVmOXZFT2JHT1Fqc0RtelhyWFY4aDd3bVFxaFdhRkh0cCtLZW14CmZqZTlNNmJDa3YxbENkZGozRVN2ank5K3d5R0xZV0FySHRWKytGVVA5NjJPTVI5L2lNakpGZ0RDQjM5bnY0MGYKS2kyQWo0bHgrenBNV1JyWXVTd2VnYmJzbU9Iay9reUV1K0pYTGgzNDlOZlZQSGdaRlhNUno5bUhXNk9hT21PVApFVWJWNUVidE5yMVBaQkFTWEhoaWd1QU12RnBZeWdiN25Rc0I4OTBUOXVWcmM4bDB1OWpwc2J2OU10ZXZFeGZCCkxZRkg0OC8xazlKL1pOWmpYQWNvNVNhN0ExZVV2RmkrdG9NaHBPL0lpVCs0L1BQaVRmYU9naXkrd3piNEFhUnEKdDFTL1lseURMSHlSbld4ZTU4ZDE3VmRmNGNBM3JVaVZZdGRBWVFJREFRQUJBb0lCQVFDakRTVlFUZGVORjR0ZwpxUmlRQ29RTkJjOHpPcFAxRFB3aDdkZG1xOFVieThTRHlSMVVFVVI3ZXUzRk54K2UzdjRtaE95UFI2QnVkakJECkZUTFlEVkdPOUw3eFIxa0E0ZE91dHFscUJpRUNiWjd5eFM4RzNKR1AxWG9lSVdwd0M3RXhUSHNpcGVvZWRjbE0KVWVaTVRrRXJFYjhOU0tTd1BDSjlaMlVBQ3hWeXpSN3FraE5hVUZYRGNYb2U5Y2FiK3hCRWFJZkFSUUFodllBVwo3ZTlraldjbzRaRTREWm1HL1JnYnRkR1cxZ05xcERiWnE2cDR4VThIUHdoWWVPVko0dmgwUEZHVEp2VWJPTUx5CjU0dEx5a2lFc0lnQzYzRXZ1aTdmQzByWmRiVEt3Z293dnZvWC9uVXhua1VUQ25sREZtUnFReitCVURLZkVlcWIKRyt4V0NWYUJBb0dCQU5mRDBvN0dIRlhKRDBLMlRuSFdHVWhEdjdTMnJBS2lncHZrdVlqNkFSV3NqckJ1VWpGTgpzSGNnRW52cHRFZloyb2lRZjh0eTNCMG9RdnNsYUxwaTBTOG9uZGVISWI2Sms5SU5xRzJzeE5DdjAxdnozam1GCkk4aGFUajRwSzBpQ3lNWnVISUhWSHFQdUZWOStvSHc1QWVkbytSUjlRZ2NHMEdUTEduYWhHOENKQW9HQkFNMFUKN1lBYkJFVm4wY0JoYU9OREFhVmFLMlBZaGdjc3BOOGJNVDh1QlhYU2VzTXkyS3dRS0EwQVNLbm5vcUNoeThyeQpVbUFRN1NNUHM4V25OcEo4Ukh2cXBOazNiSVEyMnpLSHNBQkNmZ29pcWtPc2FqZmYvQWk0Y1E3UGMwYzV0LzA5CmRnOFJNMEw3cmhBdndRUnFraHNST09UemZocTRONVE0Qnd4NGV4c1pBb0dCQU1FU1JaUGt5dTRvb0RNK0Z5dmUKUFhsZ3htYmJIMGlzU3R0YzdIa1ozV2FicG9OUjlOS1JobHJTcERlbGhPRFduS3FmUXZ1MnFDaWZJbkRCcE5sRQpHNU5yY1BLdnhRNU81YXVNOVM1Tzd6OGVWcTl0cFdrckxqM1dNVFdHZVdqRlB3dnc5Q2xwbjZWcElrNzFiSDQ4Ck5PdnlEeEM2bFI3Y2hoWHJlSjYydzdLaEFvR0FTUHI3a2EwTGxnOWVDMUllMjFFTEV1YkZyaUJ0Z2J3WFovWHIKVG9wNEV2ZTJEQ1RhQ2xFdGo0TGNXT28vYTE1b2dXNCtka1ZQdmp4bVF4NUFRMXpKbWpka05wQ01vM2hLQk85WQphSjlBN3lacTVPNUVWbUgwOUwxK0xrRVF5dlgxVGI5RGRoVXU0dFZobWcwRWFTZnJtb3BFYnVWZnFPNkppTXR2ClpyYXhTSEVDZ1lBcW5EZ0Q3bW53bnFGdmJ0R2JTUjRUdVJzYi9TQi9HejArSzNtdDhRME5NbWNIVDFsM0c1REEKWDEvU3hZdUxLZ1F5UWNPQUh2b3RxcUp0R3I2d0ZaOHJVdnIwTnEwQUtFa2JyODF2V2NpbkhySWFySkZUaVE5Vgp2SGNxYktoRlJ5dEtndjdZcEt1STJSUWM5dG9FNS9BbDZBejJOdlJZOGJ2MzN3QUFxTTl1OXc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=";
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Promisified version of request. Rejects with an Error or resolves with the
- * response (use response.body to access the parsed body).
- * @param {Object} options The request options
- * @return {Promise<Object>}
- */
-function requestPromise(options) {
-    return new Promise((resolve, reject) => {
-        Request(
-            Object.assign({}, options, { strictSSL: false }),
-            (error, res, body) => {
-                if (error) {
-                    return reject(error);
-                }
-                resolve(res);
-            }
-        );
-    });
+const TESTED_FHIR_SERVERS = {
+    "r4": config.fhirServerR4,
+    "r3": config.fhirServerR3,
+    "r2": config.fhirServerR2
 }
 
 /**
- * Throws an error if the response does not have the specified status code.
- * @param {Object} res Response
- * @param {Number} code The expected status code
- * @returns {Object} Returns the response object to simplify promise chains
- * @throws {Error}
+ * @param {object} options 
+ * @param {string} options.path
+ * @param {object} [options.query]
+ * @param {string|object} [options.sim]
+ * @param {string} [options.fhir]
  */
-function expectStatusCode(res, code) {
-    if (res.statusCode !== code) {
-        throw new Error(`Expecting status code of ${code} but received ${res.statusCode}`);
-    }
-    return res;
-}
+function buildUrl({ path, query = {}, sim = "", fhir = "r4" }) {
 
-/**
- * Throws an error if the response does not have the specified header.
- * The header name is required and the value is optional.
- * @param {Object} res The response
- * @param {String} name The name of the header
- * @param {String|RegExp} [value] The header value (checks for presence only if
- * this is missing)
- * @returns {Object} Returns the response object to simplify promise chains
- * @throws {Error}
- */
-function expectResponseHeader(res, name, value = null) {
-    let header = String(res.headers[name.toLowerCase()] || "");
-    if (!header) {
-        throw new Error(`Expecting ${name} response header but it wasn't sent`);
-    }
-    if (value) {
-        if (value instanceof RegExp) {
-            if (!value.test(header)) {
-                throw new Error(`The ${name} response header "${header}" did not match the specified RegExp`);
-            }
-        }
-        else if (header !== value) {
-            throw new Error(`Expecting ${name} response header to equal ${value} but found ${header}`);
-        }
-    }
-    return res;
-}
-
-function lookupOidcKeys(done) {
-    const path = `${config.baseUrl}/.well-known/openid-configuration/`;
-    let keysLocation, keys;
+    let _path = "";
     
-    Request({
-        url: path,
-        json: true,
-        strictSSL: false
-    }, (error, res, body) => {
-        if (error) {
-            return done(error)
+    if (fhir) {
+        _path += "/v/" + fhir;
+    }
+
+    if (sim) {
+        if (typeof sim == "string") {
+            _path += "/sim/" + sim
+        } else {
+            _path += "/sim/" + jose.util.base64url.encode(JSON.stringify(sim))
         }
+    }
 
-        try {
-            expectStatusCode(res, 200);
-            expectResponseHeader(res, 'Content-Type', /^application\/json/);
-            if (!body) {
-                throw new Error(`${path} did not return a JSON`);
-            }
-            if (!body.jwks_uri) {
-                throw new Error(`${path} did not return proper keys location`);
-            }
-        } catch(ex) {
-            return done(ex);
+    path = (_path + "/" + path).replace(/\/+/g, "/")
+
+    const url = new URL(path, config.baseUrl)
+
+    for (const key in query) {
+        if (key == "launch" && query[key] && typeof query[key] != "string") {
+            url.searchParams.set(
+                key,
+                Buffer.from(JSON.stringify(query[key])).toString("base64")
+            )
+        } else {
+            url.searchParams.set(key, query[key])
         }
+    }
 
-        Request({
-            url: body.jwks_uri,
-            json: true,
-            strictSSL: false
-        }, (error2, res2, body2) => {
-            if (error2) {
-                return done(error2)
-            }
-            
-            try {
-                expectStatusCode(res2, 200);
-                expectResponseHeader(res, 'Content-Type', /^application\/json/);
-                if (!body2) {
-                    throw new Error(`${keysLocation} did not return a JSON`)
-                }
-                if (!body2.keys) {
-                    throw new Error(`${keysLocation} did not return keys`);
-                }
-            } catch(ex) {
-                return done(ex);
-            }
-
-            done(null, body2.keys);
-        })
-    });
+    return url
 }
 
 /**
@@ -145,1193 +64,1018 @@ function lookupOidcKeys(done) {
  * @param {Object} object The object to encode
  * @returns {String}
  */
-function encodeSim(object = {}) {
-    return new Buffer(
-        JSON.stringify(Codec.encode(object))
-    ).toString("base64");
+ function encodeSim(object = {}) {
+    return Buffer.from(JSON.stringify(Codec.encode(object)), "utf8").toString("base64");
 }
 
 /**
- * Makes the initial authorization request and expects the server to redirect
- * back to redirect_uri with the given state and a code.
- * @param {Object} options
- * @param {String} options.patient 0 or more comma-separated patient IDs.
- * Defaults to "x" because we ignore it.
- * @param {String} options.client_id The client_id of the app. Defaults to "x"
- * because we ignore it.
- * @param {String} options.redirect_uri The uri to redirect to. Defaults to
- * "http://x.y" because we ignore it but still require it to be valid URL.
- * @param {String} options.scope
- * @param {String} options.state
- * @param {String} options.aud
- * @param {Object} options.launch
- * @param {Number} options.launch.launch_pt 1 or 0
- * @param {Number} options.launch.skip_login 1 or 0
- * @param {Number} options.launch.skip_auth 1 or 0
- * @param {String} options.launch.patient
- * @param {String} options.launch.encounter
- * @param {String} options.launch.auth_error
- * @param {String} options.baseUrl
- * @returns {Promise<String>} Returns a promise resolved with the code
+ * @param {string} fhirVersion "r2" | "r3" | "r4"
  */
-function getAuthCode(options) {
-    return new Promise((resolve, reject) => {
-        Request({
-            url      : `${options.baseUrl}auth/authorize`,
-            strictSSL: false,
-            followRedirect: false,
-            qs: {
-                response_type: "code",
-                patient      : options.patient   || "x",
-                client_id    : options.client_id || "x",
-                redirect_uri : options.redirect_uri || "http://x.y",
-                scope        : options.scope || "x",
-                state        : options.state || "x",
-                launch       : encodeSim(options.launch),
-                aud          : `${options.baseUrl}fhir`
-            }
-        }, (error, res, body) => {
-            if (error) {
-                return reject(error)
-            }
+function getSmartApi(fhirVersion)
+{
+    return {
 
-            try {
-                expectStatusCode(res, 302);
+        /**
+         * @param {object} options 
+         * 
+         * SMART parameters
+         * @param {string}        [options.client_id]
+         * @param {string}        [options.scope]
+         * @param {string}        [options.state]
+         * @param {string}        [options.redirect_uri]
+         * @param {object|string} [options.launch] If object, will be converted to base64 json string
+         * 
+         * Custom parameters
+         * @param {string}         [options.patient]       Pre-selected patient id(s)
+         * @param {string}         [options.provider]      Pre-selected provider id(s)
+         * @param {string}         [options.encounter]     Pre-selected encounter id(s)
+         * @param {number|boolean} [options.auth_success]  Flag to skip the launch confirmation dialog
+         * @param {number|boolean} [options.login_success] Flag to skip the launch login dialog
+         * @param {number|boolean} [options.aud_validated] Flag to skip the aud validation
+         */
+        getAuthCode: async function(options) {
 
-                if (!res.headers.location) {
-                    throw new Error(`auth/authorize did not redirect to the redirect_uri`)
+            const {
+                client_id    = "test_client_id",
+                scope        = "test_scope",
+                state        = "test_state",
+                redirect_uri = "http://test_redirect_uri"
+            } = options;
+
+            const url = buildUrl({
+                fhir: fhirVersion,
+                path: "/auth/authorize",
+                query: {
+                    ...options,
+                    client_id,
+                    scope,
+                    state,
+                    redirect_uri,
+                    aud: buildUrl({ fhir: fhirVersion, path: "fhir" }).href,
+                    response_type: "code"
                 }
-                let url = Url.parse(res.headers.location, true);
-                let code = url.query.code + "";
+            })
+
+            return request(app)
+            .get(url.pathname)
+            .query(url.searchParams.toString())
+            .redirects(0)
+            .expect(302)
+            .expect("location", /^https?\:\/\/.+/)
+            .then(res => {
+                const loc = new URL(res.get("location"));
+                const code = loc.searchParams.get("code");
                 if (!code) {
-                    console.log(res.headers)
-                    throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
+                    throw new Error(`authorize did not redirect to the redirect_uri with code parameter`)
                 }
-                // console.log("code: ", JSON.parse(base64url.decode(code.split(".")[1])));
-                resolve(code);
-            } catch(ex) {
-                reject(ex);
-            }
-        });
-    });
-}
+                return { code, state: loc.searchParams.get("state") }
+            });
+        },
 
-function getAuthToken(options) {
-    return new Promise((resolve, reject) => {
-        Request({
-            url      : `${options.baseUrl}auth/token`,
-            method   : "POST",
-            strictSSL: false,
-            followRedirect: false,
-            json: true,
-            form: {
-                grant_type: "authorization_code",
-                code      : options.code
-            }
-        }, (error, res, body) => {
-            if (error) {
-                return reject(error)
-            }
+        /**
+         * @param {string} code 
+         */
+        getAccessToken: async function(code) {
+            return request(app)
+            .post(buildUrl({ fhir: fhirVersion, path: "auth/token" }).pathname)
+            .redirects(0)
+            .type("form")
+            .send({ grant_type: "authorization_code", code })
+            .expect(200)
+            .then(res => res.body);
+        },
 
-            try {
-                expectStatusCode(res, 200);
-                resolve(body);
-            } catch(ex) {
-                reject(ex);
-            }
-        });
-    });
-}
-
-/**
- * Posts a refresh token to the token endpoint and resolves with the "new"
- * token response.
- * @param {Object} options
- * @param {String} options.baseUrl
- * @param {String} options.refreshToken
- * @returns {Promise<Object>}
- */
-function refreshSession(options) {
-    return requestPromise({
-        url           : `${options.baseUrl}auth/token`,
-        method        : "POST",
-        followRedirect: false,
-        json          : true,
-        form: {
-            grant_type   : "refresh_token",
-            refresh_token: options.refreshToken
+        /**
+         * @param {string} refreshToken 
+         */
+        refresh: async function(refreshToken) {
+            return request(app)
+            .post(buildUrl({ fhir: fhirVersion, path: "auth/token" }).pathname)
+            .redirects(0)
+            .type("form")
+            .send({ grant_type: "refresh_token", refresh_token: refreshToken })
+            .expect(200)
+            .then(res => res.body);
         }
-    }).then(res => res.body);
-}
-
-function authorize(options) {
-    return getAuthCode(options).then(
-        code => getAuthToken({ code, baseUrl: options.baseUrl })
-    );
-}
-
-function buildRoutePermutations(suffix = "", fhirVersion) {
-    suffix = suffix.replace(/^\//, "");
-    let out = [];
-    
-    if (ENABLE_FHIR_VERSION_3 && (!fhirVersion || fhirVersion == 3)) {
-        out.push(
-            `/v/r3/sim/whatever/${suffix}`,
-            `/v/r3/${suffix}`
-        );
     }
-
-    if (ENABLE_FHIR_VERSION_2 && (!fhirVersion || fhirVersion == 2)) {
-        out.push(
-            `/v/r2/sim/whatever/${suffix}`,
-            `/v/r2/${suffix}`
-        );    
-    }
-
-    return out;
-}
-
-function decodeJwtToken(token) {
-    return JSON.parse(
-        new Buffer(token.split(".")[1], "base64").toString("utf8")
-    );
 }
 ////////////////////////////////////////////////////////////////////////////////
+// app.use((error, req, res, next) => {
+//     console.error(error)
+//     res.status(500).end()
+// })
+
+// -----------------------------------------------------------------------------
+/**
+ * @type {Server|null}
+ */
 let server;
-before(() => {
+
+async function closeServer() {
     return new Promise((resolve, reject) => {
-        server = app.listen(config.port, error => {
+        if (server && server.listening) {
+            server.close(error => {
+                if (error) {
+                    reject(error);
+                } else {
+                    // server.unref()
+                    // server = null;
+                    resolve();
+                }
+            });
+        } else {
+            if (server) server.unref()
+            resolve();
+        }
+    });
+}
+
+before(async () => {
+    await closeServer()
+    return new Promise((resolve, reject) => {
+        const _server = app.listen(config.port, error => {
             if (error) {
                 return reject(error);
             }
-            resolve();
+            server = _server
+            resolve()
         });
     });
 });
 
-after(() => {
-    if (server && server.listening) {
-        return new Promise(resolve => {
-            server.close(error => {
-                if (error) {
-                    console.log("Error shutting down the : ", error);
-                }
-                server = null;
-                resolve();
-            });
-        });
-    }
-});
+after(closeServer);
 
+describe("Global Routes", () => {
 
-describe('index', function() {
-    it('responds with html', function(done) {
-        request(app)
+    it('index responds with html', () => {
+        return request(app)
         .get('/')
         .expect('Content-Type', /html/)
-        .expect(200, done);
-    });
-});
-
-["picker", "login", "authorize"].forEach(endPoint => {
-    describe(endPoint, function() {
-        buildRoutePermutations(endPoint).forEach(path => {
-            describe(`GET ${path}`, function() {
-                it('responds with html', function(done) {
-                    request(app)
-                    .get(path)
-                    .expect('Content-Type', /html/)
-                    .expect(200, done);
-                });
-            });
-        });
-    });
-});
-
-describe('Proxy', function() {
-    this.timeout(10000);
-    buildRoutePermutations("fhir/metadata").forEach(path => {
-        it(path + ' responds with html in browsers', done => {
-            request(app)
-            .get(path)
-            .set('Accept', 'text/html')
-            .expect('Content-Type', /^text\/html/)
-            .expect(200, done);
-        });
-
-        // TODO: Support XML
-        // it(path + ' responds with xml if requested', done => {
-        //     request(app)
-        //     .get(path)
-        //     .set('Accept', 'application/xml')
-        //     .expect('Content-Type', /^application\/xml\+fhir/)
-        //     .expect(200, done);
-        // });
+        .expect(200);
     });
 
-    it ("Validates the fhir version", done => {
-        request(app)
-        .get("/v/r300/fhir/metadata")
+    it('/keys hosts the public keys', () => {
+        return request(app)
+        .get('/keys')
         .expect('Content-Type', /json/)
-        .expect('{"error":"FHIR server r300 not found"}')
-        .expect(400, done);
-    });
-
-    it ("If auth token is sent - validates it", done => {
-        request(app)
-        .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/metadata`)
-        .set("authorization", "Bearer whatever")
-        .expect('Content-Type', /text/)
-        .expect("JsonWebTokenError: jwt malformed")
-        .expect(401, done);
-    });
-
-    it ("Can simulate custom token errors");
-    it ("Keeps protected data-sets read-only");
-    it ("Make urls conditional and if exists, change /id to ?_id=");
-    it ("Apply patient scope to GET requests");
-
-    it ("Adjust urls in the fhir response", done => {
-        request(app)
-        .get("/v/" + PREFERRED_FHIR_VERSION + "/fhir/Patient")
+        .expect(200)
         .expect(res => {
-            // FIXME: version mismatch...
-            if (res.text.indexOf(config.fhirServerR3) > -1) {
-                throw new Error("Not all URLs replaced");
-            }
-        })
-        .end(done);
+            expect(res.body).to.have.property("keys")
+            expect(Array.isArray(res.body.keys)).to.be.true
+            expect(res.body.keys.length).to.be.greaterThan(0)
+        });
     });
 
-    buildRoutePermutations("fhir/metadata").forEach(path => {
-        it(path + ' inject the SMART information in metadata responses', done => {
-            request(app)
-            .get(path)
-            .expect('Content-Type', /\bjson\b/i)
+    describe('RSA Generator', () => {
+        
+        it ("can generate random strings", async () => {
+            await request(app)
+            .get('/generator/random')
+            .expect('Content-Type', /text\/plain/)
             .expect(200)
-            .expect(res => {
-                let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
-                
-                // authorize ---------------------------------------------------
-                let authorizeCfg = uris.find(o => o.url == "authorize");
-                if (!authorizeCfg) {
-                    throw new Error("No 'authorize' endpoint found in the conformance statement");
-                }
-                if (authorizeCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/authorize")) {
-                    throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
-                }
+            .expect(/^[0-9a-fA-F]{64}$/);
 
-                // token -------------------------------------------------------
-                let tokenCfg = uris.find(o => o.url == "token");
-                if (!tokenCfg) {
-                    throw new Error("No 'token' endpoint found in the conformance statement");
-                }
-                if (tokenCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/token")) {
-                    throw new Error("Wrong 'token' endpoint found in the conformance statement");
-                }
+            await request(app)
+            .get('/generator/random')
+            .query({ enc: "hex" })
+            .expect('Content-Type', /text\/plain/)
+            .expect(200)
+            .expect(/^[0-9a-fA-F]{64}$/);
+        });
 
-                // register ----------------------------------------------------
-                // TODO: Un-comment when we support DCR
-                // let registerCfg  = uris.find(o => o.url == "register");
-                // if (!registerCfg) {
-                //     throw new Error("No 'register' endpoint found in the conformance statement");
-                // }
-                // if (registerCfg.valueUri != config.baseUrl + path.replace("fhir/metadata", "auth/register")) {
-                //     throw new Error("Wrong 'register' endpoint found in the conformance statement");
-                // }
+        it ("random strings length defaults to 32", async () => {
+            await request(app)
+            .get('/generator/random')
+            .query({ len: -5 })
+            .expect('Content-Type', /text\/plain/)
+            .expect(200)
+            .expect(/^[0-9a-fA-F]{64}$/);
+        });
+
+        it ("can generate random RSA-256 key pairs", async () => {
+
+            let { privateKey, publicKey } = await request(app)
+            .get("/generator/rsa")
+            .expect('content-type', /json/)
+            .expect(200)
+            .then(res => res.body)
+
+            expect(privateKey, "The generator did not create a private key")
+            expect(publicKey, "The generator did not create a public key")
+
+            await request(app)
+            .get("/generator/rsa")
+            .expect('content-type', /json/)
+            .expect(200)
+            .then(res => {
+                expect(res.body.privateKey, "The generator did not create a private key")
+                expect(res.body.publicKey, "The generator did not create a public key")
+                expect(res.body.privateKey).to.not.equal(privateKey, "privateKey does not change between requests")
+                expect(res.body.publicKey).to.not.equal(publicKey, "publicKey does not change between requests")
             })
-            .end(done);
         });
-    });
-
-    it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query", done => {
-        let patientID;
-
-        // We cannot know any IDs but we need to use one for this test, thus
-        // query all the patients with _count=1 to find the first one and use
-        // it's ID.
-        requestPromise({
-            uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`,
-            json: true,
-            qs: {
-                _count: 1
-            }
-        })
-
-        // Use the first patient ID
-        .then(res => res.body.entry[0].resource.id)
-
-        // Now do another request with that ID
-        .then(id => {
-            patientID = id;
-            return requestPromise({
-                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/fhir/Patient/${id}`,
-                json: true
-            });
-        }) 
-
-        // Did we get a patient with the requested id?
-        .then(res => {
-            return res.body.resourceType == "Patient" && res.body.id == patientID ?
-                Promise.resolve() :
-                Promise.reject("No patient returned by id")
-        })
-
-        // complete
-        .then(() => done(), done);
-    });
-
-    // it ("Pretty print if called from a browser", () => {
-    //     expect(1).to.equal(2);
-    // });
-
-    if (ENABLE_FHIR_VERSION_3) {
-        it ("Replies with application/fhir+json for STU3", done => {
-            request(app)
-            .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`)
-            .expect("content-Type", /^application\/fhir\+json/i)
-            .end(done);
-        });
-    }
-
-    if (ENABLE_FHIR_VERSION_2) {
-        it ("Replies with application/json+fhir for DSTU2", done => {
-            request(app)
-            .get("/v/r2/fhir/Patient")
-            .expect("content-Type", /^application\/json\+fhir/i)
-            .expect(/\n.+/, done);
-        });
-    }
-
-    it ("Replies with formatted JSON for bundles", done => {
-        request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`).expect(/\n.+/, done);
-    });
-
-    it ("Replies with formatted JSON for single resources", done => {
-        request(app).get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Observation/smart-5328-height`).expect(/\n.+/, done);
-    });
-
-    it ("Handles pagination", done => {
-        request(app)
-        .get(`/v/${PREFERRED_FHIR_VERSION}/fhir/Patient`)
-        .expect(res => {
-            if (!Array.isArray(res.body.link)) {
-                throw new Error("No links found");
-            }
-
-            let next = res.body.link.find(l => l.relation == "next")
-            if (!next) {
-                throw new Error("No next link found");
-            }
-            // console.log(next)
-            return request(app).get(next.url).expect(res2 => {
-                if (!Array.isArray(res.body.link)) {
-                    throw new Error("No links found on second page");
-                }
-
-                let self = res.body.link.find(l => l.relation == "self")
-                if (!self) {
-                    throw new Error("No self link found on second page");
-                }
-                if (self.url !== next.url) {
-                    throw new Error("Links mismatch");
-                }
-
-                let next2 = res.body.link.find(l => l.relation == "next")
-                if (!next2) {
-                    throw new Error("No next link found on second page");
-                }
-
-                console.log(next2)
-            })
-        })
-        .end(done);
     });
 });
 
-describe('Auth', function() {
-    describe('authorize', function() {
+for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
-        // auth/authorize Checks for required params
-        buildRoutePermutations("auth/authorize").forEach(path => {
-            let query = [];
-            [
-                "response_type",
-                "client_id",
-                "redirect_uri",
-                "scope",
-                "state",
-                "aud"
-            ].forEach(name => {
-                it(`${path} requires "${name}" param`, done => {
-                    request(app)
-                    .get(path + "?" + query.join("&"))
-                    .expect(400)
-                    .expect(`Missing ${name} parameter`)
-                    .end(() => {
-                        query.push(name + "=" + (name == "redirect_uri" ? "http%3A%2F%2Fx" : "x"));
-                        done();
-                    });
-                });
-            });
+    const SMART = getSmartApi(FHIR_VERSION);
 
-            // it(`${path} with missing "client_id" param`, done => {
-            //     request(app)
-            //     .get(path + "?response_type=code&client_id=&redirect_uri=http%3A%2F%2Fx&aud=x&state=abc")
-            //     .end(function(error, res) {
-            //         console.log(res.body, res.headers)
-            //         done();
-            //     });
-            // });
+    describe(`FHIR server ${FHIR_VERSION}`, () => {
+        
+        it('can render the patient picker', () => {
+            return request(app)
+            .get(buildUrl({ fhir: FHIR_VERSION, path: "picker" }).pathname)
+            .expect('Content-Type', /html/)
+            .expect(200)
         });
 
-        // auth/authorize validates the redirect_uri parameter
-        buildRoutePermutations("auth/authorize").forEach(path => {
-            it(`${path} - validates the redirect_uri parameter`, done => {
-                request(app)
-                .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
-                .expect(/^Invalid redirect_uri parameter/)
+        it('can render the user picker', () => {
+            return request(app)
+            .get(buildUrl({ fhir: FHIR_VERSION, path: "login" }).pathname)
+            .expect('Content-Type', /html/)
+            .expect(200)
+        });
+
+        it('can render the launch approval dialog', () => {
+            return request(app)
+            .get(buildUrl({ fhir: FHIR_VERSION, path: "authorize" }).pathname)
+            .expect('Content-Type', /html/)
+            .expect(200)
+        });
+
+        describe('Proxy', function() {
+            this.timeout(10000);
+            
+            it('fhir/metadata responds with html in browsers', () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
+                .set('Accept', 'text/html')
+                .expect('Content-Type', /^text\/html/)
+                .expect(200)
+            });
+
+            it ("Validates the FHIR version", () => {
+                return request(app)
+                .get(buildUrl({ fhir: "r300", path: "fhir/metadata" }).pathname)
+                .expect('Content-Type', /json/)
+                .expect('{"error":"FHIR server r300 not found"}')
                 .expect(400)
-                .end(done);
             });
-        });
 
-        // can simulate invalid redirect_uri error
-        {
-            let sim = new Buffer('{"auth_error":"auth_invalid_redirect_uri"}').toString('base64');
-            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-            paths.forEach(path => {
-                it (path.split("?")[0] + " can simulate invalid redirect_uri error", done => {
-                    request(app)
-                    .get(path)
-                    .expect(302)
-                    .expect(function(res) {
-                        const loc = res.get("location");
-                        if (!loc || loc.indexOf("error=sim_invalid_redirect_uri") == -1) {
-                            throw new Error(`No error passed to the redirect ${loc}`)
-                        }
-                    })
-                    .expect(function(res) {
-                        const loc = res.get("location");
-                        if (!loc || loc.indexOf("state=x") == -1) {
-                            throw new Error(`No state passed to the redirect ${loc}`)
-                        }
-                    })
-                    .end(done);
-                });
-            });
-        }
-
-        // can simulate invalid scope error
-        {
-            let sim = new Buffer('{"auth_error":"auth_invalid_scope"}').toString('base64');
-            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-            paths.forEach(path => {
-                it (path.split("?")[0] + " can simulate invalid scope error", done => {
-                    request(app)
-                    .get(path)
-                    .expect(302)
-                    .expect(function(res) {
-                        const loc = res.get("location");
-                        if (!loc) {
-                            throw new Error(`No redirect`)
-                        }
-                        let url = Url.parse(loc, true);
-                        if (url.query.error != "sim_invalid_scope") {
-                            throw new Error(`Wrong redirect ${loc}`)
-                        }
-                    })
-                    .end(done);
-                });
-            });
-        }
-
-        // can simulate invalid client_id error
-        {
-            let sim = new Buffer('{"auth_error":"auth_invalid_client_id"}').toString('base64');
-            let paths = buildRoutePermutations("auth/authorize?launch=" + sim + "&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x");
-            paths.push(`/v/${PREFERRED_FHIR_VERSION}/sim/${sim}/auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=x"`);
-            paths.forEach(path => {
-                it (path.split("?")[0] + " can simulate invalid client_id error", done => {
-                    request(app)
-                    .get(path)
-                    .expect(302)
-                    .expect(function(res) {
-                        const loc = res.get("location");
-                        if (!loc) {
-                            throw new Error(`No redirect`)
-                        }
-                        let url = Url.parse(loc, true);
-                        if (url.query.error != "sim_invalid_client_id") {
-                            throw new Error(`Wrong redirect ${loc}`)
-                        }
-                    })
-                    .end(done);
-                });
-            });
-        }
-
-        // rejects invalid audience value
-        buildRoutePermutations(
-            "auth/authorize?response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&launch=0&aud=whatever" +
-            encodeURIComponent(config.fhirServerR2),
-            2
-        ).forEach(path => {
-            it (path.split("?")[0] + " rejects invalid audience value", done => {
-                request(app)
-                .get(path)
-                .expect(302)
-                .expect(function(res) {
-                    const loc = res.get("location");
-                    if (!loc) {
-                        throw new Error(`No redirect`)
-                    }
-                    let url = Url.parse(loc, true);
-                    if (url.query.error != "bad_audience") {
-                        throw new Error(`Wrong redirect ${loc}`)
-                    }
-                })
-                .end(done);
-            });
-        });
-
-        // can show encounter picker
-        buildRoutePermutations(
-            "auth/authorize" +
-            "?client_id=x" +
-            "&response_type=code" +
-            "&scope=patient%2F*.read%20launch" +
-            "&redirect_uri=" + encodeURIComponent("https://sb-apps.smarthealthit.org/apps/growth-chart/") +
-            "&state=x" +
-            "&login_success=1" +
-            "&patient=fb48de1b-e485-458a-ac0f-c5a54c26b58d"
-        ).forEach(path => {
-            let aud = encodeURIComponent(config.baseUrl + path.split("auth/authorize")[0] + "fhir");
-            let launch = new Buffer(JSON.stringify({
-                launch_ehr      : 1,
-                select_encounter: 1
-            })).toString("base64");
-            let fullPath = path + "&aud=" + aud + "&launch=" + launch;
-
-            it (path.split("?")[0] + " can show encounter picker", done => {
-                request(app)
-                .get(fullPath)
-                .expect(302)
-                .expect(function(res) {
-                    const loc = res.get("location");
-                    if (!loc || loc.indexOf(fullPath.replace(/\/auth\/authorize\?.*/, "/encounter?")) !== 0) {
-                        throw new Error(`Wrong redirect ${loc}`)
-                    }
-                })
-                .end(done);
-            });
-        });
-    });
-
-    describe('Confidential Clients', function() {
-        buildRoutePermutations("auth/token").forEach(path => {
-            let token = jwt.sign("whatever", config.jwtSecret);
-
-            it (`${path} - can simulate auth_invalid_client_secret`, done => {
-                request(app)
-                .post(path)
-                .type('form')
-                .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
-                .send({
-                    grant_type: "refresh_token",
-                    auth_error: "auth_invalid_client_secret",
-                    refresh_token: token
-                })
-                .expect("Simulated invalid client secret error")
+            it ("If auth token is sent - validates it", () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
+                .set("authorization", "Bearer whatever")
+                .expect('Content-Type', /text/)
+                .expect("JsonWebTokenError: jwt malformed")
                 .expect(401)
-                .end(done);
-            });
-
-            it (`${path} - rejects empty auth header`, done => {
-                request(app)
-                .post(path)
-                .type('form')
-                .set("Authorization", "Basic")
-                .send({
-                    grant_type: "refresh_token",
-                    refresh_token: token
-                })
-                .expect("The authorization header 'Basic' cannot be empty")
-                .expect(401)
-                .end(done);
-            });
-
-            it (`${path} - rejects invalid auth header`, done => {
-                request(app)
-                .post(path)
-                .type('form')
-                .set("Authorization", "Basic bXktYXB")
-                .send({
-                    grant_type: "refresh_token",
-                    refresh_token: token
-                })
-                .expect(/^Bad authorization header/)
-                .expect(401)
-                .end(done);
-            });
-
-            it (`${path} - can simulate sim_invalid_token`, done => {
-                let code = jwt.sign({ auth_error:"token_invalid_token" }, config.jwtSecret);
-                request(app)
-                .post(path)
-                .type('form')
-                .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
-                .send({
-                    grant_type: "authorization_code",
-                    code
-                })
-                .expect("Simulated invalid token error")
-                .expect(401)
-                .end(done);
-            });
-        });
-    });
-
-    describe('OIDC signature algorithm works correctly', function() {
-        buildRoutePermutations().forEach(path => {
-            let code, idToken, key, keysLocation;
-            let aud = config.baseUrl + path + "fhir";
-            let launch = encodeSim({
-                launch_pt : 1,
-                skip_login: 1,
-                skip_auth : 1,
-                patient   : "abc",
-                encounter : "bcd"
-            });
-            it(`${path}auth/authorize - generates a code from profile`, done => {
-                request(app)
-                .get(`${path}auth/authorize?response_type=code&launch=${launch}` +
-                `&patient=abc&client_id=x&redirect_uri=${encodeURIComponent("http://x.y")}` +
-                `&scope=profile%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
-                .expect(302)
-                .expect(function(res) {
-                    if (!res.get("location")) {
-                        throw new Error(`auth/authorize did not redirect to the redirect_uri`)
-                    }
-                    let url = Url.parse(res.get("location"), true);
-                    code = url.query.code;
-                    if (!code) {
-                        // console.log(res.headers)
-                        throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
-                    }
-                    // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
-                })
-                .end(done);
-            });
-
-            it(`${path}auth/authorize - generates a code from fhirUser`, done => {
-                request(app)
-                .get(`${path}auth/authorize?response_type=code&launch=${launch}` +
-                `&patient=abc&client_id=x&redirect_uri=${encodeURIComponent("http://x.y")}` +
-                `&scope=fhirUser%20openid%20launch&state=x&aud=${encodeURIComponent(aud)}`)
-                .expect(302)
-                .expect(function(res) {
-                    if (!res.get("location")) {
-                        throw new Error(`auth/authorize did not redirect to the redirect_uri`)
-                    }
-                    let url = Url.parse(res.get("location"), true);
-                    code = url.query.code;
-                    if (!code) {
-                        // console.log(res.headers)
-                        throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
-                    }
-                    // console.info("code: ", JSON.parse(Buffer.from(code.split(".")[1], 'base64').toString()));
-                })
-                .end(done);
-            });
-
-            it(`${path}auth/token - provides id_token`, done => {
-                getAuthToken({ code, baseUrl: config.baseUrl + path }).then(body => {
-                    if (!body || !body.id_token) {
-                        return done(new Error(`auth/token did not return id_token`));
-                    }
-                    idToken = body.id_token;
-                    done();
-                }, done);
             });
             
-            it(`the access token can be verified`, done => {
-                lookupOidcKeys((error, keys) => {
-                    if (error) {
-                        return done(error);
+            it ("Adjust urls in the fhir response", () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                .expect(res => {
+                    if (res.text.indexOf(TESTED_FHIR_SERVERS[FHIR_VERSION]) > -1) {
+                        throw new Error("Not all URLs replaced");
                     }
-                    key = keys[0]
-                    try {
-                        jwt.verify(idToken, jwkToPem(key), { algorithms: ["RS256"] })
-                        done()
-                    } catch (ex) {
-                        done(ex)
+                })
+            });
+            
+            it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query", async () => {
+                
+                // We cannot know any IDs but we need to use one for this test, thus
+                // query all the patients with _count=1 to find the first one and use
+                // it's ID.
+                const patientID = await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient"}).pathname)
+                .query({ _count: 1 })
+                .expect(200)
+                .expect("content-type", /json/)
+                .then(res => res.body.entry[0].resource.id);
+        
+                // Now do another request with that ID
+                const resource = await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient/" + patientID }).pathname)
+                .expect(200)
+                .expect("content-type", /json/)
+                .then(res => res.body);
+        
+                // Did we get a patient with the requested id?
+                expect(resource.resourceType).to.equal("Patient")
+                expect(resource.id).to.equal(patientID)
+            });
+
+            it ("Handles pagination", () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                .expect(res => {
+                    if (!Array.isArray(res.body.link)) {
+                        throw new Error("No links found");
                     }
+        
+                    let next = res.body.link.find(l => l.relation == "next")
+                    if (!next) {
+                        throw new Error("No next link found");
+                    }
+                    // console.log(next)
+                    return request(app).get(next.url).expect(res2 => {
+                        if (!Array.isArray(res.body.link)) {
+                            throw new Error("No links found on second page");
+                        }
+        
+                        let self = res.body.link.find(l => l.relation == "self")
+                        if (!self) {
+                            throw new Error("No self link found on second page");
+                        }
+                        if (self.url !== next.url) {
+                            throw new Error("Links mismatch");
+                        }
+        
+                        let next2 = res.body.link.find(l => l.relation == "next")
+                        if (!next2) {
+                            throw new Error("No next link found on second page");
+                        }
+                        // console.log(next2)
+                    })
+                })
+            });
+
+            it ("Replies with formatted JSON for bundles", () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                .expect(/\n.+/);
+            });
+
+            it ("Replies with formatted JSON for single resources", () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/X" }).pathname) // Should return OperationOutcome
+                .expect(/\n.+/);
+            });
+
+            if (FHIR_VERSION === "r2") {
+                it (`Replies with application/json+fhir for ${FHIR_VERSION}`, () => {
+                    return request(app)
+                    .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                    .expect("content-Type", /^application\/json\+fhir/i)
+                    .expect(/\n.+/);
+                });
+            } else {
+                it (`Replies with application/fhir+json for ${FHIR_VERSION}`, () => {
+                    return request(app)
+                    .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                    .expect("content-Type", /^application\/fhir\+json/i)
+                    .expect(/\n.+/);
+                });
+            }
+
+            it('Injects the SMART information in metadata responses', () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
+                .expect('Content-Type', /\bjson\b/i)
+                .expect(200)
+                .expect(res => {
+                    let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
+                    
+                    // authorize ---------------------------------------------------
+                    let authorizeCfg = uris.find(o => o.url == "authorize");
+                    if (!authorizeCfg) {
+                        throw new Error("No 'authorize' endpoint found in the conformance statement");
+                    }
+                    if (authorizeCfg.valueUri != buildUrl({ fhir: FHIR_VERSION, path: "auth/authorize" }).href) {
+                        throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
+                    }
+    
+                    // token -------------------------------------------------------
+                    let tokenCfg = uris.find(o => o.url == "token");
+                    if (!tokenCfg) {
+                        throw new Error("No 'token' endpoint found in the conformance statement");
+                    }
+                    if (tokenCfg.valueUri != buildUrl({ fhir: FHIR_VERSION, path: "auth/token" }).href) {
+                        throw new Error("Wrong 'token' endpoint found in the conformance statement");
+                    }
+    
+                    // register ----------------------------------------------------
+                    // TODO: Un-comment when we support DCR
+                    // let registerCfg  = uris.find(o => o.url == "register");
+                    // if (!registerCfg) {
+                    //     throw new Error("No 'register' endpoint found in the conformance statement");
+                    // }
+                    // if (registerCfg.valueUri != buildUrl({ fhir: FHIR_VERSION, path: "auth/register" }).href) {
+                    //     throw new Error("Wrong 'register' endpoint found in the conformance statement");
+                    // }
                 });
             });
-        });
-    });
 
-    describe('token', function() {
-        buildRoutePermutations().forEach(path => {
-            it(`${path}auth/token can simulate sim_expired_refresh_token`, done => {
-                authorize({
-                    scope  : "offline_access",
-                    baseUrl: config.baseUrl + path,
-                    launch : {
+            it("rejects invalid authorization tokens", async () => {
+                await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                .set("authorization", "bearer invalid-token")
+                .expect(401, /JsonWebTokenError/);
+            })
+            
+            it ("Can simulate custom token errors", async () => {
+                const token = jwt.sign({ sim_error: "test error" }, config.jwtSecret)
+                await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
+                .set("authorization", "bearer " + token)
+                .expect(401, "test error");
+            });
+
+            it ("Keeps protected data-sets read-only");
+            it ("Make urls conditional and if exists, change /id to ?_id=");
+            it ("Apply patient scope to GET requests");
+
+            describe('Fhir Requests', () => {
+                it ("TODO...");
+            });
+        });
+
+        describe('Auth', () => {
+            describe('authorize', () => {
+                
+                const url = buildUrl({ fhir: FHIR_VERSION, path: "/auth/authorize" });
+
+                const fullQuery = {
+                    response_type: "code",
+                    client_id: "x",
+                    redirect_uri: "http://x",
+                    scope: "x",
+                    state: "x",
+                    aud: "x"
+                };
+
+                const authErrors = {
+                    "auth_invalid_client_id"   : "sim_invalid_client_id",
+                    "auth_invalid_redirect_uri": "sim_invalid_redirect_uri",
+                    "auth_invalid_scope"       : "sim_invalid_scope"
+                }
+
+                const requiredAuthorizeParams = [
+                    "redirect_uri",
+                    "response_type",
+                    // "client_id",
+                    // "scope",
+                    // "state"
+                ]
+            
+                // checks for required params
+                // -------------------------------------------------------------
+                for (const name of requiredAuthorizeParams) {
+
+                    // If redirect_uri is missing we reply with 400 (tested below)
+                    // If anything else is missing we redirect and pass an error param
+                    if (name !== "redirect_uri") {
+                        it(`requires "${name}" param`, () => {
+                            const query = { ...fullQuery };
+                            delete query[name]
+
+                            return request(app)
+                            .get(url.pathname)
+                            .query(query)
+                            .expect(302)
+                            .expect(function(res) {
+                                const loc = res.get("location");
+                                if (!loc || loc.indexOf(`error=missing_parameter`) == -1) {
+                                    throw new Error(`No error passed to the redirect ${loc}`)
+                                }
+                            })
+                            .expect(function(res) {
+                                const loc = res.get("location");
+                                if (!loc || loc.indexOf("state=x") == -1) {
+                                    throw new Error(`No state passed to the redirect ${loc}`)
+                                }
+                            });
+                        });
+                    }
+                }
+
+                // validates the redirect_uri parameter
+                // -------------------------------------------------------------
+                it("validates the redirect_uri parameter", () => {
+                    return request(app)
+                    .get(url.pathname)
+                    .query({ ...fullQuery, redirect_uri: "x" })
+                    .expect(/^Invalid redirect_uri parameter/)
+                    .expect(400);
+                });
+
+                // simulated errors
+                // -------------------------------------------------------------
+                Object.keys(authErrors).forEach(errorName => {
+                    it (`can simulate "${errorName}" error via sim`, () => {
+
+                        const url = buildUrl({
+                            fhir: FHIR_VERSION,
+                            path: "/auth/authorize",
+                            sim: {
+                                auth_error: errorName
+                            }
+                        });
+        
+                        return request(app)
+                        .get(url.pathname)
+                        .query(fullQuery)
+                        .expect(302)
+                        .expect(function(res) {
+                            const loc = res.get("location");
+                            if (!loc || loc.indexOf(`error=${authErrors[errorName]}`) == -1) {
+                                throw new Error(`No error passed to the redirect ${loc}`)
+                            }
+                            if (!loc || loc.indexOf("state=x") == -1) {
+                                throw new Error(`No state passed to the redirect ${loc}`)
+                            }
+                        });
+                    });
+
+                    it (`can simulate "${errorName}" error via launch param`, () => {
+
+                        const url = buildUrl({
+                            fhir: FHIR_VERSION,
+                            path: "/auth/authorize",
+                            query: {
+                                ...fullQuery,
+                                launch: {
+                                    auth_error: errorName
+                                }
+                            }
+                        });
+        
+                        return request(app)
+                        .get(url.pathname)
+                        .query(url.searchParams.toString())
+                        .expect(302)
+                        .expect(function(res) {
+                            const loc = res.get("location");
+                            if (!loc || loc.indexOf(`error=${authErrors[errorName]}`) == -1) {
+                                throw new Error(`No error passed to the redirect ${loc}`)
+                            }
+                            if (!loc || loc.indexOf("state=x") == -1) {
+                                throw new Error(`No state passed to the redirect ${loc}`)
+                            }
+                        });
+                    });
+                })
+
+                // rejects invalid audience value
+                // -------------------------------------------------------------
+                it ("rejects invalid audience value", () => {
+                    return request(app)
+                    .get(url.pathname)
+                    .query({ ...fullQuery, aud: "whatever" })
+                    .expect(302)
+                    .expect(function(res) {
+                        const loc = res.get("location");
+                        if (!loc) {
+                            throw new Error(`No redirect`)
+                        }
+                        let url = Url.parse(loc, true);
+                        if (url.query.error != "bad_audience") {
+                            throw new Error(`Wrong redirect ${loc}`)
+                        }
+                    });
+                });
+
+                // can show encounter picker
+                // -------------------------------------------------------------
+                it ("can show encounter picker", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "patient/*.read launch",
+                            patient: "whatever",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                launch_ehr: 1,
+                                select_encounter: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect(res => {
+                        const loc = res.get("location");
+                        if (!loc || loc.indexOf(`/v/${FHIR_VERSION}/encounter?`) !== 0) {
+                            throw new Error(`Wrong redirect ${loc}.`)
+                        }
+                    });
+                });
+
+                it("generates a code from profile", async () => {
+                    return SMART.getAuthCode({
+                        patient: "abc",
+                        scope: "profile openid launch",
+                        encounter: "bcd",
+                        login_success: true,
+                        auth_success: true,
+                        launch: { launch_pt: 1 }
+                    });
+                });
+
+                it("generates a code from fhirUser", async () => {
+                    return SMART.getAuthCode({
+                        patient: "abc",
+                        scope: "fhirUser openid launch",
+                        encounter: "bcd",
+                        login_success: true,
+                        auth_success: true,
+                        launch: { launch_pt: 1 }
+                    });
+                });
+            })
+
+            describe('token', function() {
+
+                it("can simulate sim_expired_refresh_token", async () => {
+
+                    const { code } = await SMART.getAuthCode({
+                        scope: "offline_access",
+                        launch: {
+                            launch_pt : 1,
+                            skip_login: 1,
+                            skip_auth : 1,
+                            patient   : "abc",
+                            encounter : "bcd",
+                            auth_error: "token_expired_refresh_token"
+                        }
+                    })
+                    
+                    const tokenResponse = await SMART.getAccessToken(code)
+
+                    /**
+                     * @type {object}
+                     */
+                    const refreshToken = jwt.decode(tokenResponse.refresh_token)
+
+                    expect(refreshToken.auth_error).to.equal("token_expired_refresh_token")
+
+                    return request(app)
+                        .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/token" }).pathname)
+                        .type("form")
+                        .send({ grant_type: "refresh_token", refresh_token: tokenResponse.refresh_token })
+                        .expect('Content-Type', /text/)
+                        .expect(401, config.errors.sim_expired_refresh_token);
+                });
+
+                it("provides id_token", async () => {
+                    const { code } = await SMART.getAuthCode({
+                        patient: "abc",
+                        scope: "fhirUser openid launch",
+                        encounter: "bcd",
+                        login_success: true,
+                        auth_success: true,
+                        launch: {
+                            launch_pt: 1    
+                        }
+                    });
+
+                    const tokenResponse = await SMART.getAccessToken(code)
+
+                    expect(tokenResponse).to.have.property("id_token")
+                });
+            });
+
+            it("the access token can be verified using the published public key", async () => {
+
+                // Start by getting an id_token
+                const { code } = await SMART.getAuthCode({
+                    patient: "abc",
+                    scope: "fhirUser openid launch",
+                    encounter: "bcd",
+                    login_success: true,
+                    auth_success: true,
+                    launch: { launch_pt: 1 }
+                });
+
+                const { id_token } = await SMART.getAccessToken(code)
+
+                // Then get the jwks_uri from .well-known/openid-configuration
+                const jwksUrl = await request(app)
+                    .get(buildUrl({ fhir: FHIR_VERSION, path: ".well-known/openid-configuration" }).pathname)
+                    .expect("content-type", /json/)
+                    .expect(200)
+                    .then(res => new URL(res.body.jwks_uri));
+
+                // Then fetch the keys
+                const keys = await request(app)
+                    .get(jwksUrl.pathname)
+                    .expect("content-type", /json/)
+                    .expect(200)
+                    .then(res => res.body.keys);
+
+                jwt.verify(id_token, jwkToPem(keys[0]), { algorithms: ["RS256"] });
+            });
+
+            describe('Confidential Clients', () => {
+
+                let token = jwt.sign("whatever", config.jwtSecret);
+                
+                it ("can simulate auth_invalid_client_secret", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" }).pathname)
+                    .type('form')
+                    .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
+                    .send({
+                        grant_type: "refresh_token",
+                        auth_error: "auth_invalid_client_secret",
+                        refresh_token: token
+                    })
+                    .expect("Simulated invalid client secret error")
+                    .expect(401);
+                });
+
+                it ("rejects empty auth header", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" }).pathname)
+                    .type('form')
+                    .set("Authorization", "Basic")
+                    .send({
+                        grant_type: "refresh_token",
+                        refresh_token: token
+                    })
+                    .expect("The authorization header 'Basic' cannot be empty")
+                    .expect(401);
+                });
+
+                it ("rejects invalid auth header", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" }).pathname)
+                    .type('form')
+                    .set("Authorization", "Basic bXktYXB")
+                    .send({
+                        grant_type: "refresh_token",
+                        refresh_token: token
+                    })
+                    .expect(/^Bad authorization header/)
+                    .expect(401);
+                });
+    
+                it ("can simulate sim_invalid_token", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" }).pathname)
+                    .type('form')
+                    .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
+                    .send({
+                        grant_type: "authorization_code",
+                        code: jwt.sign({ auth_error:"token_invalid_token" }, config.jwtSecret)
+                    })
+                    .expect("Simulated invalid token error")
+                    .expect(401);
+                });
+            })
+        });
+
+        describe('Introspection', () => {
+            it("includes the introspect endpoint in the CapabilityStatement", async () => {
+                await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/metadata" }).pathname)
+                .expect(200)
+                .then(response => {
+                    const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
+                    expect(oauthUris);
+                    const introspection = oauthUris.extension.find(e => e.url === "introspect");
+                    expect(introspection);
+                    expect(new URL(introspection.valueUri).pathname).equal(buildUrl({ fhir: FHIR_VERSION, path: "/auth/introspect" }).pathname);
+                })
+            })
+
+            it("can introspect an access token", async () => {
+                const { code } = await SMART.getAuthCode({
+                    scope: "offline_access",
+                    launch: {
                         launch_pt : 1,
                         skip_login: 1,
                         skip_auth : 1,
                         patient   : "abc",
                         encounter : "bcd",
-                        auth_error: "token_expired_refresh_token"
                     }
-                })
-                .then(tokenResponse => {
-                    return refreshSession({
-                        baseUrl: config.baseUrl + path,
-                        refreshToken: tokenResponse.refresh_token
-                    });
-                })
-                .then(result => {
-                    if (result != config.errors.sim_expired_refresh_token) {
-                        return done(new Error("No sim_expired_refresh_token error returned"));
-                    }
-                    done();
-                }, done);
-            });
-        });
-    });
-});
-
-describe('Introspection', () => {
-    buildRoutePermutations().forEach(path => {
-        it(`gets correct FHIR conformance for ${path}`, () => {
-            return request(app)
-            .get(`${path}fhir/metadata`)
-            .expect(200)
-            .then(response => {
-                const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
-                expect(oauthUris);
-                const introspection = oauthUris.extension.find(e => e.url === "introspect");
-                expect(introspection);
-                expect(new URL(introspection.valueUri).pathname).equal(`${path}auth/introspect`);
-            })
-        })
-
-        it(`can introspect an access token ${path}`, (done) => {
-            authorize({
-                scope  : "offline_access",
-                baseUrl: config.baseUrl + path,
-                launch : {
-                    launch_pt : 1,
-                    skip_login: 1,
-                    skip_auth : 1,
-                    patient   : "abc",
-                    encounter : "bcd",
-                }
-            }).then(token => {
-                request(app)
-                    .post(`${path}auth/introspect`)
-                    .set('Authorization', `Bearer ${token.access_token}`)
-                    .set('Accept', 'application/json')
-                    .set('Content-Type', 'application/x-www-form-urlencoded')
-                    .send({ token: token.access_token })
-                    .expect(200)
-                    .expect(res => {
-                        if(res.body?.active !== true) throw new Error("Token is not active.");
-                    })
-                    .end(done);
-
-            }).catch(done)
-        })
-
-        it(`can introspect a refresh token ${path}`, (done) => {
-            authorize({
-                scope  : "offline_access",
-                baseUrl: config.baseUrl + path,
-                launch : {
-                    launch_pt : 1,
-                    skip_login: 1,
-                    skip_auth : 1,
-                    patient   : "abc",
-                    encounter : "bcd",
-                }
-            }).then(token => {
-                request(app)
-                    .post(`${path}auth/introspect`)
-                    .set('Authorization', `Bearer ${token.access_token}`)
-                    .set('Accept', 'application/json')
-                    .set('Content-Type', 'application/x-www-form-urlencoded')
-                    .send({ token: token.refresh_token })
-                    .expect(200)
-                    .expect(res => {
-                        if(res.body?.active !== true) throw new Error("Token is not active.");
-                    })
-                    .end(done);
-
-            }).catch(done)
-        })
-
-        it(`gets active: false for authorized request with invalid token at ${path}`, (done) => {
-            const introspectionToken = 'invalid';
-            
-            authorize({
-                scope  : "offline_access",
-                baseUrl: config.baseUrl + path,
-                launch : {
-                    launch_pt : 1,
-                    skip_login: 1,
-                    skip_auth : 1,
-                    patient   : "abc",
-                    encounter : "bcd",
-                }
-            }).then(auth => {
-                request(app)
-                    .post(`${path}auth/introspect`)
-                    .set('Authorization', `Bearer ${auth.access_token}`)
-                    .set('Accept', 'application/json')
-                    .set('Content-Type', 'application/x-www-form-urlencoded')
-                    .send({ token: introspectionToken })
-                    .expect(200)
-                    .expect({ active: false })
-                    .end(done);
-            })
-        })
-
-        it(`gets active: false for authorized request with an expired introspection token at ${path}`, (done) => {
-
-            const expiredTokenPayload = {
-                context: {
-                    need_patient_banner: true,
-                    smart_style_url    : config.baseUrl + "/smart-style.json",
-                },
-                client_id: "mocked",
-                scope    : "Patient/*.read",
-                exp: Math.floor(Date.now() / 1000) - (60 * 60) // token expired one hour ago
-            }
-
-            const expiredToken = jwt.sign(expiredTokenPayload, config.jwtSecret)
-
-            authorize({
-                scope  : "offline_access",
-                baseUrl: config.baseUrl + path,
-                launch : {
-                    launch_pt : 1,
-                    skip_login: 1,
-                    skip_auth : 1,
-                    patient   : "abc",
-                    encounter : "bcd",
-                }
-            }).then(auth => {
-                request(app)
-                    .post(`${path}auth/introspect`)
-                    .set('Authorization', `Bearer ${auth.access_token}`)
-                    .set('Accept', 'application/json')
-                    .set('Content-Type', 'application/x-www-form-urlencoded')
-                    .send({ token: expiredToken })
-                    .expect(200)
-                    .expect({ active: false })
-                    .end(done);
-            })
-        })
-    })
-})
-
-describe('Generator', () => {
-    describe('RSA Generator', function() {
-        this.timeout(20000);
-        it ("can generate random strings", async () => {
-            let res = await requestPromise({
-                uri: `${config.baseUrl}/generator/random`,
-                json: true,
-                qs: {
-                    enc: "hex"
-                }
-            });
-            expect(res.body).to.match(/^[0-9a-fA-F]*$/);
-            
-            // res = await requestPromise({
-            //     uri: `${config.baseUrl}/generator/random`,
-            //     // json: true,
-            //     // qs: {
-            //     //     enc: "base64",
-            //     //     len: 10
-            //     // }
-            // });
-            // console.log(decodeURI(res.body))
-            // expect(res.body.length).to.equal(10);
-        });
-
-        it ("can generate random RSA-256 key pairs", done => {
-            let privateKey, publicKey;
-
-            function ketKeyPair() {
-                return requestPromise({
-                    uri: `${config.baseUrl}/generator/rsa`,
-                    json: true,
-                    qs: {
-                        enc: "base64"
-                    }
-                })
-                .then(res => expectStatusCode(res, 200))
-                .then(res => expectResponseHeader(res, 'Content-Type', /\bjson\b/i))
-                .then(res => {
-                    let { privateKey, publicKey } = res.body;
-                    if (!privateKey) {
-                        return Promise.reject(
-                            new Error("The generator did not create a private key")
-                        );
-                    }
-                    if (!publicKey) {
-                        return Promise.reject(
-                            Error("The generator did not create a public key")
-                        );
-                    }
-                    return { privateKey, publicKey };
                 });
-            }
+                
+                const { access_token } = await SMART.getAccessToken(code);
 
-            ketKeyPair()
-            .then(keys => {
-                privateKey = keys.privateKey;
-                publicKey  = keys.publicKey;
-                return ketKeyPair();
-            })
-            .then(keys => {
-                if (keys.privateKey == privateKey) {
-                    throw new Error("privateKey does not change between requests");
-                }
-                if (keys.publicKey == publicKey) {
-                    throw new Error("publicKey does not change between requests");
-                }
-                done();
-            })
-            .catch(done);
-        });
-    });
-});
-
-describe('Backend Services', () => {
-
-
-    describe('Client Registration', () => {
-
-        it ("requires form-urlencoded POST", done => {
-            requestPromise({
-                method: "POST",
-                uri: `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`
-            })
-            .then(res => expectStatusCode(res, 401))
-            .then(res => {
-                if (res.body != "Invalid request content-type header (must be 'application/x-www-form-urlencoded')") {
-                    throw new Error("Did not return the proper error message");
-                }
-                return res;
-            })
-            .then(res => done(), done)
-        });
-
-        it ("requires 'iss' parameter", done => {
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {}
-            })
-            .then(res => expectStatusCode(res, 400))
-            .then(res => {
-                if (res.body != "Missing iss parameter") {
-                    throw new Error("Did not return the proper error message");
-                }
-                return res;
-            })
-            .then(res => done(), done)
-        });
-
-        it ("requires 'pub_key' parameter", done => {
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {
-                    iss: "whatever"
-                }
-            })
-            .then(res => expectStatusCode(res, 400))
-            .then(res => {
-                if (res.body != "Missing pub_key parameter") {
-                    throw new Error("Did not return the proper error message");
-                }
-                return res;
-            })
-            .then(res => done(), done)
-        });
-
-        it ("validates the 'dur' parameter", done => {
-            Promise.all(
-                [
-                    "x",
-                    Infinity,
-                    -Infinity,
-                    -2
-                ].map(dur => {
-                    return requestPromise({
-                        method: "POST",
-                        uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                        form  : {
-                            iss: "whatever",
-                            pub_key: "abc",
-                            dur
-                        }
-                    })
-                    .then(res => expectStatusCode(res, 400))
-                    .then(res => {
-                        if (res.body != "Invalid dur parameter") {
-                            throw new Error("Did not return the proper error message");
-                        }
-                        return res;
-                    });
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer ${access_token}`)
+                .set('Accept', 'application/json')
+                .set('Content-Type', 'application/x-www-form-urlencoded')
+                .send({ token: access_token })
+                .expect(200)
+                .expect(res => {
+                    if(res.body.active !== true) throw new Error("Token is not active.");
                 })
-            )
-            .then(res => done(), done)
-        });
+            })
 
-        it ("basic usage", done => {
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {
-                    iss    : "whatever",
-                    pub_key: "something"
-                }
-            })
-            .then(res => expectStatusCode(res, 200))
-            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
-            .then(res => {
-                if (res.body.split(".").length != 3) {
-                    throw new Error("Did not return proper client id");
-                }
-                return res;
-            })
-            .then(res => done(), done)
-        });
+            it("can introspect an access token", async () => {
+                const { code } = await SMART.getAuthCode({
+                    scope: "offline_access",
+                    launch: {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                    }
+                });
+                
+                const { access_token, refresh_token } = await SMART.getAccessToken(code);
 
-        it ("accepts custom duration", done => {
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {
-                    iss    : "whatever",
-                    pub_key: "something",
-                    dur    : 23
-                }
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer ${access_token}`)
+                .set('Accept', 'application/json')
+                .set('Content-Type', 'application/x-www-form-urlencoded')
+                .send({ token: refresh_token })
+                .expect(200)
+                .expect(res => {
+                    if(res.body.active !== true) throw new Error("Token is not active.");
+                })
             })
-            .then(res => expectStatusCode(res, 200))
-            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
-            .then(res => {
-                if (res.body.split(".").length != 3) {
-                    throw new Error("Did not return proper client id");
+
+            it("gets active: false for authorized request with invalid token", async () => {
+                const { code } = await SMART.getAuthCode({
+                    scope: "offline_access",
+                    launch: {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                    }
+                });
+                
+                const { access_token, refresh_token } = await SMART.getAccessToken(code);
+
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer ${access_token}`)
+                .set('Accept', 'application/json')
+                .set('Content-Type', 'application/x-www-form-urlencoded')
+                .send({ token: "invalid token" })
+                .expect(200)
+                .expect({ active: false })
+            })
+
+            it("gets active: false for authorized request with expired token", async () => {
+
+                const expiredTokenPayload = {
+                    client_id: "mocked",
+                    scope: "Patient/*.read",
+                    exp: Math.floor(Date.now() / 1000) - (60 * 60) // token expired one hour ago
                 }
-                let token = decodeJwtToken(res.body);
-                let exp = token.accessTokensExpireIn;
-                if (exp != 23) {
-                    throw new Error(
-                        `Expected "accessTokensExpireIn" property to equal 23 but found ${exp}`
+    
+                const expiredToken = jwt.sign(expiredTokenPayload, config.jwtSecret)
+
+                const { code } = await SMART.getAuthCode({
+                    scope: "offline_access",
+                    launch: {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                    }
+                });
+                
+                const { access_token } = await SMART.getAccessToken(code);
+
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer ${access_token}`)
+                .set('Accept', 'application/json')
+                .set('Content-Type', 'application/x-www-form-urlencoded')
+                .send({ token: expiredToken })
+                .expect(200)
+                .expect({ active: false })
+            })
+        })
+
+        describe('Backend Services', () => {
+
+            describe('Client Registration', () => {
+        
+                it ("requires form-urlencoded POST", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .send({})
+                    .expect(401, "Invalid request content-type header (must be 'application/x-www-form-urlencoded')")
+                });
+        
+                it ("requires 'iss' parameter", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .type("form")
+                    .send({})
+                    .expect(400, "Missing iss parameter")
+                });
+        
+                it ("requires 'pub_key' parameter", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .type("form")
+                    .send({ iss: "whatever" })
+                    .expect(400, "Missing pub_key parameter")
+                });
+        
+                it ("validates the 'dur' parameter", () => {
+                    return Promise.all(
+                        ["x", Infinity, -Infinity, -2].map(dur => {
+                            return request(app)
+                            .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                            .type("form")
+                            .send({ iss: "whatever", pub_key: "abc", dur })
+                            .expect(400, "Invalid dur parameter");
+                        })
                     )
-                }
-            })
-            .then(res => done(), done)
-        });
+                });
+        
+                it ("basic usage", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .type("form")
+                    .send({ iss: "whatever", pub_key: "something" })
+                    .expect(200)
+                    .expect("content-type", /\btext\/plain\b/i)
+                    .expect(res => expect(jwt.decode(res.text)).to.not.be.null);
+                });
+        
+                it ("accepts custom duration", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .type("form")
+                    .send({ iss: "whatever", pub_key: "something", dur: 23 })
+                    .expect(200)
+                    .expect("content-type", /\btext\/plain\b/i)
+                    .expect(res => expect(jwt.decode(res.text).accessTokensExpireIn).to.equal(23))
+                });
+        
+                it ("accepts custom simulated errors", () => {
+                    return request(app)
+                    .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                    .type("form")
+                    .send({ iss: "whatever", pub_key: "something", auth_error: "test error" })
+                    .expect(200)
+                    .expect("content-type", /\btext\/plain\b/i)
+                    .expect(res => expect(jwt.decode(res.text).auth_error).to.equal("test error"))
+                });
+            });
+        
+            it ("Authorization Claim works as expected", async () => {
+                const iss = "whatever";
+                const tokenUrl = buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" });
 
-        it ("accepts custom simulated errors", done => {
-            const err = "test error"
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {
-                    iss    : "whatever",
-                    pub_key: "something",
-                    auth_error: err
-                }
-            })
-            .then(res => expectStatusCode(res, 200))
-            .then(res => expectResponseHeader(res, "content-type", /\btext\/plain\b/i))
-            .then(res => {
-                if (res.body.split(".").length != 3) {
-                    throw new Error("Did not return proper client id");
-                }
-                let token = decodeJwtToken(res.body);
-                let x = token.auth_error;
-                if (x !== err) {
-                    throw new Error(
-                    `Expected "auth_error" property to equal "${err}" but found "${x}"`
-                    )
-                }
-            })
-            .then(res => done(), done)
-        });
-    });
+                const alg = "RS384"
+                const key = await jose.JWK.createKey("RSA", 2048, { alg })
 
-    describe('Authorization Claim', () => {
-        it ("Works as expected", done => {
-            const iss = "whatever";
-            const tokenUrl = `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/token`;
+                const token = await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
+                .type("form")
+                .send({ iss, pub_key: key.toPEM() })
+                .then(res => res.text);
 
-            requestPromise({
-                method: "POST",
-                uri   : `${config.baseUrl}/v/${PREFERRED_FHIR_VERSION}/auth/register`,
-                form  : {
-                    iss,
-                    pub_key: PUBLIC_KEY
-                }
-            })
-            .then(res => {
                 let jwtToken = {
                     iss,
-                    sub: res.body,
-                    aud: tokenUrl,
+                    sub: token,
+                    aud: tokenUrl.href,
                     exp: Date.now()/1000 + 300, // 5 min
                     jti: crypto.randomBytes(32).toString("hex")
                 };
-        
-                return requestPromise({
-                    method: "POST",
-                    url   : tokenUrl,
-                    json  : true,
-                    form  : {
-                        scope     : "system/*.*",
-                        grant_type: "client_credentials",
-                        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                        client_assertion: jwt.sign(
-                            jwtToken,
-                            base64url.decode(PRIVATE_KEY),
-                            { algorithm: 'RS256'}
-                        )
+            
+                await request(app)
+                .post(tokenUrl.pathname)
+                .type("form")
+                .send({
+                    scope: "system/*.*",
+                    grant_type: "client_credentials",
+                    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                    client_assertion: jwt.sign(
+                        jwtToken,
+                        key.toPEM(true),
+                        { algorithm: alg }
+                    )
+                })
+                .then(res => {
+                    // console.log(res.text)
+                    if (res.body.token_type !== "bearer") {
+                        throw new Error(`Authorization failed! Expecting token_type: bearer but found ${res.body.token_type}`);
                     }
-                });
-            })
-            .then(res => {
-                // console.log(res.body);
-                if (res.body.token_type !== "bearer") {
-                    throw new Error(`Authorization failed! Expecting token_type: bearer but found ${res.body.token_type}`);
-                }
-                if (res.body.expires_in !== 900) {
-                    throw new Error(`Authorization failed! Expecting expires_in: 900 but found ${res.body.expires_in}`);
-                }
-                if (!res.body.access_token) {
-                    throw new Error(`Authorization failed! No access_token returned`);
-                }
-                if (res.body.access_token.split(".").length != 3) {
-                    throw new Error("Did not return proper access_token");
-                }
-                return res;
-            })
-            .then(res => done(), done);
+                    if (res.body.expires_in !== 900) {
+                        throw new Error(`Authorization failed! Expecting expires_in: 900 but found ${res.body.expires_in}`);
+                    }
+                    if (!res.body.access_token) {
+                        throw new Error(`Authorization failed! No access_token returned`);
+                    }
+                    if (res.body.access_token.split(".").length != 3) {
+                        throw new Error("Did not return proper access_token");
+                    }
+                })
+            });
         });
-    });
+    })
+}
 
-    describe('Fhir Requests', () => {
-        it ("TODO...");
-    });
-});
+

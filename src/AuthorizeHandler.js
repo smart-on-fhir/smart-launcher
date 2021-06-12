@@ -229,10 +229,7 @@ class AuthorizeHandler extends SMARTHandler {
             aud          : ""
         });
         redirectUrl.search = null;
-        redirectUrl.pathname = redirectUrl.pathname.replace(
-            config.authBaseUrl + "/authorize",
-            to
-        );
+        redirectUrl.pathname = redirectUrl.pathname.replace("/auth/authorize", to);
         return this.response.redirect(Url.format(redirectUrl));
     }
 
@@ -283,10 +280,7 @@ class AuthorizeHandler extends SMARTHandler {
 
         // The "aud" param must match the apiUrl (but can have different protocol)
         if (!sim.aud_validated) {
-            const apiUrl = Lib.buildUrlPath(
-                config.baseUrl,
-                req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl)
-            );
+            const apiUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl, "fhir");
             let a = Lib.normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             let b = Lib.normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             if (a != b) {

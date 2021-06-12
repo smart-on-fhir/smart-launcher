@@ -188,11 +188,11 @@ function normalizeUrl(url) {
  * Given a conformance statement (as JSON string), replaces the auth URIs with
  * new ones that point to our proxy server. Also add the rest.security.service
  * field.
- * @param {String} bodyText    A conformance statement as JSON string
- * @param {String} authBaseUrl The baseUrl of our server
+ * @param {String} bodyText A conformance statement as JSON string
+ * @param {String} baseUrl  The baseUrl of our server
  * @returns {Object|null} Returns the modified JSON object or null in case of error
  */
-function augmentConformance(bodyText, authBaseUrl) {
+function augmentConformance(bodyText, baseUrl) {
     let json;
     try {
         json = JSON.parse(bodyText);
@@ -209,15 +209,15 @@ function augmentConformance(bodyText, authBaseUrl) {
         "extension": [
             {
                 "url": "authorize",
-                "valueUri": buildUrlPath(authBaseUrl, "/authorize")
+                "valueUri": buildUrlPath(baseUrl, "/auth/authorize")
             },
             {
                 "url": "token",
-                "valueUri": buildUrlPath(authBaseUrl, "/token")
+                "valueUri": buildUrlPath(baseUrl, "/auth/token")
             },
             {
                 "url": "introspect",
-                "valueUri": buildUrlPath(authBaseUrl, "/introspect")
+                "valueUri": buildUrlPath(baseUrl, "/auth/introspect")
             }
         ]
     }];
@@ -249,7 +249,7 @@ function unBundleResource(bundle) {
 function adjustResponseUrls(bodyText, fhirUrl, requestUrl, fhirBaseUrl, requestBaseUrl) {
     bodyText = replaceAll(fhirUrl, requestUrl, bodyText);
     bodyText = replaceAll(fhirUrl.replace(",", "%2C"), requestUrl, bodyText); // allow non-encoded commas
-    bodyText = replaceAll(fhirBaseUrl, requestBaseUrl, bodyText);
+    bodyText = replaceAll("/fhir", requestBaseUrl, bodyText);
     return bodyText;
 }
 

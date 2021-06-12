@@ -2,12 +2,9 @@ const FS = require("fs");
 const convert = require('pem-jwk');
 
 const HOST = process.env.HOST || "localhost";
-const PORT = process.env.LAUNCHER_PORT ||
-             process.env.PORT ||
-             (process.env.NODE_ENV == "test" ? 8444 : 8443);
+const PORT = process.env.LAUNCHER_PORT || process.env.PORT || (process.env.NODE_ENV == "test" ? 8444 : 8443);
 
 const PRIVATE_KEY = FS.readFileSync(__dirname + "/../private-key.pem", "utf8");
-const PUBLIC_KEY  = FS.readFileSync(__dirname + "/../public-key.pem", "utf8");
 const JWK         = convert.pem2jwk(PRIVATE_KEY);
 
 [
@@ -24,17 +21,13 @@ const JWK         = convert.pem2jwk(PRIVATE_KEY);
 });
 
 module.exports = {
+  port                 : PORT,
+  host                 : HOST,
   fhirServerR2         : process.env.FHIR_SERVER_R2,
   fhirServerR3         : process.env.FHIR_SERVER_R3,
   fhirServerR4         : process.env.FHIR_SERVER_R4,
   baseUrl              : process.env.BASE_URL || `http://${HOST}:${PORT}`,
-  sandboxTagSystem     : process.env.SANDBOX_TAG_SYSTEM || "https://smarthealthit.org/tags",
-  authBaseUrl          : process.env.AUTH_BASE_URL || "/auth",
-  fhirBaseUrl          : process.env.FHIR_BASE_URL || "/fhir",
-  protectedSandboxWords: (process.env.PROTECTED_SANDBOX_WORDS || "smart,synthea,pro").split(","),
   jwtSecret            : process.env.SECRET || "thisisasecret",
-  port                 : PORT,
-  host                 : HOST,
   accessTokenLifetime  : process.env.ACCESS_TOKEN_LIFETIME || 60, // minutes
   refreshTokenLifeTime : process.env.REFRESH_TOKEN_LIFETIME || 60 * 24 * 365, // minutes
   backendServiceAccessTokenLifetime: process.env.BACKEND_ACCESS_TOKEN_LIFETIME || 15, // minutes
