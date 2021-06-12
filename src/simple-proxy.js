@@ -6,11 +6,14 @@ const replStream = require("replacestream");
 const config     = require("./config");
 const patientMap = require("./patient-compartment");
 const Lib        = require("./lib");
+const { stringify } = require("querystring");
+const GranularHelper= require('./GranularHelper');
 
 require("colors");
 
 
 module.exports = (req, res) => {
+    // console.log('\n>>>simple-proxy:', req.url);
 
     // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
@@ -20,6 +23,15 @@ module.exports = (req, res) => {
     let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 
     let token = null;
+    let granularScopes = null;
+
+    // // Require token for Connectathon ------------------------------------------
+    // if (!req.headers.authorization) {
+    //     console.log('No authorization header present!');
+    //     return res.status(403).send(
+    //         `{"Error": "Authorization is required during the Connectathon!"}`
+    //     );
+    // }
 
     // Validate token ----------------------------------------------------------
     if (req.headers.authorization) {
@@ -39,6 +51,13 @@ module.exports = (req, res) => {
         // Simulated errors
         if (token.sim_error) {
             return res.status(401).send(token.sim_error);
+        }
+
+        // check for granular permissions
+        if (token) {
+            granularScopes = GranularHelper.getGranularScopes(token);
+            // GranularHelper.logGranularScopes(granularScopes);
+            // console.log('\n');
         }
     }
 
@@ -60,6 +79,29 @@ module.exports = (req, res) => {
             error: `FHIR server ${req.params.fhir_release} not found`
         });
     }
+
+    // Check access if we have granular scopes ---------------------------------
+    if (granularScopes) {
+        // console.log('Url:', req.url);
+
+        let url = new URL(req.url, 'http://localhost');
+        let pathSegments = url.pathname.split('/').filter((val) => { return (val);});
+
+        let resourceName = (pathSegments.length > 0) ? pathSegments[0] : '';
+        let id = (pathSegments.length > 1) ? pathSegments[1] : '';
+
+        let allowed = GranularHelper.doParamsPass(resourceName, id, req.method, url.searchParams, granularScopes);
+
+        if (!allowed) {
+            console.log('Denying Granular Request for', resourceName);
+            return res.status(403).send(
+                `{"Error": "Request too wide for granted scopes"}`
+            );
+        }
+
+        console.log('Allowing Granular Request for', resourceName);
+    }
+    
 
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {

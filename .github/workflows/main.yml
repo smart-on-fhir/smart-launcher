@@ -1,0 +1,32 @@
+name: Deploy SMART Launcher master branch to argo.run ci
+# Basics from https://docs.microsoft.com/en-us/azure/dev-spaces/how-to/github-actions
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.CONTAINER_REGISTRY }}
+        username: ${{ fromJSON(secrets.AZURE_CREDENTIALS_21).clientId }}
+        password: ${{ fromJSON(secrets.AZURE_CREDENTIALS_21).clientSecret }}
+
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS_21 }}'
+        cluster-name: ${{ secrets.CLUSTER_NAME_21 }}
+        resource-group: ${{ secrets.RESOURCE_GROUP }}
+
+    - name: Build and rollout to CI
+      run: |
+        docker build . \
+          -t ${{ secrets.CONTAINER_REGISTRY }}/smart:$GITHUB_SHA \
+          -t ${{ secrets.CONTAINER_REGISTRY }}/smart:latest
+        docker push ${{ secrets.CONTAINER_REGISTRY }}/smart
+        kubectl -n smart rollout restart deployment/smart
