@@ -41,7 +41,7 @@ function getPath(obj, path = "") {
  * whatever is supplied in the rest of the arguments. If no argument is supplied
  * the "%s" token is left as is.
  * @param {String} s The string to format
- * @param {*} ... The rest of the arguments are used for the replacements
+ * @param {*[]} ... The rest of the arguments are used for the replacements
  * @return {String}
  */
 function printf(s) {
@@ -78,7 +78,9 @@ function redirectWithError(req, res, name, ...rest) {
 }
 
 function replyWithError(res, name, code = 500, ...params) {
-    return res.status(code).send(getErrorText(name, ...params));
+    res.status(code)
+    res.set('Content-Type', 'text/plain')
+    return res.send(getErrorText(name, ...params));
 }
 
 function getErrorText(name, ...rest) {
@@ -194,7 +196,7 @@ function augmentConformance(bodyText, authBaseUrl) {
     let json;
     try {
         json = JSON.parse(bodyText);
-        if (!json.rest[0].security){
+        if (!json.rest[0].security) {
             json.rest[0].security = {};
         }
     } catch (e) {

@@ -9,8 +9,8 @@ selenium-debug.log
 .vscode
 coverage
 .nyc_output
-tests/e2e/selenium-server.log
-tests/e2e/bin/chromedriver
-tests/e2e/bin/selenium.jar
-tests/e2e/reports/login-screen.xml
-tests/e2e/reports/main.xml
+test/e2e/selenium-server.log
+test/e2e/bin/chromedriver
+test/e2e/bin/selenium.jar
+test/e2e/reports/login-screen.xml
+test/e2e/reports/main.xml
