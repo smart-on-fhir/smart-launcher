@@ -251,9 +251,8 @@ function adjustResponseUrls(bodyText, fhirUrl, requestUrl, fhirBaseUrl, requestB
     return bodyText;
 }
 
-function adjustUrl(url, isGet, sandboxes = []) {
-    
-    url = url.replace(RE_RESOURCE_SLASH_ID, (
+function adjustUrl(url) {
+    return url.replace(RE_RESOURCE_SLASH_ID, (
         resourceAndId,
         resource,
         slashAndId,
@@ -262,36 +261,37 @@ function adjustUrl(url, isGet, sandboxes = []) {
         slashAndQuery,
         query
     ) => resource + "?" + (query ? query + "&" : "") + "_id=" + id);
-
-    // Also add tags if needed
-    if (sandboxes.length) {
-        // For GET requests add all the tags to act as filters.
-        // Otherwise only keep the first (the custom) tag
-        let sandboxTags = isGet ? sandboxes.join(",") : sandboxes[0];
-        url += (url.indexOf("?") == -1 ? "?" : "&") + "_tag=" + sandboxTags;
-    }
-
-    return url;
 }
 
-function adjustRequestBody(json, system, sandboxes) {
+function adjustRequestBody(json) {
     (json.entry || [{resource: json}]).forEach( entry => {
         if (entry.request) {
-            entry.request.url = 
-                adjustUrl(entry.request.url, entry.request.method.toUpperCase() == "GET", sandboxes);
-        }
-
-        let resource = entry.resource;
-        if (!resource.meta) {
-            resource.meta = {tag: [{system: system, code: sandboxes[0]}]};
-        } else if (!resource.meta.tag) {
-            resource.meta.tag =  [{system: system, code: sandboxes[0]}];
-        } else {
-            resource.meta.tag = resource.meta.tag.filter( t => t.system != system );
-            resource.meta.tag.push({system: system, code: sandboxes[0]});
+            entry.request.url = adjustUrl(entry.request.url);
         }
     });
     return json;
+}
+
+/**
+ * Checks if the currentValue is within the white-listed values. If so, returns
+ * it. Otherwise returns the defaultValue if one is set, or throws an exception
+ * if no defaultValue is provided.
+ * @param {any[]} allowedValues 
+ * @param {*} currentValue 
+ * @param {*} defaultValue 
+ */
+function whitelist(allowedValues, currentValue, defaultValue) {
+    if (allowedValues.indexOf(currentValue) == -1) {
+        if (arguments.length < 3) {
+            throw new Error(
+                `The value "${currentValue}" is not allowed. Must be one of ${
+                    allowedValues.join(", ")
+                }.`
+            )
+        }
+        return defaultValue
+    }
+    return currentValue
 }
 
 module.exports = {
@@ -315,5 +315,6 @@ module.exports = {
     adjustUrl,
     adjustRequestBody,
     getRequestBaseURL,
+    whitelist,
     die
 };

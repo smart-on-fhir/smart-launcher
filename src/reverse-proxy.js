@@ -36,14 +36,6 @@ module.exports = function (req, res) {
             error: `FHIR server ${req.params.fhir_release} not found`
         });
     }
-    
-    // only allow gets to blacklisted sandboxes (like the SMART default patients)
-    if (req.method != "GET" && !req.url.endsWith("/_search") && (
-        !sandboxes ||
-        config.protectedSandboxWords.find( w => sandboxes[0].toLowerCase().indexOf(w) != -1 )
-    )) {
-        return res.status(401).send( fhirError("You do not have permission to modify this sandbox") );
-    }
 
     // require a valid auth token if there is an auth token
     if (req.headers.authorization) {
@@ -75,21 +67,17 @@ module.exports = function (req, res) {
         // fhirRequest.body = String(fhirRequest.body) + "&_tag=" + sandboxes.join("&");
     }
     else if (Object.keys(req.body).length) {
-        fhirRequest.body = Lib.adjustRequestBody(req.body, config.sandboxTagSystem, sandboxes);
+        fhirRequest.body = Lib.adjustRequestBody(req.body);
         fhirRequest.body = Buffer.from(JSON.stringify(fhirRequest.body), 'utf8');
         fhirRequest.headers['content-length'] = Buffer.byteLength(fhirRequest.body)
     }
 
     // make urls conditional and if exists, change /id to ?_id=
     if (isSearchPost) {
-        fhirRequest.url = Lib.buildUrlPath(
-            fhirServer, req.url
-        );
+        fhirRequest.url = Lib.buildUrlPath(fhirServer, req.url);
     }
     else {
-        fhirRequest.url = Lib.buildUrlPath(
-            fhirServer, Lib.adjustUrl(req.url, req.method == "GET", sandboxes)
-        );
+        fhirRequest.url = Lib.buildUrlPath(fhirServer, Lib.adjustUrl(req.url));
     }
 
     // if applicable, apply patient scope to GET requests, largely for
