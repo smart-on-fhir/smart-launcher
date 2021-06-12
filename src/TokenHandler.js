@@ -1,6 +1,5 @@
 const crypto       = require("crypto");
 const jwt          = require("jsonwebtoken");
-const base64url    = require("base64-url");
 const jwkToPem     = require("jwk-to-pem");
 const config       = require("./config");
 const SMARTHandler = require("./SMARTHandler");
@@ -119,7 +118,9 @@ class TokenHandler extends SMARTHandler {
         }
 
         try {
-            jwt.verify(req.body.client_assertion, base64url.decode(clientDetailsToken.pub_key), { algorithm: "RS256" });
+            jwt.verify(req.body.client_assertion, clientDetailsToken.pub_key, {
+                algorithms: [ "RS256", "RS384", "RS512", "ES256", "ES384", "ES512" ]
+            });
         } catch (e) {
             return Lib.replyWithError(res, "invalid_token", 401, e.message);
         }
