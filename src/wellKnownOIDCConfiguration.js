@@ -3,10 +3,7 @@ const { getRequestBaseURL } = require("./lib");
 
 
 module.exports = (req, res) => {
-    const prefix = `${getRequestBaseURL(req)}${
-        (req.originalUrl || req.url)
-        .replace(/\/\.well-known\/openid-configuration\/?$/, "")
-        }${config.authBaseUrl}`;
+    const prefix = `${getRequestBaseURL(req)}${req.baseUrl}/auth`;
 
     const json = {
 
