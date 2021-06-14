@@ -34,7 +34,6 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^1.2.6",
-    "morgan": "^1.10.0",
     "node-jose": "^2.0.0",
     "pem": "^1.14.4",
     "pem-jwk": "^1.5.1",

@@ -1,3 +1,5 @@
+const config = require("./config");
+
 /**
  * This class tries to make it easier and cleaner to work with scopes (mostly by
  * using the two major methods - "has" and "matches").
@@ -24,7 +26,7 @@ class ScopeSet
 
     /**
      * Checks if there is a scope that matches by RegExp the given string
-     * @param {RegExp} scope The pattern to look for
+     * @param {RegExp} scopeRegExp The pattern to look for
      * @returns {Boolean} 
      */
     matches(scopeRegExp) {
@@ -90,10 +92,8 @@ class ScopeSet
         if (!scopes) {
             return config.errors.missing_scope;
         }
-    
-        scopes = scopes.split(/\s+/);
-    
-        return scopes.find(s => !(
+
+        return scopes.split(/\s+/).find(s => !(
             /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
         )) || "";
     }
