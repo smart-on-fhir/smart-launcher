@@ -1,20 +1,9 @@
-// const request    = require('supertest');
-// const jwt        = require("jsonwebtoken");
-// const Url        = require("url");
-// const jwkToPem   = require("jwk-to-pem");
-// const crypto     = require("crypto");
 const { expect } = require("chai");
-// const app        = require("../src/index.js");
-// const config     = require("../src/config");
-// const Codec      = require("../static/codec.js");
 const Lib        = require("../src/lib");
 
 
-
 it('whitelist throws if no match and no default value', () => {
-    expect(() => Lib.whitelist([1,2,3], 4)).to.throw(
-        'The value "4" is not allowed. Must be one of 1, 2, 3.'
-    )
+    expect(() => Lib.whitelist([1,2,3], 4)).to.throw('The value "4" is not allowed. Must be one of 1, 2, 3.')
 })
 
 it('whitelist returns the default value if no match', () => {

@@ -1,34 +1,20 @@
-const Url        = require("url");
-const request    = require("request");
-const jwt        = require("jsonwebtoken");
-const replStream = require("replacestream");
-const config     = require("./config");
-const debug      = require('util').debuglog("proxy");
-const Lib        = require("./lib");
-const OperationOutcome = require("./OperationOutcome");
-const replaceAll = require("replaceall");
+const got        = require("got")
+const jwt        = require("jsonwebtoken")
+const replStream = require("replacestream")
+const config     = require("./config")
+const Lib        = require("./lib")
 
-////** @type {any} */
 const assert = Lib.assert;
-
-const RE_RESOURCE_SLASH_ID = new RegExp(
-    "([A-Z][A-Za-z]+)"    + // resource type
-    "(\\/([^_][^\\/?]+))" + // resource id
-    "(\\/?(\\?(.*))?)?"     // suffix (query)
-);
-
 
 /**
  * Given a conformance statement (as JSON string), replaces the auth URIs with
  * new ones that point to our proxy server. Also add the rest.security.service
  * field.
- * @param {String} bodyText A conformance statement as JSON string
+ * @param {object} json A conformance statement as JSON
  * @param {String} baseUrl  The baseUrl of our server
  * @returns {Object|null} Returns the modified JSON object or null in case of error
  */
-function augmentConformance(bodyText, baseUrl) {
-    let json = JSON.parse(bodyText);
-
+function augmentConformance(json, baseUrl) {
     json.rest[0].security.extension = [{
         "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
         "extension": [
@@ -63,73 +49,34 @@ function augmentConformance(bodyText, baseUrl) {
     return json;
 }
 
-function adjustResponseUrls(bodyText, fhirUrl, requestUrl, fhirBaseUrl, requestBaseUrl) {
-    bodyText = replaceAll(fhirUrl, requestUrl, bodyText);
-    bodyText = replaceAll(fhirUrl.replace(",", "%2C"), requestUrl, bodyText); // allow non-encoded commas
-    bodyText = replaceAll("/fhir", requestBaseUrl, bodyText);
-    return bodyText;
-}
-
-function adjustUrl(url) {
-    return url.replace(RE_RESOURCE_SLASH_ID, (
-        resourceAndId,
-        resource,
-        slashAndId,
-        id,
-        suffix,
-        slashAndQuery,
-        query
-    ) => resource + "?" + (query ? query + "&" : "") + "_id=" + id);
-}
-
-function handleMetadataRequest(req, res, fhirServer)
+async function handleMetadataRequest(req, res, fhirServer)
 {
-    // set everything to JSON since we don't currently support XML and block XML
-    // requests at a middleware layer
-    let fhirRequest = {
-        headers: {
-            "content-type": "application/json",
-            "accept"      : req.params.fhir_release.toUpperCase() == "R2" ? "application/json+fhir" : "application/fhir+json"
-        },
-        method: req.method,
-        url: Lib.buildUrlPath(fhirServer, adjustUrl(req.url))
-    }
+    const url = Lib.buildUrlPath(fhirServer, req.url);
+    let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
 
-    if (process.env.NODE_ENV != "test") {
-        debug(fhirRequest.url, fhirRequest);
-    }
-
-    request(fhirRequest, function(error, response, body) {
-        if (error) {
-            return res.send(JSON.stringify(error, null, 4));
-        }
-        res.status(response.statusCode);
-        response.headers['content-type'] && res.type(response.headers['content-type']);
-     
-        // adjust urls in the fhir response so future requests will hit the proxy
-        if (body) {
-            let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
-            let requestBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl)
-            body = adjustResponseUrls(body, fhirRequest.url, requestUrl, fhirServer, requestBaseUrl);
-        }
-
-        // special handler for metadata requests - inject the SMART information
-        if (response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
-            let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
-            let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
-            baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
-            body = augmentConformance(body, baseUrl);
-            if (!body) {
-                res.status(404);
-                body = new OperationOutcome("Error reading server metadata")
+    const response = await got.get(url, { throwHttpErrors: false, json: true, hooks: {
+        afterResponse: [
+            response => {
+                // adjust urls in the fhir response so future requests will hit the proxy
+                response.body = response.body.replaceAll(fhirServer, requestUrl)
+                return response
             }
-        }
+        ]
+    }});
 
-        body = (typeof body == "string" ? body : JSON.stringify(body, null, 4));
+    let { statusCode, body } = response;
 
-        res.send(body);
-    });
-    
+    // pass through the statusCode
+    res.status(statusCode);
+
+    // Inject the SMART information
+    let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
+    let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+    baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
+    augmentConformance(body, baseUrl);
+
+    res.set("content-type", "application/json; charset=utf-8");
+    res.send(JSON.stringify(body, null, 4));
 }
 
 /**
@@ -166,9 +113,9 @@ function validateToken(req) {
 module.exports = (req, res) => {
 
     // Validate FHIR Version ---------------------------------------------------
-    let fhirVersion = req.params.fhir_release.toUpperCase();
+    let fhirVersion      = req.params.fhir_release.toUpperCase();
     let fhirVersionLower = fhirVersion.toLowerCase();
-    let fhirServer = config[`fhirServer${fhirVersion}`];
+    let fhirServer       = config[`fhirServer${fhirVersion}`];
 
     // FHIR_SERVER_R2_INTERNAL and FHIR_SERVER_R2_INTERNAL env variables can be
     // set to point the request to different location. This is useful when
@@ -195,11 +142,11 @@ module.exports = (req, res) => {
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {
         method: req.method,
-        url   : Url.parse(fhirServer + req.url, true),
-        gzip  : true
+        url   : new URL(req.url, fhirServer).href,
+        throwHttpErrors: false
     };
 
-    const isBinary = fhirRequestOptions.url.pathname.indexOf("/Binary/") === 0;
+    const isBinary = req.url.indexOf("/Binary/") === 0;
 
     // Add the body in case of POST or PUT -------------------------------------
     if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
@@ -207,12 +154,13 @@ module.exports = (req, res) => {
     }
 
     // Build request headers ---------------------------------------------------
-    fhirRequestOptions.headers = Object.assign({}, req.headers);
+    fhirRequestOptions.headers = { ...req.headers };
 
     if (!isBinary) {
-        fhirRequestOptions.headers = Object.assign({}, {
-            "content-type": "application/json"
-        }, req.headers);
+        fhirRequestOptions.headers = {
+            "content-type": "application/json",
+            ...req.headers
+        };
         fhirRequestOptions.headers.accept = fhirVersion === "R2" ?
             "application/json+fhir" :
             "application/fhir+json";
@@ -229,24 +177,22 @@ module.exports = (req, res) => {
     }
 
     // Proxy -------------------------------------------------------------------
-    let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}/fhir`;
-    let stream = request(fhirRequestOptions)
+    let stream = got.stream(fhirRequestOptions)
         .on('error', function(error) {
             console.error(error);
             res.status(502).end(String(error)); // Bad Gateway
         })
         .on('response', response => {
-            let contentType = response.headers['content-type'];
-            let etag = response.headers['etag']
-            let location = response.headers['location']
-            res.status(response.statusCode);
-            contentType && res.type(contentType);
-            etag && res.set('ETag', etag)
-            location && res.set('Location', location)
+            if (response.statusCode) res.status(response.statusCode);
+            ["content-type", 'etag', 'location'].forEach(name => {
+                if (name in response.headers) {
+                    res.set(name, response.headers[name])
+                }
+            })
         });
 
     if (!isBinary) {
-        stream = stream.pipe(replStream(fhirServer, fullFhirBaseUrl));
+        stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
     }
 
     stream.pipe(res);

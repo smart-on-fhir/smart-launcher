@@ -1,15 +1,13 @@
-const request    = require('supertest');
-const jwt        = require("jsonwebtoken");
-const Url        = require("url");
-const jwkToPem   = require("jwk-to-pem");
-const crypto     = require("crypto");
-const { expect } = require("chai");
+const request    = require('supertest')
+const jwt        = require("jsonwebtoken")
+const crypto     = require("crypto")
+const { expect } = require("chai")
 const jose       = require("node-jose")
-const { Server } = require('http');
-const app        = require("../src/index.js");
-const config     = require("../src/config");
-const Codec      = require("../static/codec.js");
-const Lib        = require("../src/lib");
+const { Server } = require('http')
+const app        = require("../src/index.js")
+const config     = require("../src/config")
+const Codec      = require("../static/codec.js")
+const Lib        = require("../src/lib")
 
 const TESTED_FHIR_SERVERS = {
     "r4": config.fhirServerR4,
@@ -518,7 +516,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             it('Injects the SMART information in metadata responses', () => {
                 return request(app)
                 .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
-                .expect('Content-Type', /\bjson\b/i)
+                .expect('content-type', /\bjson\b/i)
                 .expect(200)
                 .expect(res => {
                     let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
@@ -954,7 +952,8 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .expect(200)
                     .then(res => res.body.keys);
 
-                jwt.verify(id_token, jwkToPem(keys[0]), { algorithms: ["RS256"] });
+                const privateKey = (await jose.JWK.asKey(keys[0], "json")).toPEM();
+                jwt.verify(id_token, privateKey, { algorithms: ["RS256"] });
             });
 
             describe('Confidential Clients', () => {
@@ -1020,6 +1019,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             it("includes the introspect endpoint in the CapabilityStatement", async () => {
                 await request(app)
                 .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/metadata" }).pathname)
+                .expect(/json/)
                 .expect(200)
                 .then(response => {
                     const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
@@ -1231,6 +1231,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .send({ iss: "whatever", pub_key: "something", dur: 23 })
                     .expect(200)
                     .expect("content-type", /\btext\/plain\b/i)
+                    // @ts-ignore
                     .expect(res => expect(jwt.decode(res.text).accessTokensExpireIn).to.equal(23))
                 });
         
@@ -1241,6 +1242,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .send({ iss: "whatever", pub_key: "something", auth_error: "test error" })
                     .expect(200)
                     .expect("content-type", /\btext\/plain\b/i)
+                    // @ts-ignore
                     .expect(res => expect(jwt.decode(res.text).auth_error).to.equal("test error"))
                 });
             });
