@@ -1,5 +1,3 @@
-const config = require("./config");
-
 /**
  * This class tries to make it easier and cleaner to work with scopes (mostly by
  * using the two major methods - "has" and "matches").
@@ -88,11 +86,6 @@ class ScopeSet
      */
     static getInvalidSystemScopes(scopes) {
         scopes = String(scopes || "").trim();
-    
-        if (!scopes) {
-            return config.errors.missing_scope;
-        }
-
         return scopes.split(/\s+/).find(s => !(
             /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
         )) || "";

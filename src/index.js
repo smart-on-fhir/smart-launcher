@@ -8,7 +8,8 @@ const launcher   = require("./launcher")
 const fhirServer = require("./fhir-server")
 const {
     rejectXml,
-    blackList
+    blackList,
+    globalErrorHandler
 } = require("./middlewares")
 
 
@@ -62,7 +63,6 @@ app.use("/env.js", (req, res) => {
 
     const whitelist = {
         "NODE_ENV"                : String,
-        "LOG_TIMES"               : lib.bool,
         "DISABLE_BACKEND_SERVICES": lib.bool,
         "GOOGLE_ANALYTICS_ID"     : String,
         "CDS_SANDBOX_URL"         : String,
@@ -84,13 +84,16 @@ app.use("/env.js", (req, res) => {
         }
     });
 
-    res.type("javascript").send(`var ENV = ${JSON.stringify(out, null, 4)};`);
+    res.type("application/javascript").send(`var ENV = ${JSON.stringify(out, null, 4)};`);
 });
 
 // static assets
 app.use(express.static("static"));
 
+app.use(globalErrorHandler);
+
 // Start the server if ran directly (tests import it and start it manually)
+/* istanbul ignore if */
 if (require.main?.filename === __filename) {
     app.listen(config.port, () => {
         console.log(`SMART launcher listening on port ${config.port}!`)

@@ -11,10 +11,9 @@ const base64url                = require("base64-url")
 const wellKnownOIDC            = require("./wellKnownOIDCConfiguration")
 const wellKnownSmart           = require("./wellKnownSmartConfiguration")
 const AuthorizeHandler         = require("./AuthorizeHandler")
-const RegistrationHandler      = require("./RegistrationHandler")
+const handleRegistration       = require("./RegistrationHandler")
 const TokenHandler             = require("./TokenHandler")
 const { introspectionHandler } = require("./introspect")
-const lib                      = require("./lib")
 const simpleProxy              = require("./simple-proxy")
 
 const fhirServer = module.exports = express.Router({ mergeParams: true })
@@ -28,7 +27,7 @@ fhirServer.get("/auth/authorize", AuthorizeHandler.handleRequest)
 
 fhirServer.post("/auth/token", urlencoded, TokenHandler.handleRequest)
 
-fhirServer.post("/auth/register", urlencoded, RegistrationHandler.handleRequest)
+fhirServer.post("/auth/register", urlencoded, handleRegistration)
 
 fhirServer.post("/auth/introspect", urlencoded, introspectionHandler)
 
@@ -70,17 +69,6 @@ fhirServer.post("/fhir/_services/smart/launch", express.json(), (req, res) => {
 });
 
 // Proxy everything else under `/fhir` to the underlying FHIR server
-fhirServer.use("/fhir", text, handleParseError, simpleProxy);
+fhirServer.use("/fhir", text, simpleProxy);
 
 
-
-function handleParseError(err, req, res, next) {
-    if (err instanceof SyntaxError && err.status === 400) {
-        return lib.operationOutcome(
-            res,
-            `Failed to parse JSON content, error was: ${err.message}`,
-            { httpCode: 400 }
-        );
-    }
-    next(err, req, res);
-}

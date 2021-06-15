@@ -2,11 +2,14 @@
 const jwt          = require("jsonwebtoken");
 const base64url    = require("base64-url");
 const Url          = require("url");
+const util         = require("util")
 const ScopeSet     = require("./ScopeSet");
 const config       = require("./config");
 const Codec        = require("../static/codec.js");
 const Lib          = require("./lib");
 const SMARTHandler = require("./SMARTHandler");
+const errors       = require("./errors");
+
 
 class AuthorizeHandler extends SMARTHandler {
 
@@ -253,13 +256,10 @@ class AuthorizeHandler extends SMARTHandler {
 
         const missingParam = Lib.getFirstMissingProperty(req.query, requiredParams);
         if (missingParam) {
-            if (missingParam == "redirect_uri") {
-                Lib.replyWithError(res, "missing_parameter", 400, missingParam);
-            }
-            else {
-                Lib.redirectWithError(req, res, "missing_parameter", missingParam);
-            }
-            return false;
+
+            // If redirect_uri is the missing param reply with OAuth.
+            // Otherwise redirect and pass error params to the redirect uri.
+            throw new Lib.OAuthError(missingParam == "redirect_uri" ? 400 : 302, util.format("Missing %s parameter", missingParam), "invalid_request")
         }
 
         // bad_redirect_uri if we cannot parse it
@@ -267,15 +267,13 @@ class AuthorizeHandler extends SMARTHandler {
         try {
             RedirectURL = Url.parse(decodeURIComponent(req.query.redirect_uri), true);
         } catch (ex) {
-            Lib.replyWithError(res, "bad_redirect_uri", 400, ex.message);
-            return false;
+            throw Lib.OAuthError.from(errors.authorization_code.bad_redirect_uri, ex.message)
         }
 
         // Relative redirect_uri like "whatever" will eventually result in wrong
         // URLs like "/auth/whatever". We must only support full URLs. 
         if (!RedirectURL.protocol) {
-            Lib.replyWithError(res, "no_redirect_uri_protocol", 400, req.query.redirect_uri);
-            return false;
+            throw Lib.OAuthError.from(errors.authorization_code.no_redirect_uri_protocol, req.query.redirect_uri)
         }
 
         // The "aud" param must match the apiUrl (but can have different protocol)
@@ -284,8 +282,7 @@ class AuthorizeHandler extends SMARTHandler {
             let a = Lib.normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             let b = Lib.normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             if (a != b) {
-                Lib.redirectWithError(req, res, "bad_audience");
-                return false;
+                throw new Lib.OAuthError(302, "Bad audience value", "invalid_request")
             }
             sim.aud_validated = "1";
         }
@@ -309,28 +306,26 @@ class AuthorizeHandler extends SMARTHandler {
         
         // User decided not to authorize the app launch
         if (req.query.auth_success == "0") {
-            return Lib.redirectWithError(req, res, "unauthorized");
+            throw Lib.OAuthError.from(errors.authorization_code.unauthorized)
         }
         
         // Simulate auth_invalid_client_id error if requested
         if (sim.auth_error == "auth_invalid_client_id") {
-            return Lib.redirectWithError(req, res, "sim_invalid_client_id");
+            throw Lib.OAuthError.from(errors.authorization_code.sim_invalid_client_id)
         }
 
         // Simulate auth_invalid_redirect_uri error if requested
         if (sim.auth_error == "auth_invalid_redirect_uri") {
-            return Lib.redirectWithError(req, res, "sim_invalid_redirect_uri");
+            throw Lib.OAuthError.from(errors.authorization_code.sim_invalid_redirect_uri)
         }
 
         // Simulate auth_invalid_scope error if requested
         if (sim.auth_error == "auth_invalid_scope") {
-            return Lib.redirectWithError(req, res, "sim_invalid_scope");
+            throw Lib.OAuthError.from(errors.authorization_code.sim_invalid_scope)
         }
 
         // Validate query parameters
-        if (!this.validateParams()) {
-            return;
-        }
+        this.validateParams();
 
         // PATIENT LOGIN SCREEN
         if (this.needToLoginAsPatient()) {

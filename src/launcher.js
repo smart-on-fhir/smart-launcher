@@ -38,7 +38,7 @@ module.exports = (req, res) => {
     proto = proto[0];
 
     // fhir_ver
-    fhir_ver = parseInt(fhir_ver || "0", 10);
+    fhir_ver = parseInt(fhir_ver + "", 10);
     if (fhir_ver != 2 && fhir_ver != 3 && fhir_ver != 4) {
         return res.status(400).send("Invalid or missing fhir_ver parameter. It can only be '2', '3' or '4'.");
     }

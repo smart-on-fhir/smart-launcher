@@ -1,27 +1,144 @@
-// @ts-check
 const Url        = require("url");
 const request    = require("request");
 const jwt        = require("jsonwebtoken");
 const replStream = require("replacestream");
 const config     = require("./config");
-const patientMap = require("./patient-compartment");
+const debug      = require('util').debuglog("proxy");
 const Lib        = require("./lib");
+const OperationOutcome = require("./OperationOutcome");
+const replaceAll = require("replaceall");
 
-require("colors");
+////** @type {any} */
+const assert = Lib.assert;
+
+const RE_RESOURCE_SLASH_ID = new RegExp(
+    "([A-Z][A-Za-z]+)"    + // resource type
+    "(\\/([^_][^\\/?]+))" + // resource id
+    "(\\/?(\\?(.*))?)?"     // suffix (query)
+);
 
 
-module.exports = (req, res) => {
+/**
+ * Given a conformance statement (as JSON string), replaces the auth URIs with
+ * new ones that point to our proxy server. Also add the rest.security.service
+ * field.
+ * @param {String} bodyText A conformance statement as JSON string
+ * @param {String} baseUrl  The baseUrl of our server
+ * @returns {Object|null} Returns the modified JSON object or null in case of error
+ */
+function augmentConformance(bodyText, baseUrl) {
+    let json = JSON.parse(bodyText);
 
-    // We cannot handle the conformance here!
-    if (req.url.match(/^\/metadata/)) {
-        return require("./reverse-proxy")(req, res);
+    json.rest[0].security.extension = [{
+        "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
+        "extension": [
+            {
+                "url": "authorize",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/authorize")
+            },
+            {
+                "url": "token",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/token")
+            },
+            {
+                "url": "introspect",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/introspect")
+            }
+        ]
+    }];
+
+    json.rest[0].security.service = [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/restful-security-service",
+              "code": "SMART-on-FHIR",
+              "display": "SMART-on-FHIR"
+            }
+          ],
+          "text": "OAuth2 using SMART-on-FHIR profile (see http://docs.smarthealthit.org)"
+        }
+    ]
+
+    return json;
+}
+
+function adjustResponseUrls(bodyText, fhirUrl, requestUrl, fhirBaseUrl, requestBaseUrl) {
+    bodyText = replaceAll(fhirUrl, requestUrl, bodyText);
+    bodyText = replaceAll(fhirUrl.replace(",", "%2C"), requestUrl, bodyText); // allow non-encoded commas
+    bodyText = replaceAll("/fhir", requestBaseUrl, bodyText);
+    return bodyText;
+}
+
+function adjustUrl(url) {
+    return url.replace(RE_RESOURCE_SLASH_ID, (
+        resourceAndId,
+        resource,
+        slashAndId,
+        id,
+        suffix,
+        slashAndQuery,
+        query
+    ) => resource + "?" + (query ? query + "&" : "") + "_id=" + id);
+}
+
+function handleMetadataRequest(req, res, fhirServer)
+{
+    // set everything to JSON since we don't currently support XML and block XML
+    // requests at a middleware layer
+    let fhirRequest = {
+        headers: {
+            "content-type": "application/json",
+            "accept"      : req.params.fhir_release.toUpperCase() == "R2" ? "application/json+fhir" : "application/fhir+json"
+        },
+        method: req.method,
+        url: Lib.buildUrlPath(fhirServer, adjustUrl(req.url))
     }
 
-    let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
+    if (process.env.NODE_ENV != "test") {
+        debug(fhirRequest.url, fhirRequest);
+    }
 
+    request(fhirRequest, function(error, response, body) {
+        if (error) {
+            return res.send(JSON.stringify(error, null, 4));
+        }
+        res.status(response.statusCode);
+        response.headers['content-type'] && res.type(response.headers['content-type']);
+     
+        // adjust urls in the fhir response so future requests will hit the proxy
+        if (body) {
+            let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
+            let requestBaseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl)
+            body = adjustResponseUrls(body, fhirRequest.url, requestUrl, fhirServer, requestBaseUrl);
+        }
+
+        // special handler for metadata requests - inject the SMART information
+        if (response.statusCode == 200 && body.indexOf("fhirVersion") != -1) {
+            let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
+            let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+            baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
+            body = augmentConformance(body, baseUrl);
+            if (!body) {
+                res.status(404);
+                body = new OperationOutcome("Error reading server metadata")
+            }
+        }
+
+        body = (typeof body == "string" ? body : JSON.stringify(body, null, 4));
+
+        res.send(body);
+    });
+    
+}
+
+/**
+ * @param {import("express").Request} req 
+ */
+function validateToken(req) {
     let token = null;
 
-    // Validate token ----------------------------------------------------------
+    // Validate token ---------------------------------------------------------
     if (req.headers.authorization) {
 
         // require a valid auth token if there is an auth token
@@ -31,16 +148,22 @@ module.exports = (req, res) => {
                 config.jwtSecret
             );
         } catch (e) {
-            return res.status(401).send(
-                `${e.name || "Error"}: ${e.message || "Invalid token"}`
-            );
+            throw new Lib.HTTPError(401, "Invalid token: " + e.message)
         }
 
-        // Simulated errors
-        if (token.sim_error) {
-            return res.status(401).send(token.sim_error);
-        }
+        assert.http(token, 400, "Invalid token")
+        assert.http(typeof token == "object", 400, "Invalid token")
+
+        // @ts-ignore
+        assert.http(!token.sim_error, 401, token.sim_error);
     }
+}
+
+/**
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res
+ */
+module.exports = (req, res) => {
 
     // Validate FHIR Version ---------------------------------------------------
     let fhirVersion = req.params.fhir_release.toUpperCase();
@@ -61,6 +184,14 @@ module.exports = (req, res) => {
         });
     }
 
+    // We cannot handle the conformance here!
+    if (req.url.match(/^\/metadata/)) {
+        return handleMetadataRequest(req, res, fhirServer);
+    }
+
+    validateToken(req);
+    
+
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {
         method: req.method,
@@ -70,24 +201,8 @@ module.exports = (req, res) => {
 
     const isBinary = fhirRequestOptions.url.pathname.indexOf("/Binary/") === 0;
 
-    // if applicable, apply patient scope to GET requests, largely for
-    // performance reasons. Full scope support can't be implemented in a proxy
-    // because it would require "or" conditions in FHIR API calls (ie ),
-    // but should do better than this!
-    if (req.method == "GET") {
-        let scope   = (token && token.scope  ) || req.headers["x-scope"];
-        let patient = (token && token.patient) || req.headers["x-patient"];
-        if (scope && patient && scope.indexOf("user/") == -1) {
-            let resourceType = req.url.slice(1);
-            let prop = patientMap[fhirVersionLower] && patientMap[fhirVersionLower][resourceType];
-            if (prop) {
-                fhirRequestOptions.url.query[prop] = patient;
-            }
-        }
-    }
-
     // Add the body in case of POST or PUT -------------------------------------
-    if (req.method === "POST" || req.method === "PUT") {
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
         fhirRequestOptions.body = req.body;
     }
 
@@ -103,13 +218,8 @@ module.exports = (req, res) => {
             "application/fhir+json";
     }
 
-    if (fhirRequestOptions.headers.hasOwnProperty("host")) {
-        delete fhirRequestOptions.headers.host;
-    }
-
-    if (fhirRequestOptions.headers.hasOwnProperty("authorization")) {
-        delete fhirRequestOptions.headers.authorization;
-    }
+    delete fhirRequestOptions.headers.host;
+    delete fhirRequestOptions.headers.authorization;
 
     // remove custom headers
     for (let name in fhirRequestOptions.headers) {

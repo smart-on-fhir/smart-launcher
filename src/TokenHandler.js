@@ -5,6 +5,10 @@ const config       = require("./config");
 const SMARTHandler = require("./SMARTHandler");
 const Lib          = require("./lib");
 const ScopeSet     = require("./ScopeSet");
+const errors       = require("./errors")
+
+/** @type {typeof Lib.assert} */
+const assert = require("./lib").assert;
 
 
 // Generate this PEM cert once when the server starts and use it later to sign
@@ -29,13 +33,9 @@ class TokenHandler extends SMARTHandler {
      */
     handle() {
         const req = this.request;
-        const res = this.response;
 
         // Require "application/x-www-form-urlencoded" POSTs
-        let ct = req.headers["content-type"] || "";
-        if (ct.indexOf("application/x-www-form-urlencoded") !== 0) {
-            return Lib.replyWithError(res, "form_content_type_required", 401);
-        }
+        assert(req.is("application/x-www-form-urlencoded"), errors.form_content_type_required);
 
         switch (req.body.grant_type) {
             case "client_credentials":
@@ -44,9 +44,9 @@ class TokenHandler extends SMARTHandler {
                 return this.handleAuthorizationCode();
             case "refresh_token":
                 return this.handleRefreshToken();
+            default:
+                assert.fail(errors.bad_grant_type, req.body.grant_type);
         }
-
-        Lib.replyWithError(res, "bad_grant_type", 400);
     }
 
     /**
@@ -55,75 +55,68 @@ class TokenHandler extends SMARTHandler {
      * details token.
      */
     handleBackendService() {
-        const req = this.request;
-        const res = this.response;
+        const {
+            originalUrl,
+            body: {
+                client_assertion_type,
+                client_assertion,
+                scope
+            }
+        } = this.request;
+
+        const { baseUrl, jwtSecret } = config;
+
+        /** @type {any[]} */
+        const algorithms = ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"];
+
+        const aud = baseUrl + originalUrl;
+
+        /** @type {any} */
+        let authenticationToken = {};
+
+        /** @type {any} */
+        let clientDetailsToken = {};
+
+        let scopeError = "";
 
         // client_assertion_type is required
-        if (!req.body.client_assertion_type) {
-            return Lib.replyWithError(res, "missing_client_assertion_type", 401);
-        }
+        assert(client_assertion_type, errors.client_credentials.missing_client_assertion_type);
 
         // client_assertion_type must have a fixed value
-        if (req.body.client_assertion_type != "urn:ietf:params:oauth:client-assertion-type:jwt-bearer") {
-            return Lib.replyWithError(res, "invalid_client_assertion_type", 401);
-        }
+        assert(client_assertion_type == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer", errors.client_credentials.invalid_client_assertion_type)
+
+        // client_assertion must be a sent
+        assert(client_assertion, errors.client_credentials.missing_registration_token);
 
         // client_assertion must be a token
-        let authenticationToken;
-        try {
-            authenticationToken = Lib.parseToken(req.body.client_assertion);
-        } catch (ex) {
-            return Lib.replyWithError(res, "invalid_registration_token", 401, ex.message);
-        }
+        assert(() => authenticationToken = jwt.decode(client_assertion), errors.client_credentials.invalid_registration_token);
 
-        // The client_id must be a token
-        let clientDetailsToken;
-        try {
-            clientDetailsToken = Lib.parseToken(authenticationToken.sub);
-        } catch (ex) {
-            return Lib.replyWithError(res, "invalid_client_details_token", 401, ex.message);
-        }
+        // client_assertion must be a parsed
+        assert(authenticationToken, errors.client_credentials.invalid_registration_token);
+
+        // The client_id must be valid token
+        assert(() => clientDetailsToken = jwt.verify(authenticationToken.sub, jwtSecret), errors.client_credentials.invalid_client_details_token);
 
         // simulate expired_registration_token error
-        if (clientDetailsToken.auth_error == "token_expired_registration_token") {
-            return Lib.replyWithError(res, "token_expired_registration_token", 401);
-        }
+        assert(clientDetailsToken.auth_error != "token_expired_registration_token", errors.client_credentials.token_expired_registration_token);
 
         // Validate authenticationToken.aud (must equal this url)
-        let tokenUrl = config.baseUrl + req.originalUrl;
-        if (tokenUrl.replace(/^https?/, "") !== authenticationToken.aud.replace(/^https?/, "")) {
-            return Lib.replyWithError(res, "invalid_aud", 401, tokenUrl);
-        }
+        assert(aud.replace(/^https?/, "") == authenticationToken.aud.replace(/^https?/, ""), errors.client_credentials.invalid_aud, aud);
 
-        // Validate authenticationToken.iss (must equal whatever the user entered at
-        // registration time, i.e. clientDetailsToken.iss)
-        if (authenticationToken.iss !== clientDetailsToken.iss) {
-            return Lib.replyWithError(res, "invalid_token_iss", 401, authenticationToken.iss, clientDetailsToken.iss);
-        }
+        // authenticationToken.iss must equal whatever the user entered at registration time, i.e. clientDetailsToken.iss)
+        assert(authenticationToken.iss == clientDetailsToken.iss, errors.client_credentials.invalid_token_iss, authenticationToken.iss, clientDetailsToken.iss);
 
         // simulated invalid_jti error
-        if (clientDetailsToken.auth_error == "invalid_jti") {
-            return Lib.replyWithError(res, "invalid_jti", 401);
-        }
+        assert(clientDetailsToken.auth_error != "invalid_jti", errors.client_credentials.invalid_jti);
 
         // Validate scope
-        let tokenError = ScopeSet.getInvalidSystemScopes(req.body.scope);
-        if (tokenError) {
-            return Lib.replyWithError(res, "invalid_scope", 401, tokenError);
-        }
+        assert(!(scopeError = ScopeSet.getInvalidSystemScopes(scope)), errors.client_credentials.invalid_scope, scopeError);
 
         // simulated token_invalid_scope
-        if (clientDetailsToken.auth_error == "token_invalid_scope") {
-            return Lib.replyWithError(res, "token_invalid_scope", 401);
-        }
+        assert(clientDetailsToken.auth_error != "token_invalid_scope", errors.client_credentials.simulated_invalid_scope);
 
-        try {
-            jwt.verify(req.body.client_assertion, clientDetailsToken.pub_key, {
-                algorithms: [ "RS256", "RS384", "RS512", "ES256", "ES384", "ES512" ]
-            });
-        } catch (e) {
-            return Lib.replyWithError(res, "invalid_token", 401, e.message);
-        }
+        // Verify the client_assertion token signature
+        assert(() => jwt.verify(client_assertion, clientDetailsToken.pub_key, { algorithms }), errors.client_credentials.invalid_token);
 
         return this.finish(clientDetailsToken);
     }
@@ -134,11 +127,7 @@ class TokenHandler extends SMARTHandler {
      */
     handleAuthorizationCode() {
         let token;
-        try {
-            token = jwt.verify(this.request.body.code, config.jwtSecret);
-        } catch (e) {
-            return Lib.replyWithError(this.response, "invalid_token", 401, e.message);
-        }
+        assert(() => token = jwt.verify(this.request.body.code, config.jwtSecret), errors.authorization_code.invalid_code);
         return this.finish(token);
     }
 
@@ -148,17 +137,10 @@ class TokenHandler extends SMARTHandler {
      * with it.
      */
     handleRefreshToken() {
+        /** @type {any} */
         let token;
-        try {
-            token = jwt.verify(this.request.body.refresh_token, config.jwtSecret);
-        } catch (e) {
-            return Lib.replyWithError(this.response, "invalid_token", 401, e.message);
-        }
-
-        if (token.auth_error == "token_expired_refresh_token") {
-            return Lib.replyWithError(this.response, "sim_expired_refresh_token", 401);
-        }
-
+        assert(() => token = jwt.verify(this.request.body.refresh_token, config.jwtSecret), errors.refresh_token.invalid_refresh_token);
+        assert(token.auth_error != "token_expired_refresh_token", errors.refresh_token.expired_refresh_token);
         return this.finish(token);
     }
 
@@ -166,43 +148,41 @@ class TokenHandler extends SMARTHandler {
      * Validates authorization header and/or triggers custom authorization
      * errors for confidential clients
      */
-    validateAuth(clientDetailsToken) {
+    validateBasicAuth(clientDetailsToken) {
         const authHeader = this.request.headers.authorization;
-        if (authHeader && authHeader.search(/^basic\s*/i) === 0) {
-            const req = this.request;
-            const res = this.response;
-
-            // Simulate invalid client secret error
-            if (req.body.auth_error == "auth_invalid_client_secret" ||
-                clientDetailsToken.auth_error == "auth_invalid_client_secret") {
-                Lib.replyWithError(res, "sim_invalid_client_secret", 401);
-                return false;
-            }
-
-            let auth = authHeader.replace(/^basic\s*/i, "");
-            
-            // Check for empty auth
-            if (!auth) {
-                Lib.replyWithError(res, "empty_auth_header", 401, authHeader);
-                return false;
-            }
-
-            // Check for invalid base64
-            try {
-                auth = new Buffer(auth, "base64").toString().split(":");
-            } catch (err) {
-                Lib.replyWithError(res, "bad_auth_header", 401, authHeader, err.message);
-                return false;
-            }
-
-            // Check for bad auth syntax
-            if (auth.length != 2) {
-                let msg = "The decoded header must contain '{client_id}:{client_secret}'";
-                Lib.replyWithError(res, "bad_auth_header", 401, authHeader, msg);
-                return false;
-            }
+        
+        if (!authHeader || authHeader.search(/^basic\s*/i) !== 0) {
+            return;
         }
-        return true;
+
+        const req = this.request;
+
+        // Simulate invalid client secret error
+        assert(
+            req.body.auth_error != "auth_invalid_client_secret" &&
+            clientDetailsToken.auth_error != "auth_invalid_client_secret",
+            errors.client_credentials.simulated_invalid_client_secret
+        )
+
+        let auth = authHeader.replace(/^basic\s*/i, "")
+        
+        // Check for empty auth
+        assert(auth, errors.client_credentials.empty_auth_header, authHeader)
+
+        // Check for invalid base64
+        assert(
+            () => auth = Buffer.from(auth, "base64").toString().split(":"),
+            errors.client_credentials.bad_auth_header,
+            authHeader
+        )
+
+        // Check for bad auth syntax
+        assert(
+            auth.length === 2,
+            errors.client_credentials.bad_auth_header,
+            authHeader,
+            "The decoded header must contain '{client_id}:{client_secret}'"
+        )
     }
 
     /**
@@ -237,71 +217,64 @@ class TokenHandler extends SMARTHandler {
      * @param {Object} clientDetailsToken 
      */
     finish(clientDetailsToken) {
-        try {
-            const req = this.request;
-            const res = this.response;
-            
-            // Request from confidential client
-            if (!this.validateAuth(clientDetailsToken)) {
-                return;
-            }
-        
-            const scope = new ScopeSet(decodeURIComponent(clientDetailsToken.scope));
-        
-            if (clientDetailsToken.auth_error == "token_invalid_token") {
-                return Lib.replyWithError(res, "sim_invalid_token", 401);
-            }
-        
-            // refresh_token
-            if (scope.has('offline_access') || scope.has('online_access')) {
-                clientDetailsToken.context.refresh_token = Lib.generateRefreshToken(clientDetailsToken);
-            }
 
-            const expiresIn = clientDetailsToken.accessTokensExpireIn ?
-                clientDetailsToken.accessTokensExpireIn * 60 :
-                req.body.grant_type === 'client_credentials' ?
-                    config.backendServiceAccessTokenLifetime * 60 :
-                    config.accessTokenLifetime * 60;
-        
-            var token = Object.assign({}, clientDetailsToken.context, {
-                token_type: "bearer",
-                scope     : clientDetailsToken.scope,
-                client_id : req.body.client_id,
-                expires_in: expiresIn
-            });
-        
-            // sim_error
-            if (clientDetailsToken.auth_error == "request_invalid_token") {
-                token.sim_error = "Invalid token";
-            } else if (clientDetailsToken.auth_error == "request_expired_token") {
-                token.sim_error = "Token expired";
-            }
-        
-            // id_token
-            if (clientDetailsToken.user && scope.has("openid") && (scope.has("profile") || scope.has("fhirUser"))) {
-                token.id_token = this.createIdToken(clientDetailsToken);
-            }
+        const req = this.request;
+        const res = this.response;
 
-            if (clientDetailsToken.sde) {
-                token.serviceDiscoveryURL = clientDetailsToken.sde
-            }
+        // Request from confidential client
+        this.validateBasicAuth(clientDetailsToken)
+
+        const scope = new ScopeSet(decodeURIComponent(clientDetailsToken.scope));
+
+        assert(clientDetailsToken.auth_error != "token_invalid_token", errors.client_credentials.invalid_token);
         
-            // access_token
-            token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });
-
-            // The authorization servers response must include the HTTP
-            // Cache-Control response header field with a value of no-store,
-            // as well as the Pragma response header field with a value of no-cache.
-            res.set({
-               "Cache-Control": "no-store",
-               "Pragma": "no-cache"
-            });
-
-            res.json(token);
-        } catch (ex) {
-            console.error(ex);
-            throw ex;
+        // refresh_token
+        if (scope.has('offline_access') || scope.has('online_access')) {
+            clientDetailsToken.context.refresh_token = Lib.generateRefreshToken(clientDetailsToken);
         }
+
+        const expiresIn = clientDetailsToken.accessTokensExpireIn ?
+            clientDetailsToken.accessTokensExpireIn * 60 :
+            req.body.grant_type === 'client_credentials' ?
+                +config.backendServiceAccessTokenLifetime * 60 :
+                +config.accessTokenLifetime * 60;
+    
+        var token = {
+            ...clientDetailsToken.context,
+            token_type: "bearer",
+            scope     : clientDetailsToken.scope,
+            client_id : req.body.client_id,
+            expires_in: expiresIn
+        };
+    
+        // sim_error
+        if (clientDetailsToken.auth_error == "request_invalid_token") {
+            token.sim_error = "Invalid token";
+        } else if (clientDetailsToken.auth_error == "request_expired_token") {
+            token.sim_error = "Token expired";
+        }
+    
+        // id_token
+        if (clientDetailsToken.user && scope.has("openid") && (scope.has("profile") || scope.has("fhirUser"))) {
+            token.id_token = this.createIdToken(clientDetailsToken);
+        }
+
+        if (clientDetailsToken.sde) {
+            token.serviceDiscoveryURL = clientDetailsToken.sde
+        }
+    
+        // access_token
+        token.access_token = jwt.sign(token, config.jwtSecret, { expiresIn });
+
+        // The authorization servers response must include the HTTP
+        // Cache-Control response header field with a value of no-store,
+        // as well as the Pragma response header field with a value of no-cache.
+        res.set({
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache"
+        });
+
+        res.json(token);
     }
 }
 

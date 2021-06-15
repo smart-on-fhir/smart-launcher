@@ -205,7 +205,7 @@ before(async () => {
 
 after(closeServer);
 
-describe("Global Routes", () => {
+describe("Global stuff", () => {
 
     it('index responds with html', () => {
         return request(app)
@@ -225,6 +225,62 @@ describe("Global Routes", () => {
             expect(res.body.keys.length).to.be.greaterThan(0)
         });
     });
+    
+    it('/public_key hosts the public key as pem', () => {
+        return request(app)
+        .get('/public_key')
+        .expect('Content-Type', /text/)
+        .expect(200)
+        .expect(/-----BEGIN PUBLIC KEY-----/)
+    });
+
+    it ("/env.js", () => {
+        return request(app)
+        .get('/env.js')
+        .expect('Content-Type', /javascript/)
+        .expect(200)
+        .expect(/var ENV = \{/)
+    })
+
+    it("rejects xml", async () => {
+        await request(app)
+        .get("/")
+        .set("content-type", "application/xml")
+        .expect(400, /XML format is not supported/)
+    })
+
+    describe("/launcher", () => {
+        it("requires launch_uri", async () => {
+            await request(app)
+            .get('/launcher')
+            .expect('Content-Type', /text/)
+            .expect(400, "launch_uri is required")
+        })
+
+        it("requires absolute launch_uri", async () => {
+            await request(app)
+            .get('/launcher')
+            .query({ launch_uri: "./test" })
+            .expect('Content-Type', /text/)
+            .expect(400, "Invalid launch_uri parameter")
+        })
+
+        it("validates the fhir_ver param", async () => {
+            await request(app)
+            .get('/launcher')
+            .query({ launch_uri: "http://test.dev", fhir_ver: 33 })
+            .expect('Content-Type', /text/)
+            .expect(400, "Invalid or missing fhir_ver parameter. It can only be '2', '3' or '4'.")
+        })
+
+        it("works", async () => {
+            await request(app)
+            .get('/launcher')
+            .query({ launch_uri: "http://test.dev", fhir_ver: 3 })
+            .expect("location", /^http\:\/\/test\.dev\?iss=.+/)
+            .expect(302)
+        })
+    })
 
     describe('RSA Generator', () => {
         
@@ -275,6 +331,7 @@ describe("Global Routes", () => {
             })
         });
     });
+
 });
 
 for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
@@ -282,6 +339,15 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
     const SMART = getSmartApi(FHIR_VERSION);
 
     describe(`FHIR server ${FHIR_VERSION}`, () => {
+
+        it("Catches body parse errors", async () => {
+            await request(app)
+            .post(buildUrl({ fhir: FHIR_VERSION, path: "fhir" }).pathname)
+            .type("json")
+            .send('{"a":1,"b":}')
+            .expect(400)
+            .expect(/OperationOutcome/)
+        })
         
         it('can render the patient picker', () => {
             return request(app)
@@ -304,15 +370,35 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             .expect(200)
         });
 
+        it ("renders .well-known/smart-configuration", async () => {
+            return request(app)
+            .get(buildUrl({ fhir: FHIR_VERSION, path: ".well-known/smart-configuration" }).pathname)
+            .expect('Content-Type', /json/)
+            .expect(200)
+        })
+
         describe('Proxy', function() {
             this.timeout(10000);
+
+            it("rejects unknown fhir versions", async () => {
+                await request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION + 2, path: "/fhir/Patient"}).pathname)
+                .expect(400, /FHIR server r\d2 not found/)
+            })
             
             it('fhir/metadata responds with html in browsers', () => {
                 return request(app)
                 .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
                 .set('Accept', 'text/html')
-                .expect('Content-Type', /^text\/html/)
+                .expect('content-type', /application\/(fhir\+json|json\+fhir|json)/)
                 .expect(200)
+            });
+
+            it('removes custom headers', () => {
+                return request(app)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/Patient" }).pathname)
+                .set('x-custom', 'whatever')
+                .expect(res => expect(res.header['x-custom']).to.equal(undefined))
             });
 
             it ("Validates the FHIR version", () => {
@@ -325,10 +411,10 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
             it ("If auth token is sent - validates it", () => {
                 return request(app)
-                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/metadata" }).pathname)
+                .get(buildUrl({ fhir: FHIR_VERSION, path: "fhir/Patient" }).pathname)
                 .set("authorization", "Bearer whatever")
                 .expect('Content-Type', /text/)
-                .expect("JsonWebTokenError: jwt malformed")
+                .expect(/Invalid token\: /)
                 .expect(401)
             });
             
@@ -467,13 +553,6 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 });
             });
 
-            it("rejects invalid authorization tokens", async () => {
-                await request(app)
-                .get(buildUrl({ fhir: FHIR_VERSION, path: "/fhir/Patient" }).pathname)
-                .set("authorization", "bearer invalid-token")
-                .expect(401, /JsonWebTokenError/);
-            })
-            
             it ("Can simulate custom token errors", async () => {
                 const token = jwt.sign({ sim_error: "test error" }, config.jwtSecret)
                 await request(app)
@@ -506,49 +585,30 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 };
 
                 const authErrors = {
-                    "auth_invalid_client_id"   : "sim_invalid_client_id",
-                    "auth_invalid_redirect_uri": "sim_invalid_redirect_uri",
-                    "auth_invalid_scope"       : "sim_invalid_scope"
+                    "auth_invalid_client_id"   : /error_description=Simulated\+invalid\+client_id\+parameter\+error/,
+                    "auth_invalid_scope"       : /error_description=Simulated\+invalid\+scope\+error/
                 }
 
-                const requiredAuthorizeParams = [
-                    "redirect_uri",
-                    "response_type",
-                    // "client_id",
-                    // "scope",
-                    // "state"
-                ]
-            
-                // checks for required params
-                // -------------------------------------------------------------
-                for (const name of requiredAuthorizeParams) {
+                it(`requires "response_type" param`, () => {
+                    const query = { ...fullQuery };
+                    delete query.response_type
+                    return request(app)
+                    .get(url.pathname)
+                    .query(query)
+                    .expect(302)
+                    .expect("location", /error_description=Missing\+response_type\+parameter/)
+                    .expect("location", /state=x/)
+                });
 
-                    // If redirect_uri is missing we reply with 400 (tested below)
-                    // If anything else is missing we redirect and pass an error param
-                    if (name !== "redirect_uri") {
-                        it(`requires "${name}" param`, () => {
-                            const query = { ...fullQuery };
-                            delete query[name]
-
-                            return request(app)
-                            .get(url.pathname)
-                            .query(query)
-                            .expect(302)
-                            .expect(function(res) {
-                                const loc = res.get("location");
-                                if (!loc || loc.indexOf(`error=missing_parameter`) == -1) {
-                                    throw new Error(`No error passed to the redirect ${loc}`)
-                                }
-                            })
-                            .expect(function(res) {
-                                const loc = res.get("location");
-                                if (!loc || loc.indexOf("state=x") == -1) {
-                                    throw new Error(`No state passed to the redirect ${loc}`)
-                                }
-                            });
-                        });
-                    }
-                }
+                it(`requires "redirect_uri" param`, () => {
+                    const query = { ...fullQuery };
+                    delete query.redirect_uri
+                    return request(app)
+                    .get(url.pathname)
+                    .query(query)
+                    .expect(400)
+                    .expect({ error: "invalid_request", error_description: "Missing redirect_uri parameter" })
+                });
 
                 // validates the redirect_uri parameter
                 // -------------------------------------------------------------
@@ -556,11 +616,28 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     return request(app)
                     .get(url.pathname)
                     .query({ ...fullQuery, redirect_uri: "x" })
-                    .expect(/^Invalid redirect_uri parameter/)
+                    .expect({ error: "invalid_request", error_description: "Invalid redirect_uri parameter 'x' (must be full URL)" })
                     .expect(400);
                 });
 
-                // simulated errors
+                it (`can simulate invalid_redirect_uri error`, () => {
+
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        sim: {
+                            auth_error: "auth_invalid_redirect_uri"
+                        }
+                    });
+    
+                    return request(app)
+                    .get(url.pathname)
+                    .query(fullQuery)
+                    .expect(400)
+                    .expect({error:"invalid_request",error_description:"Simulated invalid redirect_uri parameter error"})
+                });
+
+                // other simulated errors
                 // -------------------------------------------------------------
                 Object.keys(authErrors).forEach(errorName => {
                     it (`can simulate "${errorName}" error via sim`, () => {
@@ -577,15 +654,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         .get(url.pathname)
                         .query(fullQuery)
                         .expect(302)
-                        .expect(function(res) {
-                            const loc = res.get("location");
-                            if (!loc || loc.indexOf(`error=${authErrors[errorName]}`) == -1) {
-                                throw new Error(`No error passed to the redirect ${loc}`)
-                            }
-                            if (!loc || loc.indexOf("state=x") == -1) {
-                                throw new Error(`No state passed to the redirect ${loc}`)
-                            }
-                        });
+                        .expect("location", authErrors[errorName])
                     });
 
                     it (`can simulate "${errorName}" error via launch param`, () => {
@@ -605,15 +674,16 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         .get(url.pathname)
                         .query(url.searchParams.toString())
                         .expect(302)
-                        .expect(function(res) {
-                            const loc = res.get("location");
-                            if (!loc || loc.indexOf(`error=${authErrors[errorName]}`) == -1) {
-                                throw new Error(`No error passed to the redirect ${loc}`)
-                            }
-                            if (!loc || loc.indexOf("state=x") == -1) {
-                                throw new Error(`No state passed to the redirect ${loc}`)
-                            }
-                        });
+                        .expect("location", authErrors[errorName])
+                        // .expect(function(res) {
+                        //     const loc = res.get("location");
+                        //     if (!loc || loc.indexOf(`error=${authErrors[errorName]}`) == -1) {
+                        //         throw new Error(`No error passed to the redirect ${loc}`)
+                        //     }
+                        //     if (!loc || loc.indexOf("state=x") == -1) {
+                        //         throw new Error(`No state passed to the redirect ${loc}`)
+                        //     }
+                        // });
                     });
                 })
 
@@ -624,16 +694,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .get(url.pathname)
                     .query({ ...fullQuery, aud: "whatever" })
                     .expect(302)
-                    .expect(function(res) {
-                        const loc = res.get("location");
-                        if (!loc) {
-                            throw new Error(`No redirect`)
-                        }
-                        let url = Url.parse(loc, true);
-                        if (url.query.error != "bad_audience") {
-                            throw new Error(`Wrong redirect ${loc}`)
-                        }
-                    });
+                    .expect("location", /error_description=Bad\+audience\+value/)
                 });
 
                 // can show encounter picker
@@ -687,11 +748,136 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         launch: { launch_pt: 1 }
                     });
                 });
+
+                it ("shows patient picker if needed", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "launch",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                launch_ehr: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/picker\?/)
+                });
+
+                it ("shows patient picker if needed", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "launch",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                launch_ehr: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/picker\?/)
+                });
+
+                it ("shows patient picker if multiple patients are pre-selected", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "launch/patient",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                launch_prov: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/picker\?/)
+                });
+
+                it ("shows patient picker if needed in CDS launch", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "launch/patient",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                launch_cds: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/picker\?/)
+                });
+
+                it ("does not show patient picker if scopes do not require it", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "whatever",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(res => expect(!res.header.location || !res.header.location.match(/\/picker\?/)).to.equal(true))
+                });
+
+                it ("shows provider login screen if needed", () => {
+                    const url = buildUrl({
+                        fhir: FHIR_VERSION,
+                        path: "/auth/authorize",
+                        query: {
+                            ...fullQuery,
+                            scope: "launch openid profile",
+                            aud: config.baseUrl + `/v/${FHIR_VERSION}/fhir`,
+                            launch: {
+                                patient: "X",
+                                encounter: "x",
+                                launch_ehr: 1
+                            }
+                        }
+                    });
+
+                    return request(app)
+                    .get(url.pathname)
+                    .query(url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/login\?/)
+                });
+
             })
 
             describe('token', function() {
 
-                it("can simulate sim_expired_refresh_token", async () => {
+                it("can simulate expired refresh tokens", async () => {
 
                     const { code } = await SMART.getAuthCode({
                         scope: "offline_access",
@@ -718,8 +904,8 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/token" }).pathname)
                         .type("form")
                         .send({ grant_type: "refresh_token", refresh_token: tokenResponse.refresh_token })
-                        .expect('Content-Type', /text/)
-                        .expect(401, config.errors.sim_expired_refresh_token);
+                        .expect('Content-Type', /json/)
+                        .expect(403, {error:"invalid_grant",error_description:"Expired refresh token"});
                 });
 
                 it("provides id_token", async () => {
@@ -785,7 +971,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         auth_error: "auth_invalid_client_secret",
                         refresh_token: token
                     })
-                    .expect("Simulated invalid client secret error")
+                    .expect({error:"invalid_client",error_description:"Simulated invalid client secret error"})
                     .expect(401);
                 });
 
@@ -798,7 +984,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         grant_type: "refresh_token",
                         refresh_token: token
                     })
-                    .expect("The authorization header 'Basic' cannot be empty")
+                    .expect({error:"invalid_request",error_description:"The authorization header 'Basic' cannot be empty"})
                     .expect(401);
                 });
 
@@ -811,11 +997,11 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         grant_type: "refresh_token",
                         refresh_token: token
                     })
-                    .expect(/^Bad authorization header/)
+                    .expect({ error: "invalid_request", error_description:"Bad authorization header 'Basic bXktYXB': The decoded header must contain '{client_id}:{client_secret}'" })
                     .expect(401);
                 });
     
-                it ("can simulate sim_invalid_token", () => {
+                it ("can simulate invalid token errors", () => {
                     return request(app)
                     .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/token" }).pathname)
                     .type('form')
@@ -824,7 +1010,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         grant_type: "authorization_code",
                         code: jwt.sign({ auth_error:"token_invalid_token" }, config.jwtSecret)
                     })
-                    .expect("Simulated invalid token error")
+                    .expect({ error: "invalid_client", error_description: "Invalid token!" })
                     .expect(401);
                 });
             })
@@ -842,6 +1028,41 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     expect(introspection);
                     expect(new URL(introspection.valueUri).pathname).equal(buildUrl({ fhir: FHIR_VERSION, path: "/auth/introspect" }).pathname);
                 })
+            })
+
+            it("requires authorization", async () => {
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .expect(401, "Authorization is required")
+            })
+
+            it("rejects invalid token", async () => {
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer invalidToken`)
+                .expect(401)
+            })
+
+            it("requires token in the payload", async () => {
+                const { code } = await SMART.getAuthCode({
+                    scope: "offline_access",
+                    launch: {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        patient   : "abc",
+                        encounter : "bcd",
+                    }
+                });
+                
+                const { access_token } = await SMART.getAccessToken(code);
+
+                await request(app)
+                .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
+                .set('Authorization', `Bearer ${access_token}`)
+                .set('Accept', 'application/json')
+                .set('Content-Type', 'application/x-www-form-urlencoded')
+                .expect(400, "No token provided")
             })
 
             it("can introspect an access token", async () => {
@@ -962,7 +1183,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     return request(app)
                     .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
                     .send({})
-                    .expect(401, "Invalid request content-type header (must be 'application/x-www-form-urlencoded')")
+                    .expect(400, { error: "invalid_request", error_description: "Invalid request content-type header (must be 'application/x-www-form-urlencoded')" })
                 });
         
                 it ("requires 'iss' parameter", () => {
@@ -970,7 +1191,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
                     .type("form")
                     .send({})
-                    .expect(400, "Missing iss parameter")
+                    .expect(400, { error: "invalid_request", error_description: 'Missing parameter "iss"' })
                 });
         
                 it ("requires 'pub_key' parameter", () => {
@@ -978,7 +1199,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
                     .type("form")
                     .send({ iss: "whatever" })
-                    .expect(400, "Missing pub_key parameter")
+                    .expect(400, { error: "invalid_request", error_description: 'Missing parameter "pub_key"' })
                 });
         
                 it ("validates the 'dur' parameter", () => {
@@ -988,7 +1209,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                             .post(buildUrl({ fhir: FHIR_VERSION, path: "/auth/register" }).pathname)
                             .type("form")
                             .send({ iss: "whatever", pub_key: "abc", dur })
-                            .expect(400, "Invalid dur parameter");
+                            .expect(400, { error: "invalid_request", error_description: 'Invalid parameter "dur"' });
                         })
                     )
                 });

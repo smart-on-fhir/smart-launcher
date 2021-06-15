@@ -1,15 +1,16 @@
-const { operationOutcome } = require("./lib");
+const { HTTPError, operationOutcome } = require("./lib");
 
 
-function rejectXml(err, req, res, next) {
+function rejectXml(req, res, next) {
     if (
-        (req.headers.accept && req.headers.accept.indexOf("xml") != -1) || 
+        // !req.accepts("json") ||
+        // (req.headers.accept && req.headers.accept.indexOf("xml") != -1) || 
         (req.headers['content-type'] && req.headers['content-type'].indexOf("xml") != -1) ||
         /_format=.*xml/i.test(req.url)
     ) {
         return operationOutcome(res, "XML format is not supported", { httpCode: 400 });
     }
-    next(err, req, res)
+    next()
 }
 
 // const handleParseError = function(err, req, res, next) {
@@ -65,7 +66,25 @@ function blackList(ipList) {
     }
 }
 
+/**
+ * Global error 500 handler
+ * @param {Error} error
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function globalErrorHandler(error, req, res, next)
+{
+    if (error instanceof HTTPError) {
+        return error.render(req, res)
+    }
+
+    console.error(error);
+    res.status(500).end('Internal Server Error');
+}
+
 module.exports = {
     rejectXml,
-    blackList
+    blackList,
+    globalErrorHandler
 }
