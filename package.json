@@ -1,8 +1,11 @@
 {
   "name": "smart-launcher",
-  "version": "0.1.1",
+  "version": "2.0.0",
   "description": "Launcher for SMART apps",
   "main": "./src/index.js",
+  "engines": {
+    "node": "16"
+  },
   "scripts": {
     "watch": "DOTENV_CONFIG_PATH=env/development.env node -r dotenv/config ./node_modules/.bin/nodemon --inspect ./src/index.js",
     "start": "node ./src/index.js",
