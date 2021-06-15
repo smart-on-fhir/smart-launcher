@@ -133,12 +133,6 @@ module.exports = (req, res) => {
             contentType && res.type(contentType);
             etag && res.set('ETag', etag)
             location && res.set('Location', location)
-            if (logTime) {
-                console.log(
-                    ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
-                    String((Date.now() - logTime) + "ms").yellow.bold
-                );
-            }
         });
 
     if (!isBinary) {
