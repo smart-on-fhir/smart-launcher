@@ -1,6 +1,5 @@
 const crypto       = require("crypto");
 const jwt          = require("jsonwebtoken");
-const jwkToPem     = require("jwk-to-pem");
 const config       = require("./config");
 const SMARTHandler = require("./SMARTHandler");
 const Lib          = require("./lib");
@@ -9,11 +8,6 @@ const errors       = require("./errors")
 
 /** @type {typeof Lib.assert} */
 const assert = require("./lib").assert;
-
-
-// Generate this PEM cert once when the server starts and use it later to sign
-// the id tokens
-const PRIVATE_KEY = jwkToPem(config.oidcKeypair, { private: true });
 
 class TokenHandler extends SMARTHandler {
 
@@ -206,7 +200,7 @@ class TokenHandler extends SMARTHandler {
             payload.nonce = nonce;
         }
 
-        return jwt.sign(payload, PRIVATE_KEY, {
+        return jwt.sign(payload, config.privateKeyAsPem, {
             algorithm: "RS256",
             expiresIn: `${(clientDetailsToken.accessTokensExpireIn || 60)} minutes`
         });

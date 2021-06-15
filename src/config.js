@@ -36,5 +36,6 @@ module.exports = {
     "kid": "9c37bf73343adb93920a7ae80260b0e57684551e",
     "use": "sig"
   }, JWK),
-  includeEncounterContextInStandaloneLaunch: true
+  includeEncounterContextInStandaloneLaunch: true,
+  privateKeyAsPem: PRIVATE_KEY
 }

@@ -1,14 +1,14 @@
 // @ts-check
-const jwt          = require("jsonwebtoken");
-const base64url    = require("base64-url");
-const Url          = require("url");
+const jwt          = require("jsonwebtoken")
+const jose         = require("node-jose")
+const Url          = require("url")
 const util         = require("util")
-const ScopeSet     = require("./ScopeSet");
-const config       = require("./config");
-const Codec        = require("../static/codec.js");
-const Lib          = require("./lib");
-const SMARTHandler = require("./SMARTHandler");
-const errors       = require("./errors");
+const ScopeSet     = require("./ScopeSet")
+const config       = require("./config")
+const Codec        = require("../static/codec.js")
+const Lib          = require("./lib")
+const SMARTHandler = require("./SMARTHandler")
+const errors       = require("./errors")
 
 
 class AuthorizeHandler extends SMARTHandler {
@@ -34,9 +34,9 @@ class AuthorizeHandler extends SMARTHandler {
         let sim = {}, request = this.request;
         if (request.query.launch || request.params.sim) {
             try {
-                sim = Codec.decode(JSON.parse(base64url.decode(
+                sim = Codec.decode(JSON.parse(jose.util.base64url.decode(
                     request.query.launch || request.params.sim
-                )));
+                ).toString("utf8")));
             }
             catch(ex) {
                 sim = null;

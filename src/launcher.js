@@ -1,7 +1,7 @@
-const base64url = require("base64-url");
-const lib       = require("./lib");
-const Codec     = require("../static/codec.js");
-const config    = require("./config");
+const jose   = require("node-jose")
+const lib    = require("./lib")
+const Codec  = require("../static/codec.js")
+const config = require("./config")
 
 module.exports = (req, res) => {
 
@@ -53,7 +53,7 @@ module.exports = (req, res) => {
 
     // Build the url
     let url = `${launch_uri}?iss=${encodeURIComponent(iss)}&launch=${
-        base64url.encode(JSON.stringify(Codec.encode(launchParams)))
+        jose.util.base64url.encode(JSON.stringify(Codec.encode(launchParams)))
     }`;
 
     res.redirect(url);

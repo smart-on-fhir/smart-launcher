@@ -26,35 +26,26 @@
   "bugs": {
     "url": "https://github.com/smart-on-fhir/smart-launcher/issues"
   },
-  " homepage": "http://launch.smarthealthit.org/",
+  "homepage": "http://launch.smarthealthit.org/",
   "dependencies": {
-    "base64-url": "^2.0.0",
     "body-parser": "^1.14.1",
-    "colors": "^1.1.2",
     "concurrently": "^5.2.0",
     "cors": "^2.7.1",
     "dotenv": "^6.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
-    "jwk-to-pem": "^1.2.6",
     "node-jose": "^2.0.0",
     "pem": "^1.14.4",
     "pem-jwk": "^1.5.1",
-    "replaceall": "^0.1.6",
-    "replacestream": "^4.0.3",
-    "request": "^2.88.2",
-    "ursa-purejs": "0.0.3"
+    "replacestream": "^4.0.3"
   },
   "devDependencies": {
-    "@types/base64-url": "^2.2.0",
     "@types/chai": "^4.2.11",
     "@types/express": "^4.17.12",
     "@types/jsonwebtoken": "^8.5.1",
-    "@types/jwk-to-pem": "^2.0.0",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^14.0.14",
+    "@types/node": "^15.12.2",
     "@types/node-jose": "^1.1.6",
-    "@types/request": "^2.48.5",
     "@types/supertest": "^2.0.11",
     "chai": "^4.2.0",
     "mocha": "^8.0.1",

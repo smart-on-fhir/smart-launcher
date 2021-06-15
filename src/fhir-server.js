@@ -7,7 +7,7 @@
  */
 
 const express                  = require("express")
-const base64url                = require("base64-url")
+const { util: { base64url }}   = require("node-jose")
 const wellKnownOIDC            = require("./wellKnownOIDCConfiguration")
 const wellKnownSmart           = require("./wellKnownSmartConfiguration")
 const AuthorizeHandler         = require("./AuthorizeHandler")
