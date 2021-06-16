@@ -398,6 +398,10 @@
                         <p class="help-block small launch launch-ehr launch-pp" id="launch-url-help">
                             Full url of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
+                        <div class="alert alert-danger">
+                            You are about to launch an app that runs on HTTPS but the launcher was loaded on HTTP. The app may refuse to work
+                            with a FHIR server that is not on HTTPS. To solve that <a class="btn btn-sm btn-danger" href="#" id="reload-on-https">Reload on HTTPS</a>
+                        </div>
                         <div class="launch launch-pt launch-prov">
                             <label>FHIR Server Url</label>
                             <textarea id="standalone-launch-url" class="form-control" readonly></textarea>
@@ -803,11 +807,7 @@
                     ehrLaunchUrl = appLaunchUrl + 
                         (appLaunchUrl.indexOf("?") > -1 ? "&" : "?") +
                         "launch=" + launchData;
-                    var iss = openUrl;
-                    if (window.location.protocol === "https:") {
-                        iss = iss.replace(/^https?/, "https");
-                    }
-                    ehrLaunchUrl += "&iss=" + encodeURIComponent(iss);
+                    ehrLaunchUrl += "&iss=" + encodeURIComponent(openUrl);
                 }
                     
                 var sampleEhrLaunchUrl = "/sample-app/launch.html?iss=" +
@@ -917,6 +917,14 @@
                     toggles.filter("." + launchType + ":not(:visible)").show();
                 }
 
+                var appLaunchUrl = getLaunchUrl();
+
+                $("#reload-on-https").closest(".alert").toggle(
+                    (launchType == "launch-ehr" || launchType == "launch-pp") &&
+                    appLaunchUrl.match(/^https\:/) &&
+                    location.protocol == "http:"
+                )
+
                 switch (launchType) {
                     case "launch-ehr":
                         $("#sim-ehr-label").appendTo("#launch-ehr-radio")
@@ -986,6 +994,7 @@
                 buildForm();
                 Lib.qsToForm();
                 bindEventHandlers();
+                $("#reload-on-https").attr("href", location.href.replace(/^http\:\/\//, "https://"))
                 // if (!$("#launch-url").val()) {
                 //     $("#launch-url").val(
                 //         (location.origin || (location.protocol + "//" + location.host)) +
