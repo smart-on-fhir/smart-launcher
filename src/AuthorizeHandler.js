@@ -222,6 +222,8 @@ class AuthorizeHandler extends SMARTHandler {
             code.nonce = this.nonce;
         }
 
+        code.redirect_uri = this.request.query.redirect_uri
+
         return jwt.sign(code, config.jwtSecret, { expiresIn: "5m" });
     }
 

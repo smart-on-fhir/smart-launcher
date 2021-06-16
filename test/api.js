@@ -126,19 +126,19 @@ function getSmartApi(fhirVersion)
                 if (!code) {
                     throw new Error(`authorize did not redirect to the redirect_uri with code parameter`)
                 }
-                return { code, state: loc.searchParams.get("state") }
+                return { code, state: loc.searchParams.get("state"), redirect_uri }
             });
         },
 
         /**
          * @param {string} code 
          */
-        getAccessToken: async function(code) {
+        getAccessToken: async function(code, redirect_uri) {
             return request(app)
             .post(buildUrl({ fhir: fhirVersion, path: "auth/token" }).pathname)
             .redirects(0)
             .type("form")
-            .send({ grant_type: "authorization_code", code })
+            .send({ grant_type: "authorization_code", code, redirect_uri })
             .expect(200)
             .then(res => res.body);
         },
@@ -875,9 +875,32 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
             describe('token', function() {
 
+                it("rejects token requests with invalid redirect_uri param", async () => {
+
+                    /** @type {{ code: any }} */
+                    let { code } = await SMART.getAuthCode({
+                        scope: "offline_access",
+                        launch: {
+                            launch_pt : 1,
+                            skip_login: 1,
+                            skip_auth : 1,
+                            patient   : "abc",
+                            encounter : "bcd"
+                        }
+                    })
+
+                    code = jwt.decode(code);
+
+                    expect(code).to.haveOwnProperty("redirect_uri");
+
+                    await SMART.getAccessToken(code, "http://something.else").then(() => {
+                        throw new Error("The token request should have failed")
+                    }).catch(() => true)
+                })
+
                 it("can simulate expired refresh tokens", async () => {
 
-                    const { code } = await SMART.getAuthCode({
+                    const { code, redirect_uri } = await SMART.getAuthCode({
                         scope: "offline_access",
                         launch: {
                             launch_pt : 1,
@@ -889,7 +912,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     })
                     
-                    const tokenResponse = await SMART.getAccessToken(code)
+                    const tokenResponse = await SMART.getAccessToken(code, redirect_uri)
 
                     /**
                      * @type {object}
@@ -907,7 +930,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 });
 
                 it("provides id_token", async () => {
-                    const { code } = await SMART.getAuthCode({
+                    const { code, redirect_uri } = await SMART.getAuthCode({
                         patient: "abc",
                         scope: "fhirUser openid launch",
                         encounter: "bcd",
@@ -918,7 +941,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    const tokenResponse = await SMART.getAccessToken(code)
+                    const tokenResponse = await SMART.getAccessToken(code, redirect_uri)
 
                     expect(tokenResponse).to.have.property("id_token")
                 });
@@ -927,7 +950,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             it("the access token can be verified using the published public key", async () => {
 
                 // Start by getting an id_token
-                const { code } = await SMART.getAuthCode({
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     patient: "abc",
                     scope: "fhirUser openid launch",
                     encounter: "bcd",
@@ -936,7 +959,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     launch: { launch_pt: 1 }
                 });
 
-                const { id_token } = await SMART.getAccessToken(code)
+                const { id_token } = await SMART.getAccessToken(code, redirect_uri)
 
                 // Then get the jwks_uri from .well-known/openid-configuration
                 const jwksUrl = await request(app)
@@ -1007,7 +1030,8 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
                     .send({
                         grant_type: "authorization_code",
-                        code: jwt.sign({ auth_error:"token_invalid_token" }, config.jwtSecret)
+                        code: jwt.sign({ auth_error:"token_invalid_token", redirect_uri: "x" }, config.jwtSecret),
+                        redirect_uri: "x"
                     })
                     .expect({ error: "invalid_client", error_description: "Invalid token!" })
                     .expect(401);
@@ -1044,7 +1068,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             })
 
             it("requires token in the payload", async () => {
-                const { code } = await SMART.getAuthCode({
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     scope: "offline_access",
                     launch: {
                         launch_pt : 1,
@@ -1055,7 +1079,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await SMART.getAccessToken(code);
+                const { access_token } = await SMART.getAccessToken(code, redirect_uri);
 
                 await request(app)
                 .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
@@ -1066,7 +1090,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             })
 
             it("can introspect an access token", async () => {
-                const { code } = await SMART.getAuthCode({
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     scope: "offline_access",
                     launch: {
                         launch_pt : 1,
@@ -1077,7 +1101,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await SMART.getAccessToken(code);
+                const { access_token } = await SMART.getAccessToken(code, redirect_uri);
 
                 await request(app)
                 .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
@@ -1091,8 +1115,8 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 })
             })
 
-            it("can introspect an access token", async () => {
-                const { code } = await SMART.getAuthCode({
+            it("can introspect a refresh token", async () => {
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     scope: "offline_access",
                     launch: {
                         launch_pt : 1,
@@ -1103,7 +1127,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token, refresh_token } = await SMART.getAccessToken(code);
+                const { access_token, refresh_token } = await SMART.getAccessToken(code, redirect_uri);
 
                 await request(app)
                 .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
@@ -1118,7 +1142,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             })
 
             it("gets active: false for authorized request with invalid token", async () => {
-                const { code } = await SMART.getAuthCode({
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     scope: "offline_access",
                     launch: {
                         launch_pt : 1,
@@ -1129,7 +1153,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token, refresh_token } = await SMART.getAccessToken(code);
+                const { access_token, refresh_token } = await SMART.getAccessToken(code, redirect_uri);
 
                 await request(app)
                 .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)
@@ -1151,7 +1175,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
     
                 const expiredToken = jwt.sign(expiredTokenPayload, config.jwtSecret)
 
-                const { code } = await SMART.getAuthCode({
+                const { code, redirect_uri } = await SMART.getAuthCode({
                     scope: "offline_access",
                     launch: {
                         launch_pt : 1,
@@ -1162,7 +1186,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await SMART.getAccessToken(code);
+                const { access_token } = await SMART.getAccessToken(code, redirect_uri);
 
                 await request(app)
                 .post(buildUrl({ fhir: FHIR_VERSION, path: "auth/introspect" }).pathname)

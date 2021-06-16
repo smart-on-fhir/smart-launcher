@@ -120,8 +120,26 @@ class TokenHandler extends SMARTHandler {
      * token from request.body.code and eventually calls this.finish() with it.
      */
     handleAuthorizationCode() {
+        /** @type {any} */
         let token;
         assert(() => token = jwt.verify(this.request.body.code, config.jwtSecret), errors.authorization_code.invalid_code);
+
+        assert(token.redirect_uri, errors.authorization_code.invalid_code);
+
+        assert(this.request.body.redirect_uri, {
+            type : "oauth",
+            code : 400,
+            error: "invalid_request",
+            msg  : "Missing redirect_uri parameter"
+        });
+
+        assert(token.redirect_uri === this.request.body.redirect_uri, {
+            type : "oauth",
+            code : 401,
+            error: "invalid_request",
+            msg  : "Invalid redirect_uri parameter"
+        });
+
         return this.finish(token);
     }
 
