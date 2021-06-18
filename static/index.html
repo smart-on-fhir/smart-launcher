@@ -398,7 +398,7 @@
                         <p class="help-block small launch launch-ehr launch-pp" id="launch-url-help">
                             Full url of the page in your app that will initialize the SMART session (often the path for a launch.html file)
                         </p>
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger" style="display: none">
                             You are about to launch an app that runs on HTTPS but the launcher was loaded on HTTP. The app may refuse to work
                             with a FHIR server that is not on HTTPS. To solve that <a class="btn btn-sm btn-danger" href="#" id="reload-on-https">Reload on HTTPS</a>
                         </div>
@@ -919,11 +919,13 @@
 
                 var appLaunchUrl = getLaunchUrl();
 
-                $("#reload-on-https").closest(".alert").toggle(
-                    (launchType == "launch-ehr" || launchType == "launch-pp") &&
+                if ((launchType == "launch-ehr" || launchType == "launch-pp") &&
                     appLaunchUrl.match(/^https\:/) &&
-                    location.protocol == "http:"
-                )
+                    location.protocol == "http:") {
+                    $("#reload-on-https").closest(".alert").show()
+                } else {
+                    $("#reload-on-https").closest(".alert").hide()
+                }
 
                 switch (launchType) {
                     case "launch-ehr":
