@@ -1,46 +1,24 @@
 import { Request, Response } from "express"
 import crypto from "crypto"
 import jwt from "jsonwebtoken"
-import config from "./config"
-import { OAuthError, buildUrlPath, normalizeUrl } from "./lib";
-import errors from "./errors"
+import * as config from "../config"
+import { OAuthError } from "../lib";
+import * as errors from "../errors"
+import ScopeSet from "./ScopeSet"
 
+// Begin type definitions ------------------------------------------------------
 
 type LaunchType = "ehr" | "patient-standalone" | "provider-standalone" | "cds-hooks"
 
 type AuthorizeRequest = Request<any, any, any, AuthorizeParams, any>
 
-type TokenRequest = Request<
-    any, // any route params (not used)
-    TokenResponse | typeof OAuthError,
-    TokenRequestBody,
-    any, // any query params (not used)
-    any  // any locals (not used)
->
+type TokenRequest = RefreshTokenRequest | ClientCredentialsTokenRequest | AuthorizationCodeTokenRequest
 
-type RefreshTokenRequest = Request<
-    any, // any route params (not used)
-    RefreshTokenResponse | typeof OAuthError,
-    RefreshTokenRequestBody,
-    any, // any query params (not used)
-    any  // any locals (not used)
->
+type RefreshTokenRequest = Request<any, RefreshTokenResponse | typeof OAuthError, RefreshTokenRequestBody, any, any>
 
-type ClientCredentialsTokenRequest = Request<
-    any, // any route params (not used)
-    ClientCredentialsTokenResponse | typeof OAuthError,
-    ClientCredentialsTokenRequestBody,
-    any, // any query params (not used)
-    any  // any locals (not used)
->
+type ClientCredentialsTokenRequest = Request<any, ClientCredentialsTokenResponse | typeof OAuthError, ClientCredentialsTokenRequestBody, any, any>
 
-type AuthorizationCodeTokenRequest = Request<
-    any, // any route params (not used)
-    AccessTokenResponse | typeof OAuthError,
-    AuthorizationCodeTokenRequestBody,
-    any, // any query params (not used)
-    any  // any locals (not used)
->
+type AuthorizationCodeTokenRequest = Request<any, AccessTokenResponse | typeof OAuthError, AuthorizationCodeTokenRequestBody, any, any>
 
 interface TokenRequestBody
 {
@@ -307,13 +285,13 @@ interface CodeToken
  */
 interface AuthorizeParams
 {
-    redirect_uri?: string
-    state?: string
+    response_type: "code"
+    redirect_uri: string
     client_id: string
     scope: string
     aud: string
-    response_type: "code"
     launch?: string
+    state?: string
 
     /**
      * ID of the selected patient (passed in from the patient picker)
@@ -358,6 +336,21 @@ interface LaunchState
     selectFirstEncounter?: boolean
 }
 
+// End type definitions --------------------------------------------------------
+
+// Begin constants -------------------------------------------------------------
+// These are just temporary constants to improve code readability. It should be
+// possible to compute URLs dynamically later...
+const PROTOCOL             = "http:"
+const SERVER_BASE_URL      = PROTOCOL + "//localhost:8443/v/r4"
+const FHIR_SERVER_URL      = SERVER_BASE_URL + "/fhir"
+const PATIENT_PICKER_URL   = SERVER_BASE_URL + "/select-patient"
+const ENCOUNTER_PICKER_URL = SERVER_BASE_URL + "/select-encounter"
+const PATIENT_LOGIN_URL    = PROTOCOL + "//localhost:8443/v3/login"
+const PROVIDER_LOGIN_URL   = PROTOCOL + "//localhost:8443/v3/login-as-provider"
+const APPROVE_LAUNCH_URL   = SERVER_BASE_URL + "/approve-launch"
+// End constants ---------------------------------------------------------------
+
 /**
  * Decide if a patients needs top log in. Should only return true if all of the
  * following is true:
@@ -375,7 +368,7 @@ function needToLoginAsPatient(state: LaunchState): boolean
         return true;
     }
 
-    return !state.skipLogin;
+    return state.skipLogin === false;
 }
 
 function needToLoginAsProvider(state: LaunchState): boolean
@@ -480,9 +473,8 @@ function getAuthorizeParams(req: AuthorizeRequest): AuthorizeParams
 
     // The "aud" param must match the apiUrl (but can have different protocol)
     // -------------------------------------------------------------------------
-    const apiUrl = buildUrlPath(config.baseUrl, req.baseUrl, "fhir");
-    let a = normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
-    let b = normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
+    let a = String(req.query.aud || "").replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
+    let b = FHIR_SERVER_URL.replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
     if (a != b) {
         throw new OAuthError(302, "Bad audience value", "invalid_request")
     }
@@ -550,7 +542,12 @@ function getLaunchType(params: AuthorizeParams): LaunchType
 
 function redirect(res: Response, path: string, query: Record<string, any>)
 {
-    const search = new URLSearchParams(query)
+    const search = new URLSearchParams()
+    for (const name in query) {
+        if (query[name] !== undefined) {
+            search.set(name, query[name])
+        }
+    }
     res.redirect(path + "?" + search)
 }
 
@@ -608,7 +605,7 @@ export function authorize(req: AuthorizeRequest, res: Response)
 
     // User decided not to authorize the app launch
     if (params.error == "launch_rejected") {
-        throw Lib.OAuthError.from(errors.authorization_code.unauthorized)
+        throw OAuthError.from(errors.authorization_code.unauthorized)
     }
 
     // Simulate auth_invalid_client_id error if requested
@@ -628,32 +625,34 @@ export function authorize(req: AuthorizeRequest, res: Response)
     
     // PATIENT LOGIN SCREEN
     if (needToLoginAsPatient(state)) {
-        return redirect(res, "/login", { patient: state.patient, login_type: "patient" });
+        return redirect(res, PATIENT_LOGIN_URL, { ...req.query, patient: state.patient });
     }
     
     // PROVIDER LOGIN SCREEN
     if (needToLoginAsProvider(state)) {
-        return redirect(res, "/login", { provider: state.user, login_type: "provider" });
+        return redirect(res, PROVIDER_LOGIN_URL, { ...req.query, provider: state.user });
     }
 
     // PATIENT PICKER
     if (needToSelectPatient(state)) {
-        return redirect(res, "/picker", { patient: state.patient });
+        return redirect(res, PATIENT_PICKER_URL, { patient: state.patient });
     }
     
     // ENCOUNTER
     if (needToSelectEncounter(state)) {
-        return redirect(res, "/encounter", { patient: state.patient, select_first: state.selectFirstEncounter });
+        return redirect(res, ENCOUNTER_PICKER_URL, { patient: state.patient, select_first: state.selectFirstEncounter });
     }
 
     // AUTH SCREEN
     if (needToApproveLaunch(state)) {
-        return redirect(res, "/authorize", { patient: state.patient });
+        return redirect(res, APPROVE_LAUNCH_URL, { patient: state.patient });
     }
 
     // CREATE CODE TOKEN
     const codeToken: CodeToken = {
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        scope       : params.scope,
+        client_id   : params.client_id
     }
 
     // LAUNCH!
@@ -696,14 +695,23 @@ function getAccessTokenFromAuthorizationCode(req: AuthorizationCodeTokenRequest,
 
     // build AccessTokenResponse
     const response: AccessTokenResponse = {
-        token_type: "bearer",
+        token_type  : "bearer",
         access_token: jwt.sign(accessToken, config.jwtSecret),
-        scope: ""
+        scope       : negotiateScopes(codeToken.scope)
     }
 
     // id_token
     if (codeToken.user && scope.has("openid") && (scope.has("profile") || scope.has("fhirUser"))) {
         response.id_token = jwt.sign(createIdToken(req, codeToken), config.jwtSecret);
+    }
+
+    // refresh_token
+    if (scope.has('offline_access') || scope.has('online_access')) {
+        response.refresh_token = jwt.sign(
+            crypto.randomBytes(16).toString("hex"),
+            config.jwtSecret,
+            { expiresIn: +config.refreshTokenLifeTime * 60 }
+        );
     }
 
     // Reply with AccessTokenResponse
@@ -775,7 +783,7 @@ export function getToken(req: TokenRequest, res: Response)
             getRefreshToken(req as RefreshTokenRequest, res);
         break;
         default:
-            throw OAuthError.from(errors.bad_grant_type, req.body.grant_type);
+            throw OAuthError.from(errors.bad_grant_type, (req.body as any).grant_type);
     }
 }
 
@@ -788,12 +796,31 @@ function verifyToken<T=Record<string, any>>(token: string): T
 }
 
 /**
- * Generates the id token that is included in the response if needed
+ * Returns the ISS url.
+ * NOTE that this function assumes that it is being called within a router and
+ * the `baseUrl` property of the request (the router's mount point) is the ISS!
+ */
+function getISS(req: Request)
+{
+    const secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+    const iss = new URL(req.baseUrl, config.baseUrl);
+    iss.protocol = secure ? "https:" : "http:"
+    return iss.href;
+}
+
+/**
+ * Generates the id token that is included in the token response if needed.
+ * This function is only used when an access token is requested and if an user
+ * has already been selected.
  */
 function createIdToken(req: Request, codeToken: CodeToken): IDToken
 {
-    let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
-    let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
+    // this function should only be called if the codeToken has an user,
+    // but lets verify that anyway
+    if (!codeToken.user) {
+        throw new OAuthError(400, "Invalid code parameter", "invalid_request")
+    }
+
     let payload: IDToken = {
         profile : codeToken.user,
         fhirUser: codeToken.user,
@@ -801,7 +828,7 @@ function createIdToken(req: Request, codeToken: CodeToken): IDToken
         sub: crypto.createHash('sha256').update(codeToken.user).digest('hex'),
         exp: 0,
         iat: 0,
-        iss
+        iss: getISS(req)
     };
 
     // Reflect back the nonce if it was provided in the original Authentication
@@ -814,3 +841,11 @@ function createIdToken(req: Request, codeToken: CodeToken): IDToken
     return payload;
 }
 
+/**
+ * Currently we grant whatever scope is requested. This is just a placeholder
+ * in case we need to do scope negotiation.
+ */
+function negotiateScopes(requestedScopes: string)
+{
+    return requestedScopes;
+}

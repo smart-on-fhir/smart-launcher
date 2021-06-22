@@ -1,0 +1,75 @@
+extends ./layout.pug
+
+block append styles
+    style.
+        html, body {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .btn-success {
+            padding-left : 4em;
+            padding-right: 4em;
+        }
+        .panel-body {
+            padding: 3rem;
+        }
+        .heading {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 0
+        }
+        .logo {
+            display: flex;
+            flex: 0 0 60px;
+        }
+        .title {
+            display: flex;
+            font-size: 26px;
+            padding: 0 0 0 1rem;
+            text-align: center;
+        }
+        .panel {
+            margin: 2rem;
+            max-width: 650px;
+            border-radius: 10px;
+        }
+        .panel-body {
+            border-radius: 10px;
+            padding: 4rem 6rem 3rem 6rem
+        }
+
+block main
+    datalist#patients
+        each pt in patients
+            option(value=pt.id)= pt.name
+
+    .container-fluid
+        .row
+            .col
+                .panel.panel-default
+                    .panel-body.navbar-default
+                        h3.heading
+                            +logo()
+                            span.title= title
+                        hr
+                        form(action="./auth/authorize")
+                            each val, key in query
+                                if (key !== "patient")
+                                    input(type="hidden" name=key value=val)
+
+                            .form-group
+                                label Patient ID
+                                input.form-control(type="text" name="patient" list="patients" autocomplete="off" required=true value=patients.length === 1 ? patients[0].id : "")
+
+                            .form-group
+                                label Password
+                                input.form-control(type="password" value="demo-password" autocomplete="off" required=true)
+                                p.help-text: .text-muted This login is for demonstration purposes only. ANY password will be accepted.
+                            hr
+                            .form-group
+                                .col-xs-12.text-center
+                                    button.btn.btn-lg.btn-success(type="submit") Login
+                        

@@ -11,6 +11,7 @@ const {
     blackList,
     globalErrorHandler
 } = require("./middlewares")
+const v3 = require("./v3/fhir-server").default
 
 
 const app = express();
@@ -23,6 +24,10 @@ app.use(blackList(process.env.IP_BLACK_LIST || ""));
 
 // reject xml
 app.use(rejectXml);
+
+// We use Pug as view engine
+app.set('view engine', 'pug');
+app.set('views', __dirname + "/v3/views");
 
 // Host public keys for backend services JWKS auth
 app.get("/keys", (req, res) => {
@@ -45,6 +50,8 @@ app.get("/public_key", (req, res) => {
 
 // FHIR servers
 app.use(["/v/:fhir_release/sim/:sim", "/v/:fhir_release"], fhirServer)
+
+app.use("/v3", v3);
 
 // The launcher used by the SMART App Gallery
 app.get("/launcher", launcher);
@@ -86,6 +93,8 @@ app.use("/env.js", (req, res) => {
 
     res.type("application/javascript").send(`var ENV = ${JSON.stringify(out, null, 4)};`);
 });
+
+
 
 // static assets
 app.use(express.static("static"));

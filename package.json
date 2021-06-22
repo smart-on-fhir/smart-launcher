@@ -38,6 +38,7 @@
     "node-jose": "^2.0.0",
     "pem": "^1.14.4",
     "pem-jwk": "^1.5.1",
+    "pug": "^3.0.2",
     "replacestream": "^4.0.3"
   },
   "devDependencies": {
