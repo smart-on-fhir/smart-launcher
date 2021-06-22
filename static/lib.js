@@ -342,7 +342,11 @@
             read  : "",
             write : "",
             access: "",
-            other : ""
+            other : "",
+            create: "",
+            update: "",
+            deletePermission: "",
+            search: ""
         };
 
         if (scope == "smart/orchestrate_launch") {
@@ -383,34 +387,100 @@
         var scopeParts = scope.split(/[/.]/);
         if (scopeParts.length < 2) return out;
 
-        if (scopeParts[1].toLowerCase() == "patient")
-            scopeParts[1] = "Demographic";
+        if ((scopeParts.length === 2) ||
+            (scopeParts[2] === 'read') ||
+            (scopeParts[2] === 'write') ||
+            (scopeParts[2] === '*')) {
 
-        var text;
-        if (!isPatient) {
-            text = (scopeParts[1] == "*") ? "All" : scopeParts[1];
-            if (scopeParts[0] == "user") {
-                text += " data you have access to in the EHR system";
+            if (scopeParts[1].toLowerCase() == "patient")
+                scopeParts[1] = "Demographic";
+    
+            var text;
+            if (!isPatient) {
+                text = (scopeParts[1] == "*") ? "All" : scopeParts[1];
+                if (scopeParts[0] == "user") {
+                    text += " data you have access to in the EHR system";
+                } else {
+                    text += " data on the current patient";
+                }
             } else {
-                text += " data on the current patient";
+                if 	(scopeParts[1] == "*") {
+                    text = "Your medical information";
+                } else {
+                    text = 'Your information of type "' + scopeParts[1] + '"';
+                }
             }
-        } else {
-            if 	(scopeParts[1] == "*") {
-                text = "Your medical information";
-            } else {
-                text = 'Your information of type "' + scopeParts[1] + '"';
+    
+            if (scopeParts[2] === "write" || scopeParts[2] === "*") {
+                out.write = text;
             }
+    
+            if (scopeParts[2] === "read" || scopeParts[2] === "*") {
+                out.read = text;
+            }
+    
+            return out;
         }
 
-        if (scopeParts[2] == "write" || scopeParts[2] == "*") {
-            out.write = text;
+        var tags = "";
+
+        if (scopeParts[2].includes('?')) {
+            var accessAndTags = scopeParts[2].split(/[?&]/);
+            scopeParts[2] = accessAndTags[0];
+
+            accessAndTags = scope.split(/[?&]/);
+            tags = tagsToString(accessAndTags);
         }
 
-        if (scopeParts[2] == "read" || scopeParts[2] == "*") {
-            out.read = text;
+        if (scopeParts[2].includes('c')) {
+            out.create = `New <code>${scopeParts[1]}</code> records${tags}`;
+        }
+        
+        if (scopeParts[2].includes('u')) {
+            out.update = `Changes to existing <code>${scopeParts[1]}</code> records${tags}`;
+        }
+
+        if (scopeParts[2].includes('s')) {
+            out.search = `Search for <code>${scopeParts[1]}</code> records${tags}`;
+        }
+        
+        if (scopeParts[2].includes('r')) {
+            out.read = `<code>${scopeParts[1]}</code> records${tags}`;
+        }
+
+        if (scopeParts[2].includes('d')) {
+            out.delete = `Delete <code>${scopeParts[1]}</code> records${tags}`;
         }
 
         return out;
+    }
+
+    function tagsToString(accessAndTags) {
+        if (!accessAndTags) {
+            return "";
+        }
+
+        if (accessAndTags.length < 2) {
+            return "";
+        }
+
+        var tags = "";
+        accessAndTags.forEach((val, index) => {
+            if (index === 0) { return; }
+            if (val.includes('=')) {
+                var parts = val.split(/[=]/);
+                if (parts[1].includes('|')) {
+                    parts[1] = parts[1].split('|')[1];
+                }
+                if (index === 1) {
+                    tags += ` with <code>${parts[0]}</code> of <code>${parts[1]}</code>`;
+                } else {
+                    tags += ` and <code>${parts[0]}</code> of <code>${parts[1]}</code>`;
+                }
+            }
+        });
+
+        return tags;
     }
 
     function scopeListToPermissions(scopes, isPatient) {
@@ -458,6 +528,18 @@
             }
             if (permissions.other) {
                 other.push(permissions.other);
+            }
+            if (permissions.create) {
+                write.push(permissions.create);
+            }
+            if (permissions.update) {
+                write.push(permissions.update);
+            }
+            if (permissions.deletePermission) {
+                other.push(permissions.deletePermission);
+            }
+            if (permissions.search) {
+                other.push(permissions.search);
             }
         });
 

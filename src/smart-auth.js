@@ -4,10 +4,22 @@ const router              = require("express").Router({ mergeParams: true });
 const AuthorizeHandler    = require("./AuthorizeHandler");
 const RegistrationHandler = require("./RegistrationHandler");
 const TokenHandler        = require("./TokenHandler");
+const tokenIntrospection  = require("./tokenIntrospection");
 
 
 router.get(
     "/authorize",
+    AuthorizeHandler.handleRequest
+);
+
+router.post("/introspect",
+    bodyParser.urlencoded({ extended: false }),
+    tokenIntrospection
+);
+
+router.post(
+    "/authorize",
+    bodyParser.urlencoded({ extended: false }),
     AuthorizeHandler.handleRequest
 );
 

@@ -76,7 +76,10 @@ module.exports = {
     "invalid_scope"                   : 'Invalid scope: "%s"',
     "missing_scope"                   : "Empty scope",
     "token_invalid_scope"             : "Simulated invalid scope error",
-    "bad_grant_type"                  : "Unknown or missing grant_type parameter"
+    "bad_grant_type"                  : "Unknown or missing grant_type parameter",
+    "invalid_code_challenge_method"   : "Invalid code_challenge_method parameter",
+    "missing_code_challenge"          : "Missing code_challenge parameter",
+    "invalid_grant"                   : "Invalid grant or Invalid PKCE Verifier, '%s' vs '%s'.",
   },
   includeEncounterContextInStandaloneLaunch: true
 }

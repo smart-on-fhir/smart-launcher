@@ -16,9 +16,10 @@ class AuthorizeHandler extends SMARTHandler {
 
     constructor(req, res) {
         super(req, res);
+        this.inputs = req.body || req.query;
         this.sim = this.getRequestedSIM();
-        this.scope = new ScopeSet(decodeURIComponent(req.query.scope));
-        this.nonce = req.query.nonce ? decodeURIComponent(req.query.nonce) : undefined;
+        this.scope = new ScopeSet(decodeURIComponent(this.inputs.scope));
+        this.nonce = this.inputs.nonce ? decodeURIComponent(this.inputs.nonce) : undefined;
     }
 
     /**
@@ -29,10 +30,10 @@ class AuthorizeHandler extends SMARTHandler {
      */
     getRequestedSIM() {
         let sim = {}, request = this.request;
-        if (request.query.launch || request.params.sim) {
+        if (this.inputs.launch || request.params.sim) {
             try {
                 sim = Codec.decode(JSON.parse(base64url.decode(
-                    request.query.launch || request.params.sim
+                    this.inputs.launch || request.params.sim
                 )));
             }
             catch(ex) {
@@ -171,8 +172,10 @@ class AuthorizeHandler extends SMARTHandler {
                     need_patient_banner: !sim.sim_ehr,
                     smart_style_url    : config.baseUrl + "/smart-style.json",
                 }),
-                client_id: this.request.query.client_id,
-                scope    : this.request.query.scope,
+                client_id: this.inputs.client_id,
+                code_challenge_method: this.inputs.code_challenge_method,
+                code_challenge: this.inputs.code_challenge,
+                scope    : this.inputs.scope,
                 sde      : sim.sde
             };
 
@@ -224,7 +227,7 @@ class AuthorizeHandler extends SMARTHandler {
 
     redirect(to, query = {}) {
         let redirectUrl = Url.parse(this.request.originalUrl, true);
-        redirectUrl.query = Object.assign(redirectUrl.query, query, {
+        redirectUrl.query = Object.assign(redirectUrl.query, this.inputs, query, {
             aud_validated: this.sim.aud_validated,
             aud          : ""
         });
@@ -254,7 +257,7 @@ class AuthorizeHandler extends SMARTHandler {
             requiredParams.push("aud");
         }
 
-        const missingParam = Lib.getFirstMissingProperty(req.query, requiredParams);
+        const missingParam = Lib.getFirstMissingProperty(this.inputs, requiredParams);
         if (missingParam) {
             if (missingParam == "redirect_uri") {
                 Lib.replyWithError(res, "missing_parameter", 400, missingParam);
@@ -268,7 +271,7 @@ class AuthorizeHandler extends SMARTHandler {
         // bad_redirect_uri if we cannot parse it
         let RedirectURL;
         try {
-            RedirectURL = Url.parse(decodeURIComponent(req.query.redirect_uri), true);
+            RedirectURL = Url.parse(decodeURIComponent(this.inputs.redirect_uri), true);
         } catch (ex) {
             Lib.replyWithError(res, "bad_redirect_uri", 400, ex.message);
             return false;
@@ -277,7 +280,7 @@ class AuthorizeHandler extends SMARTHandler {
         // Relative redirect_uri like "whatever" will eventually result in wrong
         // URLs like "/auth/whatever". We must only support full URLs. 
         if (!RedirectURL.protocol) {
-            Lib.replyWithError(res, "no_redirect_uri_protocol", 400, req.query.redirect_uri);
+            Lib.replyWithError(res, "no_redirect_uri_protocol", 400, this.inputs.redirect_uri);
             return false;
         }
 
@@ -287,7 +290,7 @@ class AuthorizeHandler extends SMARTHandler {
                 config.baseUrl,
                 req.baseUrl.replace(config.authBaseUrl, config.fhirBaseUrl)
             );
-            let a = Lib.normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
+            let a = Lib.normalizeUrl(this.inputs.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             let b = Lib.normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             if (a != b) {
                 Lib.redirectWithError(req, res, "bad_audience");
@@ -295,6 +298,17 @@ class AuthorizeHandler extends SMARTHandler {
             }
             sim.aud_validated = "1";
         }
+
+        if (this.inputs.code_challenge_method && this.inputs.code_challenge_method !== 'S256') {
+            Lib.redirectWithError(req, res, "invalid_code_challenge_method");
+            return false;
+        }
+
+        if (this.inputs.code_challenge_method && !this.inputs.code_challenge) {
+            Lib.redirectWithError(req, res, "missing_code_challenge");
+            return false;
+        }
+
 
         return true;
     }
@@ -306,15 +320,15 @@ class AuthorizeHandler extends SMARTHandler {
         const sim = this.sim;
 
         // Handle response from picker, login or auth screen
-        if (req.query.patient      ) sim.patient       = req.query.patient;
-        if (req.query.provider     ) sim.provider      = req.query.provider;
-        if (req.query.encounter    ) sim.encounter     = req.query.encounter;
-        if (req.query.auth_success ) sim.skip_auth     = "1";
-        if (req.query.login_success) sim.skip_login    = "1";
-        if (req.query.aud_validated) sim.aud_validated = "1";
+        if (this.inputs.patient      ) sim.patient       = this.inputs.patient;
+        if (this.inputs.provider     ) sim.provider      = this.inputs.provider;
+        if (this.inputs.encounter    ) sim.encounter     = this.inputs.encounter;
+        if (this.inputs.auth_success ) sim.skip_auth     = "1";
+        if (this.inputs.login_success) sim.skip_login    = "1";
+        if (this.inputs.aud_validated) sim.aud_validated = "1";
         
         // User decided not to authorize the app launch
-        if (req.query.auth_success == "0") {
+        if (this.inputs.auth_success == "0") {
             return Lib.redirectWithError(req, res, "unauthorized");
         }
         
@@ -333,7 +347,7 @@ class AuthorizeHandler extends SMARTHandler {
             return Lib.redirectWithError(req, res, "sim_invalid_scope");
         }
 
-        // Validate query parameters
+        // Validate input parameters
         if (!this.validateParams()) {
             return;
         }
@@ -364,10 +378,10 @@ class AuthorizeHandler extends SMARTHandler {
         }
 
         // LAUNCH!
-        const RedirectURL = Url.parse(decodeURIComponent(req.query.redirect_uri), true);
+        const RedirectURL = Url.parse(decodeURIComponent(this.inputs.redirect_uri), true);
         RedirectURL.query.code = this.createAuthCode();
-        if (req.query.state) {
-            RedirectURL.query.state = req.query.state;
+        if (this.inputs.state) {
+            RedirectURL.query.state = this.inputs.state;
         }
         res.redirect(Url.format(RedirectURL));
     }    

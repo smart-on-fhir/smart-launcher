@@ -8,7 +8,7 @@ WORKDIR /app
 
 ENV NODE_ENV      "production"
 ENV LAUNCHER_PORT "80"
-ENV BASE_URL      "http://localhost:9009"
+ENV BASE_URL      "https://smart.argo.run/"
 
 # Which FHIR servers to use
 ENV FHIR_SERVER_R2 "https://r2.smarthealthit.org"
@@ -29,6 +29,16 @@ RUN cd /tmp && npm install --production
 RUN mv /tmp/node_modules /app/node_modules
 
 COPY . .
+
+# Granular app
+# RUN pwd -L
+# RUN ls -al .
+# RUN ls -dl ../*
+# RUN ls -dl ../app
+# RUN ls -al ../tmp
+RUN cd granular-scopes-app && npm ci
+RUN cd granular-scopes-app && npm run-script build
+RUN mv granular-scopes-app/build static/granular
 
 # You must use -p 9009:80 when running the image
 EXPOSE 80 

@@ -158,7 +158,8 @@ function encodeSim(object = {}) {
  * @param {String} options.patient 0 or more comma-separated patient IDs.
  * Defaults to "x" because we ignore it.
  * @param {String} options.client_id The client_id of the app. Defaults to "x"
- * because we ignore it.
+ * @param {String} options.code_challenge_method PKCE option; no PKCE request if omitted
+ * @param {String} options.code_challenge PKCE option; no PKCE request if omitted
  * @param {String} options.redirect_uri The uri to redirect to. Defaults to
  * "http://x.y" because we ignore it but still require it to be valid URL.
  * @param {String} options.scope
@@ -177,11 +178,14 @@ function encodeSim(object = {}) {
 function getAuthCode(options) {
     return new Promise((resolve, reject) => {
         Request({
+            method: options.post ? "POST" : "GET",
             url      : `${options.baseUrl}auth/authorize`,
             strictSSL: false,
             followRedirect: false,
-            qs: {
+            [options.post ? "form" : "qs"]: {
                 response_type: "code",
+                code_challenge_method: options.code_challenge_method || undefined,
+                code_challenge: options.code_challenge || undefined,
                 patient      : options.patient   || "x",
                 client_id    : options.client_id || "x",
                 redirect_uri : options.redirect_uri || "http://x.y",
@@ -202,11 +206,10 @@ function getAuthCode(options) {
                     throw new Error(`auth/authorize did not redirect to the redirect_uri`)
                 }
                 let url = Url.parse(res.headers.location, true);
-                let code = url.query.code + "";
-                if (!code) {
-                    console.log(res.headers)
+                if (!url.query.code) {
                     throw new Error(`auth/authorize did not redirect to the redirect_uri with code parameter`)
                 }
+                let code = url.query.code + "";
                 // console.log("code: ", JSON.parse(base64url.decode(code.split(".")[1])));
                 resolve(code);
             } catch(ex) {
@@ -226,7 +229,8 @@ function getAuthToken(options) {
             json: true,
             form: {
                 grant_type: "authorization_code",
-                code      : options.code
+                code      : options.code,
+                code_verifier: options.code_verifier,
             }
         }, (error, res, body) => {
             if (error) {
@@ -266,8 +270,20 @@ function refreshSession(options) {
 
 function authorize(options) {
     return getAuthCode(options).then(
-        code => getAuthToken({ code, baseUrl: options.baseUrl })
+        code => getAuthToken({ code, baseUrl: options.baseUrl, code_verifier: options.code_verifier})
     );
+}
+
+function introspect(options) {
+    return requestPromise({
+        url           : `${options.baseUrl}auth/introspect`,
+        method        : "POST",
+        followRedirect: false,
+        json          : true,
+        form: {
+            token: options.accessToken
+        }
+    }).then(res => res.body);
 }
 
 function buildRoutePermutations(suffix = "", fhirVersion) {
@@ -390,11 +406,11 @@ describe('Proxy', function() {
         .expect(401, done);
     });
 
-    it ("Can simulate custom token errors", null);
-    it ("Keeps protected data-sets read-only", null);
-    it ("Inject sandbox tag into POST and PUT requests", null);
-    it ("Make urls conditional and if exists, change /id to ?_id=", null);
-    it ("Apply patient scope to GET requests", null);
+    // xit ("Can simulate custom token errors", null);
+    // xit ("Keeps protected data-sets read-only", null);
+    // xit ("Inject sandbox tag into POST and PUT requests", null);
+    // xit ("Make urls conditional and if exists, change /id to ?_id=", null);
+    // xit ("Apply patient scope to GET requests", null);
 
     it ("Adjust urls in the fhir response", done => {
         request(app)
@@ -556,6 +572,26 @@ describe('Proxy', function() {
 
 describe('Auth', function() {
     describe('authorize', function() {
+        buildRoutePermutations().forEach(path => {
+            it(`POST ${path}`, done => {
+                getAuthCode({
+                    post: true,
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                }).then(code => {
+                    expect(code).to.have.length.greaterThan(10);
+                    done()
+                });
+            });
+        });
+
 
         // auth/authorize Checks for required params
         buildRoutePermutations("auth/authorize").forEach(path => {
@@ -579,7 +615,6 @@ describe('Auth', function() {
                     });
                 });
             });
-
             // it(`${path} with missing "client_id" param`, done => {
             //     request(app)
             //     .get(path + "?response_type=code&client_id=&redirect_uri=http%3A%2F%2Fx&aud=x&state=abc")
@@ -599,7 +634,77 @@ describe('Auth', function() {
                 .expect(400)
                 .end(done);
             });
+
         });
+
+        // auth/authorize validates pkce challenge method
+        buildRoutePermutations().forEach(path => {
+            it(`${path}auth/authorize - validates the code_challenge_method parameter`, done => {
+                request(app)
+                .get(path + `auth/authorize?code_challenge_method=plain&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=${encodeURIComponent(config.baseUrl + path)}fhir`)
+                .expect(/Invalid%20code_challenge_method%20parameter/)
+                .expect(302)
+                .end(done);
+            });
+
+            it(`${path}auth/authorize - validates the code_challenge parameter`, done => {
+                request(app)
+                .get(path + `auth/authorize?code_challenge_method=S256&response_type=x&client_id=x&redirect_uri=http%3A%2F%2Fx&scope=x&state=x&aud=${encodeURIComponent(config.baseUrl + path)}fhir`)
+                .expect(/Missing%20code_challenge%20parameter/)
+                .expect(302)
+                .end(done);
+            });
+
+            const code_verifier = base64url.encode(crypto.randomBytes(32));
+            const hash = crypto.createHash('sha256');
+            hash.update(code_verifier);
+            const code_challenge = base64url.encode(hash.digest());
+            const authorizePayload = {
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    code_challenge_method: 'S256',
+                    code_challenge: code_challenge,
+                    code_verifier: code_verifier,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                };
+
+            it(`POST ${path} - fails with PKCE S256 and an invalid code_verifier`, done => {
+                authorize({...authorizePayload, code_verifier: 'bad-verifier'}).catch(()=> {
+                    done()
+                });
+            });
+ 
+            it(`POST ${path} - succeeds with PKCE S256 and an valid code_verifier`, done => {
+                authorize(authorizePayload).then(()=> {
+                    done()
+                });
+            });
+       
+
+
+
+        });
+
+
+
+
+        buildRoutePermutations("auth/authorize").forEach(path => {
+            it(`${path} - validates the redirect_uri parameter`, done => {
+                request(app)
+                .get(path + "?response_type=x&client_id=x&redirect_uri=x&scope=x&state=x&aud=x")
+                .expect(/^Invalid redirect_uri parameter/)
+                .expect(400)
+                .end(done);
+            });
+
+        });
+
 
         // can simulate invalid redirect_uri error
         {
@@ -878,6 +983,40 @@ describe('Auth', function() {
             });
         });
     });
+    
+    describe('token introspection', function() {
+        buildRoutePermutations().forEach(path => {
+            it(`${path}auth/introspect yields a valid introspection response`, done => {
+                authorize({
+                    scope  : "offline_access launch launch/patient openid fhirUser",
+                    baseUrl: config.baseUrl + path,
+                    launch : {
+                        launch_pt : 1,
+                        skip_login: 1,
+                        skip_auth : 1,
+                        encounter : "bcd",
+                        patient: "abc"
+                    },
+                    client_id: "example-client",
+                    patient   : "abc",
+                }).then(tokenResponse => {
+                    return introspect({
+                        baseUrl: config.baseUrl + path,
+                        accessToken: tokenResponse.access_token
+                    })
+                }).then(result => {
+                    expect(result.active).to.be.true;
+                    expect(result.exp).to.exist;
+                    expect(result.scope).to.exist;
+                    expect(result.patient).to.equal("abc");
+                    expect(result.client_id).to.equal("example-client");
+                    done();
+                })
+            })
+        });
+
+    });
+
 
     describe('token', function() {
         buildRoutePermutations().forEach(path => {
@@ -1336,7 +1475,8 @@ describe('Backend Services', () => {
         });
     });
 
-    describe('Fhir Requests', () => {
-        it ("TODO...");
-    });
+    //TODO
+    // describe('Fhir Requests', () => {
+    //     it ("TODO...");
+    // });
 });

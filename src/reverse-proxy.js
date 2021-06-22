@@ -14,6 +14,7 @@ const RE_RESOURCE_SLASH_ID = new RegExp(
 );
 
 module.exports = function (req, res) {
+    // console.log('\n>>>reverse-proxy:', req.url, '\n');
 
     let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
 

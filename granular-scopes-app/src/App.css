@@ -1,0 +1,104 @@
+.App {
+  text-align: center;
+}
+
+.bp3-card {
+  margin: 10px;
+  /* width: 100%; */
+}
+
+.bp3-switch {
+  margin: 5px;
+}
+
+.bp3-button {
+  margin: 5px;
+}
+
+#main-content {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: calc(100vw - 20px);
+}
+
+.code-tab {
+  overflow: auto !important;
+  max-height: 510px;
+  max-width: calc(100vw - 250px);
+  min-width: 50vw;
+}
+
+.code-md-tab-light {
+  overflow: auto !important;
+  max-height: 510px;
+  max-width: calc(100vw - 250px);
+  min-width: 50vw;
+  background-color: #ffffff;
+}
+
+.code-md-tab-light tr {
+  border-top: 1px solid #c6cbd1;
+  background: #fff;
+}
+
+.code-md-tab-light th, .code-md-tab-light td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.code-md-tab-light table tr:nth-child(2n) {
+  background: #f6f8fa;
+}
+
+.code-md-tab-dark {
+  overflow: auto !important;
+  max-height: 510px;
+  max-width: calc(100vw - 250px);
+  min-width: 50vw;
+  background-color: #1e1e1e;
+}
+
+.code-md-tab-dark tr {
+  border-top: 1px solid #c6cbd1;
+  background: #0f0f0f;
+}
+
+.code-md-tab-dark th, .code-md-tab-dark td {
+  padding: 6px 13px;
+  border: 1px solid #0f0f0f;
+}
+
+.code-md-tab-dark table tr:nth-child(2n) {
+  background: #1e1e1e;
+}
+
+.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+}
+
+.nav-logo {
+  width: 32px;
+  margin-right: 4px;
+}
+
+.fixed-checkbox {
+  width: 300px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.narrow-fixed-checkbox {
+  width: 150px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
