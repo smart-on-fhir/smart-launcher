@@ -37,9 +37,9 @@ fhirServer.post("/auth/introspect", urlencoded, introspectionHandler)
 // Metadata endpoints
 // -----------------------------------------------------------------------------
 
-fhirServer.get("/.well-known/smart-configuration",  wellKnownSmart)
+fhirServer.get("/fhir/.well-known/smart-configuration",  wellKnownSmart)
 
-fhirServer.get("/.well-known/openid-configuration",  wellKnownOIDC)
+fhirServer.get("/fhir/.well-known/openid-configuration",  wellKnownOIDC)
 
 
 // UI endpoints
