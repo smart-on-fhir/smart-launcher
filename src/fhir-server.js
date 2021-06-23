@@ -9,7 +9,7 @@
 const express                  = require("express")
 const { util: { base64url }}   = require("node-jose")
 const wellKnownOIDC            = require("./wellKnownOIDCConfiguration")
-const wellKnownSmart           = require("./wellKnownSmartConfiguration")
+const wellKnownSMART           = require("./wellKnownSmartConfiguration")
 const AuthorizeHandler         = require("./AuthorizeHandler")
 const handleRegistration       = require("./RegistrationHandler")
 const TokenHandler             = require("./TokenHandler")
@@ -35,9 +35,9 @@ fhirServer.post("/auth/introspect", urlencoded, introspectionHandler)
 // Metadata endpoints
 // -----------------------------------------------------------------------------
 
-fhirServer.get("/.well-known/smart-configuration",  wellKnownSmart)
+fhirServer.get("/fhir/.well-known/smart-configuration", wellKnownSMART)
 
-fhirServer.get("/.well-known/openid-configuration",  wellKnownOIDC)
+fhirServer.get("/fhir/.well-known/openid-configuration", wellKnownOIDC)
 
 
 // UI endpoints
