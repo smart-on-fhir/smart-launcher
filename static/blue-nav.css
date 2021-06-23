@@ -104,6 +104,9 @@ hr.solid {
 }
 .dropdown-menu {
   min-width: 100%;
+  max-height: 400px;
+  max-height: 40vh;
+  overflow: auto;
 }
 .disabled {
   color: #777;

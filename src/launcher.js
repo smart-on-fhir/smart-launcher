@@ -1,7 +1,7 @@
-const base64url = require("base64-url");
-const lib       = require("./lib");
-const Codec     = require("../static/codec.js");
-const config    = require("./config");
+const jose   = require("node-jose")
+const lib    = require("./lib")
+const Codec  = require("../static/codec.js")
+const config = require("./config")
 
 module.exports = (req, res) => {
 
@@ -38,7 +38,7 @@ module.exports = (req, res) => {
     proto = proto[0];
 
     // fhir_ver
-    fhir_ver = parseInt(fhir_ver || "0", 10);
+    fhir_ver = parseInt(fhir_ver + "", 10);
     if (fhir_ver != 2 && fhir_ver != 3 && fhir_ver != 4) {
         return res.status(400).send("Invalid or missing fhir_ver parameter. It can only be '2', '3' or '4'.");
     }
@@ -53,7 +53,7 @@ module.exports = (req, res) => {
 
     // Build the url
     let url = `${launch_uri}?iss=${encodeURIComponent(iss)}&launch=${
-        base64url.encode(JSON.stringify(Codec.encode(launchParams)))
+        jose.util.base64url.encode(JSON.stringify(Codec.encode(launchParams)))
     }`;
 
     res.redirect(url);

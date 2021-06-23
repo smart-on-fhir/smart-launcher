@@ -1,31 +1,93 @@
-// @ts-check
-const Url        = require("url");
-const request    = require("request");
-const jwt        = require("jsonwebtoken");
-const replStream = require("replacestream");
-const config     = require("./config");
-const patientMap = require("./patient-compartment");
-const Lib        = require("./lib");
-const { stringify } = require("querystring");
+const got        = require("got")
+const jwt        = require("jsonwebtoken")
+const replStream = require("replacestream")
+const config     = require("./config")
+const Lib        = require("./lib")
 const GranularHelper= require('./GranularHelper');
 
-require("colors");
+const assert = Lib.assert;
 
+/**
+ * Given a conformance statement (as JSON string), replaces the auth URIs with
+ * new ones that point to our proxy server. Also add the rest.security.service
+ * field.
+ * @param {object} json A conformance statement as JSON
+ * @param {String} baseUrl  The baseUrl of our server
+ * @returns {Object|null} Returns the modified JSON object or null in case of error
+ */
+function augmentConformance(json, baseUrl) {
+    json.rest[0].security.extension = [{
+        "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
+        "extension": [
+            {
+                "url": "authorize",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/authorize")
+            },
+            {
+                "url": "token",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/token")
+            },
+            {
+                "url": "introspect",
+                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/introspect")
+            }
+        ]
+    }];
 
-module.exports = (req, res) => {
-    // console.log('\n>>>simple-proxy:', req.url);
+    json.rest[0].security.service = [
+        {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/restful-security-service",
+              "code": "SMART-on-FHIR",
+              "display": "SMART-on-FHIR"
+            }
+          ],
+          "text": "OAuth2 using SMART-on-FHIR profile (see http://docs.smarthealthit.org)"
+        }
+    ]
 
-    // We cannot handle the conformance here!
-    if (req.url.match(/^\/metadata/)) {
-        return require("./reverse-proxy")(req, res);
-    }
+    return json;
+}
 
-    let logTime = Lib.bool(process.env.LOG_TIMES) ? Date.now() : null;
+async function handleMetadataRequest(req, res, fhirServer)
+{
+    const url = Lib.buildUrlPath(fhirServer, req.url);
+    let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
 
+    const response = await got.get(url, { throwHttpErrors: false, json: true, hooks: {
+        afterResponse: [
+            response => {
+                // adjust urls in the fhir response so future requests will hit the proxy
+                response.body = response.body.replaceAll(fhirServer, requestUrl)
+                return response
+            }
+        ]
+    }});
+
+    let { statusCode, body } = response;
+
+    // pass through the statusCode
+    res.status(statusCode);
+
+    // Inject the SMART information
+    let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
+    let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+    baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
+    augmentConformance(body, baseUrl);
+
+    res.set("content-type", "application/json; charset=utf-8");
+    res.send(JSON.stringify(body, null, 4));
+}
+
+/**
+ * @param {import("express").Request} req 
+ */
+function validateToken(req) {
     let token = null;
     let granularScopes = null;
 
-    // // Require token for Connectathon ------------------------------------------
+    // Require token for Connectathon ------------------------------------------
     // if (!req.headers.authorization) {
     //     console.log('No authorization header present!');
     //     return res.status(403).send(
@@ -33,7 +95,7 @@ module.exports = (req, res) => {
     //     );
     // }
 
-    // Validate token ----------------------------------------------------------
+    // Validate token ---------------------------------------------------------
     if (req.headers.authorization) {
 
         // require a valid auth token if there is an auth token
@@ -43,15 +105,14 @@ module.exports = (req, res) => {
                 config.jwtSecret
             );
         } catch (e) {
-            return res.status(401).send(
-                `${e.name || "Error"}: ${e.message || "Invalid token"}`
-            );
+            throw new Lib.HTTPError(401, "Invalid token: " + e.message)
         }
 
-        // Simulated errors
-        if (token.sim_error) {
-            return res.status(401).send(token.sim_error);
-        }
+        assert.http(token, 400, "Invalid token")
+        assert.http(typeof token == "object", 400, "Invalid token")
+
+        // @ts-ignore
+        assert.http(!token.sim_error, 401, token.sim_error);
 
         // check for granular permissions
         if (token) {
@@ -59,25 +120,6 @@ module.exports = (req, res) => {
             // GranularHelper.logGranularScopes(granularScopes);
             // console.log('\n');
         }
-    }
-
-    // Validate FHIR Version ---------------------------------------------------
-    let fhirVersion = req.params.fhir_release.toUpperCase();
-    let fhirVersionLower = fhirVersion.toLowerCase();
-    let fhirServer = config[`fhirServer${fhirVersion}`];
-
-    // FHIR_SERVER_R2_INTERNAL and FHIR_SERVER_R2_INTERNAL env variables can be
-    // set to point the request to different location. This is useful when
-    // running as a Docker service and the fhir servers are in another service
-    // container
-    if (process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"]) {
-        fhirServer = process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"];
-    }
-
-    if (!fhirServer) {
-        return res.status(400).send({
-            error: `FHIR server ${req.params.fhir_release} not found`
-        });
     }
 
     // Check access if we have granular scopes ---------------------------------
@@ -101,57 +143,68 @@ module.exports = (req, res) => {
 
         console.log('Allowing Granular Request for', resourceName);
     }
+}
+
+/**
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res
+ */
+module.exports = (req, res) => {
+
+    // Validate FHIR Version ---------------------------------------------------
+    let fhirVersion      = req.params.fhir_release.toUpperCase();
+    let fhirVersionLower = fhirVersion.toLowerCase();
+    let fhirServer       = config[`fhirServer${fhirVersion}`];
+
+    // FHIR_SERVER_R2_INTERNAL and FHIR_SERVER_R2_INTERNAL env variables can be
+    // set to point the request to different location. This is useful when
+    // running as a Docker service and the fhir servers are in another service
+    // container
+    if (process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"]) {
+        fhirServer = process.env["FHIR_SERVER_" + fhirVersion + "_INTERNAL"];
+    }
+
+    if (!fhirServer) {
+        return res.status(400).send({ error: `FHIR server ${req.params.fhir_release} not found` });
+    }
+
+    // We cannot handle the conformance here!
+    if (req.url.match(/^\/metadata/)) {
+        return handleMetadataRequest(req, res, fhirServer);
+    }
+
+    validateToken(req);
     
 
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {
         method: req.method,
-        url   : Url.parse(fhirServer + req.url, true),
-        gzip  : true
+        url   : new URL(req.url, fhirServer).href,
+        throwHttpErrors: false
     };
 
-    const isBinary = fhirRequestOptions.url.pathname.indexOf("/Binary/") === 0;
-
-    // if applicable, apply patient scope to GET requests, largely for
-    // performance reasons. Full scope support can't be implemented in a proxy
-    // because it would require "or" conditions in FHIR API calls (ie ),
-    // but should do better than this!
-    if (req.method == "GET") {
-        let scope   = (token && token.scope  ) || req.headers["x-scope"];
-        let patient = (token && token.patient) || req.headers["x-patient"];
-        if (scope && patient && scope.indexOf("user/") == -1) {
-            let resourceType = req.url.slice(1);
-            let prop = patientMap[fhirVersionLower] && patientMap[fhirVersionLower][resourceType];
-            if (prop) {
-                fhirRequestOptions.url.query[prop] = patient;
-            }
-        }
-    }
+    const isBinary = req.url.indexOf("/Binary/") === 0;
 
     // Add the body in case of POST or PUT -------------------------------------
-    if (req.method === "POST" || req.method === "PUT") {
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
         fhirRequestOptions.body = req.body;
     }
 
     // Build request headers ---------------------------------------------------
-    fhirRequestOptions.headers = Object.assign({}, req.headers);
+    fhirRequestOptions.headers = { ...req.headers };
 
     if (!isBinary) {
-        fhirRequestOptions.headers = Object.assign({}, {
-            "content-type": "application/json"
-        }, req.headers);
+        fhirRequestOptions.headers = {
+            "content-type": "application/json",
+            ...req.headers
+        };
         fhirRequestOptions.headers.accept = fhirVersion === "R2" ?
             "application/json+fhir" :
             "application/fhir+json";
     }
 
-    if (fhirRequestOptions.headers.hasOwnProperty("host")) {
-        delete fhirRequestOptions.headers.host;
-    }
-
-    if (fhirRequestOptions.headers.hasOwnProperty("authorization")) {
-        delete fhirRequestOptions.headers.authorization;
-    }
+    delete fhirRequestOptions.headers.host;
+    delete fhirRequestOptions.headers.authorization;
 
     // remove custom headers
     for (let name in fhirRequestOptions.headers) {
@@ -161,30 +214,22 @@ module.exports = (req, res) => {
     }
 
     // Proxy -------------------------------------------------------------------
-    let fullFhirBaseUrl = `${config.baseUrl}/v/${fhirVersionLower}${config.fhirBaseUrl}`;
-    let stream = request(fhirRequestOptions)
+    let stream = got.stream(fhirRequestOptions)
         .on('error', function(error) {
             console.error(error);
             res.status(502).end(String(error)); // Bad Gateway
         })
         .on('response', response => {
-            let contentType = response.headers['content-type'];
-            let etag = response.headers['etag']
-            let location = response.headers['location']
-            res.status(response.statusCode);
-            contentType && res.type(contentType);
-            etag && res.set('ETag', etag)
-            location && res.set('Location', location)
-            if (logTime) {
-                console.log(
-                    ("Simple Proxy: ".bold + Url.format(fhirRequestOptions.url) + " -> ").cyan +
-                    String((Date.now() - logTime) + "ms").yellow.bold
-                );
-            }
+            if (response.statusCode) res.status(response.statusCode);
+            ["content-type", 'etag', 'location'].forEach(name => {
+                if (name in response.headers) {
+                    res.set(name, response.headers[name])
+                }
+            })
         });
 
     if (!isBinary) {
-        stream = stream.pipe(replStream(fhirServer, fullFhirBaseUrl));
+        stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
     }
 
     stream.pipe(res);

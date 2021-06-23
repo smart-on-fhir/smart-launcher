@@ -1,12 +1,8 @@
-const config = require("./config");
 const { getRequestBaseURL } = require("./lib");
 
 
 module.exports = (req, res) => {
-    const prefix = `${getRequestBaseURL(req)}${
-        (req.originalUrl || req.originalUrl)
-        .replace(/\/fhir\/\.well-known\/smart-configuration$/, "")
-        }${config.authBaseUrl}`;
+    const prefix = `${getRequestBaseURL(req)}${req.baseUrl}/auth`;
     
     const json = {
 

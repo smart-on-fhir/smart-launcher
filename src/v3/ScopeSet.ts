@@ -2,11 +2,14 @@
  * This class tries to make it easier and cleaner to work with scopes (mostly by
  * using the two major methods - "has" and "matches").
  */
-class ScopeSet
+export default class ScopeSet
 {
+    private _scopesString: string
+
+    private _scopes: string[]
+
     /**
      * Parses the input string (if any) and initializes the private state vars
-     * @param {String} str 
      */
     constructor(str = "") {
         this._scopesString = String(str).trim();
@@ -15,28 +18,26 @@ class ScopeSet
 
     /**
      * Checks if there is a scope that matches exactly the given string
-     * @param {String} scope The scope to look for
-     * @returns {Boolean} 
+     * @param scope The scope to look for
      */
-    has(scope) {
+    has(scope: string): boolean {
         return this._scopes.indexOf(scope) > -1;
     }
 
     /**
      * Checks if there is a scope that matches by RegExp the given string
-     * @param {RegExp} scopeRegExp The pattern to look for
-     * @returns {Boolean} 
+     * @param scopeRegExp The pattern to look for
      */
-    matches(scopeRegExp) {
+    matches(scopeRegExp: RegExp): boolean {
         return this._scopesString.search(scopeRegExp) > -1;
     }
 
     /**
      * Adds new scope to the set unless it already exists
-     * @param {String} scope The scope to add
-     * @returns {Boolean} true if the scope was added and false otherwise
+     * @param scope The scope to add
+     * @returns true if the scope was added and false otherwise
      */
-    add(scope) {
+    add(scope: string): boolean {
         if (this.has(scope)) {
             return false;
         }
@@ -48,10 +49,10 @@ class ScopeSet
 
     /**
      * Removes a scope to the set unless it does not exist.
-     * @param {String} scope The scope to remove
-     * @returns {Boolean} true if the scope was removed and false otherwise
+     * @param scope The scope to remove
+     * @returns true if the scope was removed and false otherwise
      */
-    remove(scope) {
+    remove(scope: string): boolean {
         let index = this._scopes.indexOf(scope);
         if (index < 0) {
             return false;
@@ -63,7 +64,6 @@ class ScopeSet
 
     /**
      * Converts the object to string which is the space-separated list of scopes
-     * @returns {String}
      */
     toString() {
         return this._scopesString;
@@ -71,7 +71,6 @@ class ScopeSet
 
     /**
      * Converts the object to JSON which is an arrays of scope strings
-     * @returns {Array<String>}
      */
     toJSON() {
         return this._scopes;
@@ -80,16 +79,14 @@ class ScopeSet
     /**
      * Checks if the given scopes string is valid for use by backend services.
      * This will only accept system scopes and will also reject empty scope.
-     * @param {String} scopes The scopes to check
-     * @returns {String} The invalid scope or empty string on success
+     * @param scopes The scopes to check
+     * @returns The invalid scope or empty string on success
      * @static
      */
-    static getInvalidSystemScopes(scopes) {
+    static getInvalidSystemScopes(scopes: string): string {
         scopes = String(scopes || "").trim();
         return scopes.split(/\s+/).find(s => !(
             /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
         )) || "";
     }
 }
-
-module.exports = ScopeSet;

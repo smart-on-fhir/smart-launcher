@@ -1,52 +1,28 @@
-const router = require("express").Router({ mergeParams: true });
-const ursa   = require('ursa-purejs');
-const crypto = require("crypto");
+const jose          = require("node-jose")
+const { whitelist } = require("./lib")
+
+const router = module.exports = require("express").Router({ mergeParams: true });
 
 module.exports = router;
 
-router.get("/rsa", (req, res) => {
-
-    let enc = String(req.query.enc || "");
-    if (["base64", "binary", "hex", "utf8"].indexOf(enc) == -1) {
-        enc = undefined;
-    }
-
-    // create a pair of keys (a private key contains both keys...)
-    const keys = ursa.generatePrivateKey();
-
-    // reconstitute the private and public keys from a base64 encoding
-    // @ts-ignore
-    const privatePem = keys.toPrivatePem(enc);
-    const publicPem  = keys.toPublicPem(enc);
-
-    // make a private key, to be used for encryption
-    // const privateKey = ursa.createPrivateKey(privatePem, '', enc);
-
-    // make a public key, to be used for decryption
-    // const publicKey = ursa.createPublicKey(publicPem, enc);
-
-    res.json({
-        privateKey: privatePem,
-        publicKey : publicPem
-    });
-
+router.get("/rsa", (req, res, next) => {
+    jose.JWK.createKey("RSA", 2048, { alg: "RS384" }).then(key => {
+        res.json({
+            publicKey: key.toPEM(),
+            privateKey: key.toPEM(true)
+        })
+    }, next)
 });
 
 router.get("/random", (req, res) => {
+    const encodings = ["base64", "binary", "hex", "utf8", "ascii"];
+    let enc = whitelist(encodings, String(req.query.enc), "hex");
     
-    /**
-     * @type { "base64" | "binary" | "hex" | "utf8" }
-     */
-    // @ts-ignore
-    let enc = String(req.query.enc || "ascii");
-    if (["base64", "binary", "hex", "utf8"].indexOf(enc) == -1) {
-        enc = undefined;
-    }
-
-    let len = +req.query.len;
+    let len = +(req.query.len || 32);
     if (isNaN(len) || !isFinite(len) || len < 1 || len > 1024) {
         len = 32;
     }
-    
-    res.send(crypto.randomBytes(len).toString(enc));
+
+    res.set("content-type", "text/plain")
+    res.end(jose.util.randomBytes(len).toString(enc))
 });
