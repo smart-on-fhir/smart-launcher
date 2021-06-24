@@ -217,8 +217,9 @@ class TokenHandler extends SMARTHandler {
      * @param {Object} clientDetailsToken
      */
     createIdToken(clientDetailsToken) {
-        let secure = this.request.secure || this.request.headers["x-forwarded-proto"] == "https";
-        let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
+        // let secure = this.request.secure || this.request.headers["x-forwarded-proto"] == "https";
+        // let iss    = config.baseUrl.replace(/^https?/, secure ? "https" : "http");
+        let iss    = `${Lib.getRequestBaseURL(this.request)}${this.request.baseUrl}/fhir`
         let payload = {
             profile : clientDetailsToken.user,
             fhirUser: clientDetailsToken.user,
