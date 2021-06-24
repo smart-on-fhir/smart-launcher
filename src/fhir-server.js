@@ -13,7 +13,7 @@ const wellKnownSMART           = require("./wellKnownSmartConfiguration")
 const AuthorizeHandler         = require("./AuthorizeHandler")
 const handleRegistration       = require("./RegistrationHandler")
 const TokenHandler             = require("./TokenHandler")
-const { introspectionHandler } = require("./introspect")
+const introspectionHandler     = require("./tokenIntrospection")
 const simpleProxy              = require("./simple-proxy")
 
 const fhirServer = module.exports = express.Router({ mergeParams: true })
@@ -24,6 +24,8 @@ const text       = express.text({ type: "*/*", limit: 1e6 })
 // -----------------------------------------------------------------------------
 
 fhirServer.get("/auth/authorize", AuthorizeHandler.handleRequest)
+
+// fhirServer.post("/auth/authorize", urlencoded, AuthorizeHandler.handleRequest)
 
 fhirServer.post("/auth/token", urlencoded, TokenHandler.handleRequest)
 

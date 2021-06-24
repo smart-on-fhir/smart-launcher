@@ -1,9 +1,10 @@
-const crypto       = require("crypto");
-const jwt          = require("jsonwebtoken");
-const config       = require("./config");
-const SMARTHandler = require("./SMARTHandler");
-const Lib          = require("./lib");
-const ScopeSet     = require("./ScopeSet");
+const crypto       = require("crypto")
+const jwt          = require("jsonwebtoken")
+const jose         = require("node-jose")
+const config       = require("./config")
+const SMARTHandler = require("./SMARTHandler")
+const Lib          = require("./lib")
+const ScopeSet     = require("./ScopeSet")
 const errors       = require("./errors")
 
 /** @type {typeof Lib.assert} */
@@ -122,8 +123,9 @@ class TokenHandler extends SMARTHandler {
     handleAuthorizationCode() {
         /** @type {any} */
         let token;
-        assert(() => token = jwt.verify(this.request.body.code, config.jwtSecret), errors.authorization_code.invalid_code);
 
+        assert(() => token = jwt.verify(this.request.body.code, config.jwtSecret), errors.authorization_code.invalid_code);
+        
         assert(token.redirect_uri, errors.authorization_code.invalid_code);
 
         assert(this.request.body.redirect_uri, {
@@ -139,6 +141,19 @@ class TokenHandler extends SMARTHandler {
             error: "invalid_request",
             msg  : "Invalid redirect_uri parameter"
         });
+
+        if (token.code_challenge_method === 'S256') {
+            const hash = crypto.createHash('sha256');
+            hash.update(this.request.body.code_verifier || "");
+            const code_challenge = jose.util.base64url.encode(hash.digest());
+            if (code_challenge !== token.code_challenge) {
+                throw Lib.OAuthError.from({
+                    code : 401,
+                    error: "invalid_grant",
+                    msg  : "Invalid grant or Invalid PKCE Verifier, '%s' vs '%s'."
+                }, code_challenge, token.code_challenge);
+            }
+        }
 
         return this.finish(token);
     }
@@ -256,7 +271,7 @@ class TokenHandler extends SMARTHandler {
             ...clientDetailsToken.context,
             token_type: "bearer",
             scope     : clientDetailsToken.scope,
-            client_id : req.body.client_id,
+            client_id : clientDetailsToken.client_id || req.body.client_id,
             expires_in: expiresIn
         };
     
