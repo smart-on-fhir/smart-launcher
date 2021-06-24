@@ -3,7 +3,7 @@ const { getRequestBaseURL } = require("./lib");
 
 
 module.exports = (req, res) => {
-    const prefix = `${getRequestBaseURL(req)}${req.baseUrl}/auth`;
+    const issuer = `${getRequestBaseURL(req)}${req.baseUrl}`;
 
     const json = {
 
@@ -12,7 +12,7 @@ module.exports = (req, res) => {
         // discovery is supported (see Section 2), this value MUST be identical 
         // to the issuer value returned by WebFinger. This also MUST be
         // identical to the iss Claim value in ID Tokens issued from this Issuer. 
-        issuer: `${config.baseUrl}`,
+        issuer: `${issuer}/fhir`,
 
         // REQUIRED. URL of the OPs JSON Web Key Set [JWK] document. This
         // contains the signing key(s) the RP uses to validate signatures from
@@ -29,13 +29,13 @@ module.exports = (req, res) => {
         jwks_uri: `${config.baseUrl}/keys`,
 
         // REQUIRED, URL to the OAuth2 authorization endpoint.
-        authorization_endpoint: `${prefix}/authorize`,
+        authorization_endpoint: `${issuer}/auth/authorize`,
 
         // REQUIRED, URL to the OAuth2 token endpoint.
-        token_endpoint: `${prefix}/token`,
+        token_endpoint: `${issuer}/auth/token`,
 
         // OPTIONAL, URL of the authorization server's introspection endpoint.	
-        introspection_endpoint: `${prefix}/introspect`,
+        introspection_endpoint: `${issuer}/auth/introspect`,
 
         // REQUIRED. JSON array containing a list of the Subject Identifier
         // types that this OP supports. Valid types include pairwise and public. 
