@@ -273,26 +273,23 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 expect(resource.id).to.equal(patientID)
             });
 
-            it ("Handles pagination", () => {
+            it ("Handles pagination", async () => {
 
                 // Returns the 'self' and 'next' links from a paginated bundle.
                 async function getLinks(url) {
                     const page = await agent.get(url);
-                    if (!page) throw new Error('Unable to get page at:' + url);
+                    if (!page) throw new Error('Unable to get page at: ' + url);
                     if (page.status !== 200) throw new Error('Expected 200 OK');
 
-                    if (!Array.isArray(page.body.link)) {
-                        throw new Error('No links found');
+                    const links = page.body.links;
+                    if (!Array.isArray(links)) {
+                        throw new Error('No links found in page at: ' + url);
                     }
-                    const self = new URL(
-                        page.body.link.find(x => x.relation === 'self').url
-                    );
-                    const next = new URL(
-                        page.body.link.find(x => x.relation === 'next').url
-                    );
+                    const self = links.find(x => x.relation === 'self');
+                    const next = links.find(x => x.relation === 'next');
                     if (!self) throw new Error('No "self" link found');
                     if (!next) throw new Error('No "next" link found');
-                    return [self, next];
+                    return [new URL(self.url), new URL(next.url)];
                 }
 
                 const [_s1, n1] = await getLinks(`${PATH_FHIR}/Patient`);
