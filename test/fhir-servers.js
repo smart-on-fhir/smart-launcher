@@ -274,37 +274,30 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             });
 
             it ("Handles pagination", () => {
-                return agent.get(`${PATH_FHIR}/Patient`)
-                .expect(res => {
-                    if (!Array.isArray(res.body.link)) {
-                        throw new Error("No links found");
+
+                // Returns the 'self' and 'next' links from a paginated bundle.
+                async function getLinks(url) {
+                    const page = await agent.get(url);
+                    if (!page) throw new Error('Unable to get page at:' + url);
+                    if (page.status !== 200) throw new Error('Expected 200 OK');
+
+                    if (!Array.isArray(page.body.link)) {
+                        throw new Error('No links found');
                     }
-        
-                    let next = res.body.link.find(l => l.relation == "next")
-                    if (!next) {
-                        throw new Error("No next link found");
-                    }
-                    // console.log(next)
-                    return agent.get(next.url).expect(res2 => {
-                        if (!Array.isArray(res.body.link)) {
-                            throw new Error("No links found on second page");
-                        }
-        
-                        let self = res.body.link.find(l => l.relation == "self")
-                        if (!self) {
-                            throw new Error("No self link found on second page");
-                        }
-                        if (self.url !== next.url) {
-                            throw new Error("Links mismatch");
-                        }
-        
-                        let next2 = res.body.link.find(l => l.relation == "next")
-                        if (!next2) {
-                            throw new Error("No next link found on second page");
-                        }
-                        // console.log(next2)
-                    })
-                })
+                    const self = new URL(
+                        page.body.link.find(x => x.relation === 'self').url
+                    );
+                    const next = new URL(
+                        page.body.link.find(x => x.relation === 'next').url
+                    );
+                    if (!self) throw new Error('No "self" link found');
+                    if (!next) throw new Error('No "next" link found');
+                    return [self, next];
+                }
+
+                const [_s1, n1] = await getLinks(`${PATH_FHIR}/Patient`);
+                const [s2, _n2] = await getLinks(`${n1.pathname}${n1.search}`);
+                if (s2.href !== n1.href) throw new Error('Links mismatch');
             });
 
             it ("Replies with formatted JSON for bundles", () => {
