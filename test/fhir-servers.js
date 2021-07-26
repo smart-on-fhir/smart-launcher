@@ -286,7 +286,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     
                     const nextURL = new URL(next.url)
 
-                    const res2 = await request(app).get(nextURL.pathname + nextURL.search)
+                    const res2 = await agent.get(nextURL.pathname + nextURL.search)
                     
                     if (!Array.isArray(res2.body.link)) {
                         throw new Error("No links found on second page");
