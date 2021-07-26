@@ -192,7 +192,8 @@ module.exports = (req, res) => {
         });
 
     if (!isBinary) {
-        stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
+        // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
+        stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
     }
 
     stream.pipe(res);

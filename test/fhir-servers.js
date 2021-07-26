@@ -274,8 +274,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             });
 
             it ("Handles pagination", () => {
-                return agent.get(`${PATH_FHIR}/Patient`)
-                .expect(res => {
+                return agent.get(`${PATH_FHIR}/Patient`).expect(async (res) => {
                     if (!Array.isArray(res.body.link)) {
                         throw new Error("No links found");
                     }
@@ -284,26 +283,30 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     if (!next) {
                         throw new Error("No next link found");
                     }
-                    // console.log(next)
-                    return agent.get(next.url).expect(res2 => {
-                        if (!Array.isArray(res.body.link)) {
-                            throw new Error("No links found on second page");
-                        }
+                    
+                    const nextURL = new URL(next.url)
+
+                    const res2 = await request(app).get(nextURL.pathname + nextURL.search)
+                    
+                    if (!Array.isArray(res2.body.link)) {
+                        throw new Error("No links found on second page");
+                    }
         
-                        let self = res.body.link.find(l => l.relation == "self")
-                        if (!self) {
-                            throw new Error("No self link found on second page");
-                        }
-                        if (self.url !== next.url) {
-                            throw new Error("Links mismatch");
-                        }
+                    let self = res2.body.link.find(l => l.relation == "self")
+
+                    if (!self) {
+                        throw new Error("No self link found on second page");
+                    }
+                    
+                    if (self.url !== next.url) {
+                        throw new Error("Links mismatch");
+                    }
         
-                        let next2 = res.body.link.find(l => l.relation == "next")
-                        if (!next2) {
-                            throw new Error("No next link found on second page");
-                        }
-                        // console.log(next2)
-                    })
+                    let next2 = res.body.link.find(l => l.relation == "next")
+
+                    if (!next2) {
+                        throw new Error("No next link found on second page");
+                    }
                 })
             });
 
