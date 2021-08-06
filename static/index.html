@@ -108,6 +108,57 @@
 
             <br />
 
+            <div class="panel panel-warning">
+                <div class="panel-heading" id="authentication-options-heading">
+                    <b class="text-warning">
+                        <i class="glyphicon glyphicon-cog"></i> Registered App Options
+                    </b>
+                    <i class="pull-right text-warning">Click To Hide/Show</i>
+                </div>
+                <div id="authentication-options" class="panel-body navbar-default">
+                    <label>Client Validation</label>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="validate-pkce" checked>
+                            Validate that my client performs PKCE
+                        </label>
+                    </div>
+                    <br class="hidden-sm"/>
+                    <label>
+                        Client Identity Validation Method
+                    </label>
+                    <div id="validation-methods">
+                        <select class="form-control">
+                            <option value="none" selected>none</option>
+                            <option value="public">client-public</option>
+                            <option value="cc-sym">client-confidential-symmetric</option>
+                            <option value="cc-asym">client-confidential-asymmetric</option>
+                        </select>
+                    </div>
+                    <label>&nbsp;</label>
+                    <div id="redirect-uris">
+                        <label>Redirect URIs</label>
+                        <!-- TODO: initialize with the default redirect-uri -->
+                        <input type="text" class="form-control" placeholder="Redirect URIs" name="redirect-uris" autocomplete="on">
+                        <br/>
+                    </div>
+                    <div id="client-secret">
+                        <label>Client Secret</label>
+                        <textarea class="form-control" ></textarea>
+                        <br/>
+                    </div>
+                    <div id="jwks-uri">
+                        <label>JWKS URI</label>
+                        <input type="text" class="form-control" placeholder="JWKS URI" name="jwks-uri" autocomplete="on">
+                        <br/>
+                    </div>
+                    <div id="jwks-inline">
+                        <label>JWKS Inline</label>
+                        <textarea class="form-control" ></textarea>
+                    </div>
+                </div>
+            </div>
+
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <b class="text-primary">
@@ -337,38 +388,7 @@
                                     <option value="60">1 hour</option>
                                 </select>
                                 <br class="hidden-sm"/>
-                                <!-- TODO: consider supporting launch-* as a class? -->
-                                <label class="launch launch-bs launch-ehr launch-pp launch-pt">
-                                    <u>
-                                    Client Validation
-                                    </u>
-                                </label>
-                                <div class="launch launch-bs launch-ehr launch-pp launch-pt">
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" id="validate-pkce" checked>
-                                            Validate that my client performs PKCE
-                                        </label>
-                                    </div>
-                                    <br class="hidden-sm"/>
-                                    <label class="launch launch-bs launch-ehr launch-pp launch-pt">
-                                        Client Identity Validation Method
-                                    </label>
-                                    <div id="validation-methods">
-                                        <select class="form-control launch launch-bs launch-ehr launch-pp launch-pt" id="validation-method">
-                                            <option value="none" selected>none</option>
-                                            <option value="public">client-public</option>
-                                            <option value="cc-sym">client-confidential-symmetric</option>
-                                            <option value="cc-asym">client-confidential-asymmetric</option>
-                                        </select>
-<!--
-                                        // redirect URI (not(none))
-                                        // client-secret (conf-symm only)
-                                        // jwks-uri (conf-asym only)
-                                        // jwks-inline (conf-asym only)
--->
-                                    </div>
-                                </div>
+
                                 <br class="hidden-sm"/>
                             </div>
                             <div class="col-sm-6">
@@ -376,31 +396,6 @@
                                 <select id="auth-error" class="form-control"></select>
                                 <br/>
                                 <br class="hidden-sm"/>
-
-                                <!-- TODO: move all the validation stuff into a new section below advanced... -->
-                                <!-- Client Validation options (column 2) -->
-                                <div class="launch launch-bs launch-ehr launch-pp launch-pt">
-                                    <label>&nbsp;</label>
-                                    <div id="redirect-uris">
-                                        <label>Redirect URIs</label>
-                                        <input type="text" class="form-control" placeholder="Redirect URIs" name="redirect-uris" autocomplete="on">
-                                        <br/>
-                                    </div>
-                                    <div id="client-secret">
-                                        <label>Client Secret</label>
-                                        <textarea class="form-control" ></textarea>
-                                        <br/>
-                                    </div>
-                                    <div id="jwks-uri">
-                                        <label>JWKS URI</label>
-                                        <input type="text" class="form-control" placeholder="JWKS URI" name="jwks-uri" autocomplete="on">
-                                        <br/>
-                                    </div>
-                                    <div id="jwks-inline">
-                                        <label>JWKS Inline</label>
-                                        <textarea class="form-control" ></textarea>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -615,6 +610,7 @@
             // This function tries to minimize the number of included client
             // authorization field values from the UI into the sim object.
             function getPseudoClientRegistrationState() {
+                console.log('getPseudoClientRegistrationState')
                 const sim = {
                     'val_method': getValidationMethod(),
                     'redirect_uris': getRedirectUris(),
@@ -733,6 +729,12 @@
             }
 
             function bindEventHandlers() {
+
+                $("#authentication-options-heading").on("click",
+                    function toggle() {
+                        $('#authentication-options').toggle();
+                    }
+                );
 
                 $("#launch-url").on("keyup change input", validateLaunchUrl);
 
@@ -1111,6 +1113,7 @@
                 }
 
                 $("#loading").hide();
+                $("#authentication-options").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
