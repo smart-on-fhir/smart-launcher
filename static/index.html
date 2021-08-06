@@ -629,14 +629,14 @@
                         sim['sym_secret'] = getClientSecret();
                         break;
                     case 'cc-asym':
-                        const jwks_uri = getJwksUri();
+                        var jwks_uri = getJwksUri();
                         const jwks = getJwksInline();
-                        try {
-                            jwks_url = URL(jwks_uri);
+                        if (jwks_uri) try {
+                            jwks_url = new URL(jwks_uri);
                             // TODO: fetch and parse the url contents?
                         } catch (error) {
                             jwks_uri = undefined;
-                            console.error(error);
+                            console.warn(error);
                         }
                         if (jwks_uri) {
                             sim['jwks_uri'] = jwks_uri;
