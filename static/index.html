@@ -26,7 +26,7 @@
                             <p class="pull-left text-left">Copy this private key and use it in
                             your app to sign the token claims<br/>(authentication JWT).</p>
                         </label>
-                        <textarea rows="16" id="gen-private-key" class="form-control input-sm" readonly></textarea>
+                        <textarea rows="16" id="gen-private-key" class="form-control input-sm mono-small" readonly></textarea>
                     </div>
                 </div>
             </div>
@@ -109,13 +109,22 @@
             <br />
 
             <div class="panel panel-warning">
-                <div class="panel-heading" id="authentication-options-heading">
+                <div class="panel-heading" id="registration-options-heading">
                     <b class="text-warning">
-                        <i class="glyphicon glyphicon-cog"></i> Registered App Options
+                        <i class="glyphicon glyphicon-cog"></i> App Registration Options
                     </b>
                     <i class="pull-right text-warning">Click To Hide/Show</i>
                 </div>
-                <div id="authentication-options" class="panel-body navbar-default">
+                <div id="registration-options" class="panel-body navbar-default">
+
+                    <div class="panel-body list-group-item-warning">
+                        <h3 class="glyphicon glyphicon-info-sign pull-left" ></h3>
+                        <!-- TODO(carl): massage the rendered look of this panel -->
+                        <small>These options are separated from the others
+                            to signify that they would be configured only
+                            when an app is first registered with an EHR.</small>
+                    </div>
+
                     <label>Client Validation</label>
                     <div class="checkbox">
                         <label>
@@ -128,7 +137,7 @@
                         Client Identity Validation Method
                     </label>
                     <div id="validation-methods">
-                        <select class="form-control">
+                        <select id="validation-method" class="form-control">
                             <option value="none" selected>none</option>
                             <option value="public">client-public</option>
                             <option value="cc-sym">client-confidential-symmetric</option>
@@ -136,25 +145,27 @@
                         </select>
                     </div>
                     <label>&nbsp;</label>
-                    <div id="redirect-uris">
-                        <label>Redirect URIs</label>
-                        <!-- TODO: initialize with the default redirect-uri -->
-                        <input type="text" class="form-control" placeholder="Redirect URIs" name="redirect-uris" autocomplete="on">
+                    <div id="redirect-uris-field">
+                        <label>
+                            Redirect URIs
+                            <span class="text-muted small normal-weight">(space separated)</span>
+                        </label>
+                        <input id="redirect-uris" type="text" class="form-control" placeholder="Redirect URIs" autocomplete="on">
                         <br/>
                     </div>
-                    <div id="client-secret">
+                    <div id="client-secret-field">
                         <label>Client Secret</label>
-                        <textarea class="form-control" ></textarea>
+                        <textarea id="client-secret" autocomplete="on" class="form-control" ></textarea>
                         <br/>
                     </div>
-                    <div id="jwks-uri">
+                    <div id="jwks-uri-field">
                         <label>JWKS URI</label>
-                        <input type="text" class="form-control" placeholder="JWKS URI" name="jwks-uri" autocomplete="on">
+                        <input id="jwks-uri" type="text" class="form-control" placeholder="JWKS URI" autocomplete="on">
                         <br/>
                     </div>
-                    <div id="jwks-inline">
+                    <div id="jwks-field">
                         <label>JWKS Inline</label>
-                        <textarea class="form-control" ></textarea>
+                        <textarea id="jwks" class="form-control mono-small" ></textarea>
                     </div>
                 </div>
             </div>
@@ -322,7 +333,7 @@
                             <button type="button" class="btn btn-info btn-xs pull-right" id="generate-keys">Generate Keys</button>
                             Public Key
                         </label>
-                        <textarea id="public-key" rows="3" class="form-control input-sm" placeholder="base64-encoded RSA-256 public key"></textarea>
+                        <textarea id="public-key" rows="3" class="form-control input-sm mono-small" placeholder="base64-encoded RSA-256 public key"></textarea>
                         <p class="help-block small">Paste your RSA-256 public key or use the button above to generate a new one</p>
                         <input type="hidden" name="last-public-key">
                     </div>
@@ -479,7 +490,6 @@
                                 </span>
                             </div>
                         </div>
- 
                     </div>
 
                     <div class="form-group col-sm-12 launch launch-bs">
@@ -592,25 +602,51 @@
             }
 
             function getRedirectUris() {
-                return $('#redirect-uris input').val().trim().split(' ');
+                return $('#redirect-uris').val().trim().split(' ');
             }
 
             function getClientSecret() {
-                return $('#client-secret textarea').val().trim();
+                return $('#client-secret').val().trim();
             }
 
             function getJwksInline() {
-                return $('#jwks-inline textarea').val().trim();
+                return $('#jwks').val().trim();
             }
 
             function getJwksUri() {
-                return $('#jwks-uri input').val().trim();
+                return $('#jwks-uri').val().trim();
             }
 
-            // This function tries to minimize the number of included client
-            // authorization field values from the UI into the sim object.
+            function updateRegistrationOptionVisibilities() {
+                const shown = {
+                    'none'   : [0, 0, 0, 0],
+                    'public' : [1, 0, 0, 0],
+                    'cc-sym' : [1, 1, 0, 0],
+                    'cc-asym': [1, 0, 1, 1],
+                }[getValidationMethod()];
+                [
+                    $("#redirect-uris-field"),
+                    $("#client-secret-field"),
+                    $("#jwks-uri-field"),
+                    $("#jwks-field"),
+                ].forEach((e, i) => { shown[i] ? e.show() : e.hide()});
+            }
+
+            async function dereferenceJwks(url) {
+                try {
+                    const result = await fetch(url);
+                    if (result.ok) {
+                        $("#jwks").val(await result.text());
+                        handleFormChange();
+                    } else {
+                        $("#jwks").val(`Error fetching from '${url}'`);
+                    }
+                } catch (exception) {
+                    $("#jwks").val(`Error fetching from '${url}'`);
+                }
+            }
+
             function getPseudoClientRegistrationState() {
-                console.log('getPseudoClientRegistrationState')
                 const sim = {
                     'val_method': getValidationMethod(),
                     'redirect_uris': getRedirectUris(),
@@ -625,22 +661,11 @@
                         sim['sym_secret'] = getClientSecret();
                         break;
                     case 'cc-asym':
-                        var jwks_uri = getJwksUri();
+                        const jwks_uri = getJwksUri();
                         const jwks = getJwksInline();
-                        if (jwks_uri) try {
-                            jwks_url = new URL(jwks_uri);
-                            // TODO: fetch and parse the url contents?
-                        } catch (error) {
-                            jwks_uri = undefined;
-                            console.warn(error);
-                        }
-                        if (jwks_uri) {
-                            sim['jwks_uri'] = jwks_uri;
-                        } else if (jwks) {
-                            sim['jwks'] = getJwksInline();
-                        } else {
-                            console.error('undefined JWKS');
-                        }
+                        if (jwks_uri) sim['jwks_uri'] = jwks_uri;
+                        if (jwks) sim['jwks'] = jwks;
+                        break;
                 }
                 return sim;
             }
@@ -730,11 +755,11 @@
 
             function bindEventHandlers() {
 
-                $("#authentication-options-heading").on("click",
-                    function toggle() {
-                        $('#authentication-options').toggle();
-                    }
-                );
+                $("#validation-methods select").change(updateRegistrationOptionVisibilities);
+
+                $("#registration-options-heading").on("click", function() {
+                    $('#registration-options').toggle();
+                });
 
                 $("#launch-url").on("keyup change input", validateLaunchUrl);
 
@@ -752,6 +777,25 @@
 
                 $("#standalone-launch-url, [readonly]").on("focus", function() {
                     $(this).select();
+                });
+
+                // Right after updating the uri - try to dereference it into
+                // the jwks inline textarea (unless that's already populated).
+                $("#jwks-uri-field").focusout(async function() {
+                    try {
+                        const url = new URL(getJwksUri());
+                        try {
+                            JSON.parse(getJwksInline());
+                        } catch {
+                            dereferenceJwks(url);
+                        }
+                    } catch {}
+                });
+
+                $("#jwks").focusout(function() {
+                    // TODO(carl): json beautify the the contents?
+                    const rows = getJwksInline().split("\n").length;
+                    $("#jwks").attr("rows", rows);
                 });
 
                 function launchPatientBrowser(input) {
@@ -1113,10 +1157,11 @@
                 }
 
                 $("#loading").hide();
-                $("#authentication-options").hide();
+                $("#registration-options").hide();
                 $("#content").show();
                 buildForm();
                 Lib.qsToForm();
+                updateRegistrationOptionVisibilities();
                 bindEventHandlers();
                 $("#reload-on-https").attr("href", location.href.replace(/^http\:\/\//, "https://"))
                 // if (!$("#launch-url").val()) {
