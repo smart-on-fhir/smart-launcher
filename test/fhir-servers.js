@@ -273,28 +273,41 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 expect(resource.id).to.equal(patientID)
             });
 
-            it ("Handles pagination", async () => {
-
-                // Returns the 'self' and 'next' links from a paginated bundle.
-                async function getLinks(url) {
-                    const page = await agent.get(url);
-                    if (!page) throw new Error('Unable to get page at: ' + url);
-                    if (page.status !== 200) throw new Error('Expected 200 OK');
-
-                    const links = page.body.links;
-                    if (!Array.isArray(links)) {
-                        throw new Error('No links found in page at: ' + url);
+            it ("Handles pagination", () => {
+                return agent.get(`${PATH_FHIR}/Patient`).expect(async (res) => {
+                    if (!Array.isArray(res.body.link)) {
+                        throw new Error("No links found");
                     }
-                    const self = links.find(x => x.relation === 'self');
-                    const next = links.find(x => x.relation === 'next');
-                    if (!self) throw new Error('No "self" link found');
-                    if (!next) throw new Error('No "next" link found');
-                    return [new URL(self.url), new URL(next.url)];
-                }
+        
+                    let next = res.body.link.find(l => l.relation == "next")
+                    if (!next) {
+                        throw new Error("No next link found");
+                    }
+                    
+                    const nextURL = new URL(next.url)
 
-                const [_s1, n1] = await getLinks(`${PATH_FHIR}/Patient`);
-                const [s2, _n2] = await getLinks(`${n1.pathname}${n1.search}`);
-                if (s2.href !== n1.href) throw new Error('Links mismatch');
+                    const res2 = await agent.get(nextURL.pathname + nextURL.search)
+                    
+                    if (!Array.isArray(res2.body.link)) {
+                        throw new Error("No links found on second page");
+                    }
+        
+                    let self = res2.body.link.find(l => l.relation == "self")
+
+                    if (!self) {
+                        throw new Error("No self link found on second page");
+                    }
+                    
+                    if (self.url !== next.url) {
+                        throw new Error("Links mismatch");
+                    }
+        
+                    let next2 = res.body.link.find(l => l.relation == "next")
+
+                    if (!next2) {
+                        throw new Error("No next link found on second page");
+                    }
+                })
             });
 
             it ("Replies with formatted JSON for bundles", () => {

@@ -54,15 +54,20 @@ async function handleMetadataRequest(req, res, fhirServer)
     const url = Lib.buildUrlPath(fhirServer, req.url);
     let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
 
-    const response = await got.get(url, { throwHttpErrors: false, json: true, hooks: {
-        afterResponse: [
-            response => {
-                // adjust urls in the fhir response so future requests will hit the proxy
-                response.body = response.body.replaceAll(fhirServer, requestUrl)
-                return response
-            }
-        ]
-    }});
+    const response = await got.get(url, {
+        throwHttpErrors: false,
+        json: true,
+        rejectUnauthorized: false,
+        hooks: {
+            afterResponse: [
+                response => {
+                    // adjust urls in the fhir response so future requests will hit the proxy
+                    response.body = response.body.replaceAll(fhirServer, requestUrl)
+                    return response
+                }
+            ]
+        }
+    });
 
     let { statusCode, body } = response;
 
@@ -143,7 +148,8 @@ module.exports = (req, res) => {
     let fhirRequestOptions = {
         method: req.method,
         url   : new URL(req.url, fhirServer).href,
-        throwHttpErrors: false
+        throwHttpErrors: false,
+        rejectUnauthorized: false
     };
 
     const isBinary = req.url.indexOf("/Binary/") === 0;
@@ -192,7 +198,8 @@ module.exports = (req, res) => {
         });
 
     if (!isBinary) {
-        stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
+        // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
+        stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
     }
 
     stream.pipe(res);
