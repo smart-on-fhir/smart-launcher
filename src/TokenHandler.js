@@ -125,7 +125,7 @@ class TokenHandler extends SMARTHandler {
         let token;
 
         assert(() => token = jwt.verify(this.request.body.code, config.jwtSecret), errors.authorization_code.invalid_code);
-        
+
         assert(token.redirect_uri, errors.authorization_code.invalid_code);
 
         assert(this.request.body.redirect_uri, {
@@ -152,6 +152,25 @@ class TokenHandler extends SMARTHandler {
                     error: "invalid_grant",
                     msg  : "Invalid grant or Invalid PKCE Verifier, '%s' vs '%s'."
                 }, code_challenge, token.code_challenge);
+            }
+        }
+
+        const val_method = token?.context?.val_method;
+        if (val_method && val_method !== 'none') {
+            if (val_method === 'cc-sym') {
+                const expected = token.context.auth_basic_header;
+                const actual = this.request.headers.authorization;
+                if (expected !== actual) {
+                    throw Lib.OAuthError.from({
+                        code: 401,
+                        error: 'unauthorized',
+                        msg: 'Authorization header mismatch!',
+                    }, expected, acutal);
+                }
+            } else if (val_method == 'cc-asym') {
+                const jwks = token.context.jwks;
+                const uri = token.context.jwks_uri;
+                // TODO: now what?
             }
         }
 
