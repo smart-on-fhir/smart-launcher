@@ -10,8 +10,9 @@ const config         = require("./config");
 const generator      = require("./generator");
 const lib            = require("./lib");
 const launcher       = require("./launcher");
+const wellKnownOIDC  = require("./wellKnownOIDCConfiguration");
 const wellKnownSmart = require("./wellKnownSmartConfiguration");
-
+const { introspectionHandler } = require("./introspect")
 
 const handleParseError = function(err, req, res, next) {
     if (err instanceof SyntaxError && err.status === 400) {
@@ -83,10 +84,8 @@ if (IP_BLACK_LIST.length) {
 //reject xml
 app.use(handleXmlRequest);
 
-//provide oidc keys when requested
-app.get("/.well-known/openid-configuration/", (req, res) => {
-    res.json({"jwks_uri": `${config.baseUrl}/keys`})
-});
+// Well-known OpenID Connect (OIDC) Configuration
+app.get("/.well-known/openid-configuration/", wellKnownOIDC);
 
 app.get("/keys", (req, res) => {
     let key = {}
@@ -130,6 +129,13 @@ app.get(buildRoutePermutations("/login"), (req, res) => {
 app.get(buildRoutePermutations("/authorize"), (req, res) => {
     res.sendFile("authorize.html", {root: './static'});
 });
+
+// introspect
+app.post(
+    buildRoutePermutations(`${config.authBaseUrl}/introspect`),
+    express.urlencoded({ limit: '64kb', extended: false }),
+    introspectionHandler
+);
 
 // auth request
 app.use(buildRoutePermutations(config.authBaseUrl), smartAuth)

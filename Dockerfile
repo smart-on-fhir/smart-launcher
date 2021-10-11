@@ -2,7 +2,7 @@
 # then the image should be started using the same port like:
 #    docker run -t -p 9009:80 -d smartonfhir/smart-launcher:latest
 
-FROM node:9
+FROM node:14
 
 WORKDIR /app
 

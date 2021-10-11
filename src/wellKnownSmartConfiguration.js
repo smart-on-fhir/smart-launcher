@@ -1,14 +1,6 @@
 const config = require("./config");
+const { getRequestBaseURL } = require("./lib");
 
-
-/**
- * Given a request object, returns its base URL
- */
-function getRequestBaseURL(req) {
-    const host = req.headers["x-forwarded-host"] || req.headers.host;
-    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
-    return protocol + "://" + host;
-}
 
 module.exports = (req, res) => {
     const prefix = `${getRequestBaseURL(req)}${
@@ -34,7 +26,7 @@ module.exports = (req, res) => {
 
         // RECOMMENDED, URL to a server’s introspection endpoint that can be
         // used to validate a token.
-        "introspection_endpoint": undefined,
+        "introspection_endpoint": `${prefix}/introspect`,
 
         // RECOMMENDED, URL to a server’s revoke endpoint that can be used to
         // revoke a token.

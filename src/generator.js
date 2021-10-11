@@ -1,12 +1,12 @@
 const router = require("express").Router({ mergeParams: true });
-const ursa   = require('ursa');
+const ursa   = require('ursa-purejs');
 const crypto = require("crypto");
 
 module.exports = router;
 
 router.get("/rsa", (req, res) => {
 
-    let enc = req.query.enc;
+    let enc = String(req.query.enc || "");
     if (["base64", "binary", "hex", "utf8"].indexOf(enc) == -1) {
         enc = undefined;
     }
@@ -15,14 +15,15 @@ router.get("/rsa", (req, res) => {
     const keys = ursa.generatePrivateKey();
 
     // reconstitute the private and public keys from a base64 encoding
+    // @ts-ignore
     const privatePem = keys.toPrivatePem(enc);
     const publicPem  = keys.toPublicPem(enc);
 
     // make a private key, to be used for encryption
-    const privateKey = ursa.createPrivateKey(privatePem, '', enc);
+    // const privateKey = ursa.createPrivateKey(privatePem, '', enc);
 
     // make a public key, to be used for decryption
-    const publicKey = ursa.createPublicKey(publicPem, enc);
+    // const publicKey = ursa.createPublicKey(publicPem, enc);
 
     res.json({
         privateKey: privatePem,
@@ -33,7 +34,11 @@ router.get("/rsa", (req, res) => {
 
 router.get("/random", (req, res) => {
     
-    let enc = req.query.enc;
+    /**
+     * @type { "base64" | "binary" | "hex" | "utf8" }
+     */
+    // @ts-ignore
+    let enc = String(req.query.enc || "ascii");
     if (["base64", "binary", "hex", "utf8"].indexOf(enc) == -1) {
         enc = undefined;
     }
