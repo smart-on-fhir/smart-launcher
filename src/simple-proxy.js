@@ -53,8 +53,7 @@ async function handleMetadataRequest(req, res, fhirServer)
 {
     const url = Lib.buildUrlPath(fhirServer, req.url);
     let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
-
-    const response = await got.get(url, {
+    const response = await got(url, {
         throwHttpErrors: false,
         json: true,
         rejectUnauthorized: false,
@@ -74,11 +73,13 @@ async function handleMetadataRequest(req, res, fhirServer)
     // pass through the statusCode
     res.status(statusCode);
 
-    // Inject the SMART information
-    let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
-    let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
-    baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
-    augmentConformance(body, baseUrl);
+    // Inject the SMART information (if the upstream server is up and has replied properly)
+    if (body && typeof body === "object") {
+        let baseUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl.replace("/fhir", ""));
+        let secure = req.secure || req.headers["x-forwarded-proto"] == "https";
+        baseUrl = baseUrl.replace(/^https?/, secure ? "https" : "http");
+        augmentConformance(body, baseUrl);
+    }
 
     res.set("content-type", "application/json; charset=utf-8");
     res.send(JSON.stringify(body, null, 4));
@@ -198,7 +199,6 @@ module.exports = (req, res) => {
         });
 
     if (!isBinary) {
-        // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
         stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
     }
 

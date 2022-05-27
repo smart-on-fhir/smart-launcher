@@ -3,6 +3,7 @@ const jwt        = require("jsonwebtoken")
 const crypto     = require("crypto")
 const { expect } = require("chai")
 const jose       = require("node-jose")
+const express    = require("express")
 const app        = require("../src/index.js")
 const config     = require("../src/config")
 const Lib        = require("../src/lib")
@@ -222,6 +223,27 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 .expect(200)
             });
 
+            it(`does not crash if the upstream returns 503 service unavailable`, (cb) => {
+                const upstream = express()
+                upstream.use((_, res) => res.status(503).end("Service unavailable"))
+                const server = upstream.listen(56789, "0.0.0.0", () => {
+                    const key = "fhirServerR" + FHIR_VERSION.slice(-1)
+                    const old = config[key]
+                    config[key] = "http://0.0.0.0:56789"
+
+                    agent.get(PATH_METADATA)
+                    .expect('content-type', /application\/(fhir\+json|json\+fhir|json)/)
+                    .expect(503)
+                    .expect('"Service unavailable"')
+                    .then(() => cb())
+                    .catch(cb)
+                    .finally(() => {
+                        config[key] = old
+                        server.close()
+                    });
+                });
+            })
+
             it('removes custom headers', () => {
                 return agent.get(`${PATH_FHIR}/Patient`)
                 .set('x-custom', 'whatever')
@@ -382,13 +404,41 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             it ("Apply patient scope to GET requests");
 
             describe('Fhir Requests', () => {
-                it ("TODO...");
+                it(`does not crash if the upstream returns 503 service unavailable`, (cb) => {
+                    const upstream = express()
+                    upstream.use((_, res) => res.status(503).end("Service unavailable"))
+                    const server = upstream.listen(56789, "0.0.0.0", () => {
+                        const key = "fhirServerR" + FHIR_VERSION.slice(-1)
+                        const old = config[key]
+                        config[key] = "http://0.0.0.0:56789"
+    
+                        agent.get(PATH_FHIR + "/Patient")
+                        .expect(503)
+                        .expect("Service unavailable")
+                        .then(() => cb())
+                        .catch(cb)
+                        .finally(() => {
+                            config[key] = old
+                            server.close()
+                        });
+                    });
+                })
             });
         });
 
         describe('Auth', () => {
             describe('authorize', () => {
                 
+                /**
+                 * @type {{
+                 *     response_type?: string
+                 *     client_id: string
+                 *     redirect_uri?: string
+                 *     scope: string
+                 *     state: string
+                 *     aud: string
+                 * }}
+                 */
                 const fullQuery = {
                     response_type: "code",
                     client_id: "x",
