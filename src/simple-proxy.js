@@ -183,24 +183,28 @@ module.exports = (req, res) => {
     }
 
     // Proxy -------------------------------------------------------------------
-    let stream = got.stream(fhirRequestOptions)
-        .on('error', function(error) {
-            console.error(error);
-            res.status(502).end(String(error)); // Bad Gateway
-        })
-        .on('response', response => {
-            if (response.statusCode) res.status(response.statusCode);
-            ["content-type", 'etag', 'location'].forEach(name => {
-                if (name in response.headers) {
-                    res.set(name, response.headers[name])
-                }
+    try {
+        let stream = got.stream(fhirRequestOptions)
+            .on('error', function(error) {
+                console.error(error);
+                res.status(502).end(String(error)); // Bad Gateway
             })
-        });
+            .on('response', response => {
+                if (response.statusCode) res.status(response.statusCode);
+                ["content-type", 'etag', 'location'].forEach(name => {
+                    if (name in response.headers) {
+                        res.set(name, response.headers[name])
+                    }
+                })
+            });
 
-    if (!isBinary) {
-        // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
-        stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
+        if (!isBinary) {
+            // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
+            stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
+        }
+
+        stream.pipe(res);
+    } catch (ex) {
+        res.end(ex.message)
     }
-
-    stream.pipe(res);
 };
