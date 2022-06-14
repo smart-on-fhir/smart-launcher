@@ -15,36 +15,38 @@ const assert = Lib.assert;
  * @returns {Object|null} Returns the modified JSON object or null in case of error
  */
 function augmentConformance(json, baseUrl) {
-    json.rest[0].security.extension = [{
-        "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
-        "extension": [
+    if (json?.rest?.[0]?.security) {
+        json.rest[0].security.extension = [{
+            "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
+            "extension": [
+                {
+                    "url": "authorize",
+                    "valueUri": Lib.buildUrlPath(baseUrl, "/auth/authorize")
+                },
+                {
+                    "url": "token",
+                    "valueUri": Lib.buildUrlPath(baseUrl, "/auth/token")
+                },
+                {
+                    "url": "introspect",
+                    "valueUri": Lib.buildUrlPath(baseUrl, "/auth/introspect")
+                }
+            ]
+        }];
+
+        json.rest[0].security.service = [
             {
-                "url": "authorize",
-                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/authorize")
-            },
-            {
-                "url": "token",
-                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/token")
-            },
-            {
-                "url": "introspect",
-                "valueUri": Lib.buildUrlPath(baseUrl, "/auth/introspect")
+            "coding": [
+                {
+                "system": "http://hl7.org/fhir/restful-security-service",
+                "code": "SMART-on-FHIR",
+                "display": "SMART-on-FHIR"
+                }
+            ],
+            "text": "OAuth2 using SMART-on-FHIR profile (see http://docs.smarthealthit.org)"
             }
         ]
-    }];
-
-    json.rest[0].security.service = [
-        {
-          "coding": [
-            {
-              "system": "http://hl7.org/fhir/restful-security-service",
-              "code": "SMART-on-FHIR",
-              "display": "SMART-on-FHIR"
-            }
-          ],
-          "text": "OAuth2 using SMART-on-FHIR profile (see http://docs.smarthealthit.org)"
-        }
-    ]
+    }
 
     return json;
 }
@@ -54,7 +56,7 @@ async function handleMetadataRequest(req, res, fhirServer)
     const url = Lib.buildUrlPath(fhirServer, req.url);
     let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
 
-    const response = await got.get(url, {
+    const response = await got(url, {
         throwHttpErrors: false,
         json: true,
         rejectUnauthorized: false,
