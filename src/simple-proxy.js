@@ -51,13 +51,26 @@ function augmentConformance(json, baseUrl) {
     return json;
 }
 
+/**
+ * The `/metadata` endpoint is an exception in the proxy behavior. For every
+ * other path we are streaming the response back to the client while replacing
+ * URLs on the fly. In case of `/metadata` more complex replacements are needed
+ * , thus we download the `CapabilityStatement`, parse it, modify it and then
+ * we are sending it to the client.
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res 
+ * @param {string} fhirServer The base URL of the upstream FHIR server
+ */
 async function handleMetadataRequest(req, res, fhirServer)
 {
+    // Compute the URL on the upstream server
     const url = Lib.buildUrlPath(fhirServer, req.url);
-    let requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
+
+    // Compute the full URL of this request
+    const requestUrl = Lib.buildUrlPath(config.baseUrl, req.originalUrl);
 
     const response = await got(url, {
-        throwHttpErrors: false,
+        throwHttpErrors: true,
         json: true,
         rejectUnauthorized: false,
         hooks: {
@@ -140,7 +153,8 @@ module.exports = Lib.asyncWrap((req, res) => {
 
     // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
-        return handleMetadataRequest(req, res, fhirServer);
+        return handleMetadataRequest(req, res, fhirServer)
+        .catch(ex => res.status(ex.code || 500).json({ error: ex + "" }));
     }
 
     validateToken(req);
@@ -201,7 +215,6 @@ module.exports = Lib.asyncWrap((req, res) => {
             });
 
         if (!isBinary) {
-            // stream = stream.pipe(replStream(fhirServer, `${config.baseUrl}/v/${fhirVersionLower}/fhir`));
             stream = stream.pipe(replStream(fhirServer, `${Lib.getRequestBaseURL(req)}/v/${fhirVersionLower}/fhir`));
         }
 
