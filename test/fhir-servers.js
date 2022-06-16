@@ -5,7 +5,6 @@ const { expect } = require("chai")
 const jose       = require("node-jose")
 const app        = require("../src/index.js")
 const config     = require("../src/config")
-const Lib        = require("../src/lib")
 
 const agent = request(app);
 
@@ -23,14 +22,10 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
     const PATH_TOKEN            = `/v/${FHIR_VERSION}/auth/token`
     const PATH_INTROSPECT       = `/v/${FHIR_VERSION}/auth/introspect`
     const PATH_FHIR             = `/v/${FHIR_VERSION}/fhir`
-    const PATH_METADATA         = `/v/${FHIR_VERSION}/fhir/metadata`
     const PATH_WELL_KNOWN_SMART = `/v/${FHIR_VERSION}/fhir/.well-known/smart-configuration`
     const PATH_WELL_KNOWN_OIDC  = `/v/${FHIR_VERSION}/fhir/.well-known/openid-configuration`
     const PATH_PATIENT_PICKER   = `/v/${FHIR_VERSION}/picker`
     const PATH_LOGIN_PAGE       = `/v/${FHIR_VERSION}/login`
-    const URI_REGISTER          = `${BASE_URL}${PATH_REGISTER}`
-    const URI_AUTHORIZE         = `${BASE_URL}${PATH_AUTHORIZE}`
-    const URI_TOKEN             = `${BASE_URL}${PATH_TOKEN}`
     const URI_FHIR              = `${BASE_URL}${PATH_FHIR}`
 
     /**
@@ -176,13 +171,6 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
     describe(`FHIR server ${FHIR_VERSION}`, () => {
 
-        it("Catches body parse errors", async () => {
-            await agent.post(PATH_FHIR)
-            .type("json")
-            .send('{"a":1,"b":}')
-            .expect(400, /OperationOutcome/)
-        })
-        
         it('can render the patient picker', () => {
             return agent.get(PATH_PATIENT_PICKER)
             .expect('Content-Type', /html/)
@@ -207,185 +195,6 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             .expect(200)
         })
 
-        describe('Proxy', function() {
-            this.timeout(10000);
-
-            it("rejects unknown fhir versions", async () => {
-                await agent.get(`${PATH_FHIR.replace(/\/v\/r\d\//, "/v/r123/")}/Patient`)
-                .expect(400, /FHIR server r123 not found/)
-            })
-            
-            it(`${PATH_METADATA} with html in browsers`, () => {
-                return agent.get(PATH_METADATA)
-                .set('Accept', 'text/html')
-                .expect('content-type', /application\/(fhir\+json|json\+fhir|json)/)
-                .expect(200)
-            });
-
-            it('removes custom headers', () => {
-                return agent.get(`${PATH_FHIR}/Patient`)
-                .set('x-custom', 'whatever')
-                .expect(res => expect(res.header['x-custom']).to.equal(undefined))
-            });
-
-            it ("Validates the FHIR version", () => {
-                return agent.get(PATH_METADATA.replace(/\/v\/r\d\//, "/v/r123/"))
-                .expect('Content-Type', /json/)
-                .expect('{"error":"FHIR server r123 not found"}')
-                .expect(400)
-            });
-
-            it ("If auth token is sent - validates it", () => {
-                return agent.get(`${PATH_FHIR}/Patient`)
-                .set("authorization", "Bearer whatever")
-                .expect('Content-Type', /text/)
-                .expect(/Invalid token\: /)
-                .expect(401)
-            });
-            
-            it ("Adjust urls in the fhir response", () => {
-                return agent.get(`${PATH_FHIR}/Patient`)
-                .expect(res => {
-                    if (res.text.indexOf(TESTED_FHIR_SERVERS[FHIR_VERSION]) > -1) {
-                        throw new Error("Not all URLs replaced");
-                    }
-                })
-            });
-            
-            it ("pull the resource out of the bundle if we converted a /id url into a ?_id= query", async () => {
-                
-                // We cannot know any IDs but we need to use one for this test, thus
-                // query all the patients with _count=1 to find the first one and use
-                // it's ID.
-                const patientID = await agent.get(`${PATH_FHIR}/Patient?_count=1`)
-                .expect(200)
-                .expect("content-type", /json/)
-                .then(res => res.body.entry[0].resource.id);
-        
-                // Now do another request with that ID
-                const resource = await agent.get(`${PATH_FHIR}/Patient/${patientID}`)
-                .expect(200)
-                .expect("content-type", /json/)
-                .then(res => res.body);
-        
-                // Did we get a patient with the requested id?
-                expect(resource.resourceType).to.equal("Patient")
-                expect(resource.id).to.equal(patientID)
-            });
-
-            it ("Handles pagination", () => {
-                return agent.get(`${PATH_FHIR}/Patient`).expect(async (res) => {
-                    if (!Array.isArray(res.body.link)) {
-                        throw new Error("No links found");
-                    }
-        
-                    let next = res.body.link.find(l => l.relation == "next")
-                    if (!next) {
-                        throw new Error("No next link found");
-                    }
-                    
-                    const nextURL = new URL(next.url)
-
-                    const res2 = await agent.get(nextURL.pathname + nextURL.search)
-                    
-                    if (!Array.isArray(res2.body.link)) {
-                        throw new Error("No links found on second page");
-                    }
-        
-                    let self = res2.body.link.find(l => l.relation == "self")
-
-                    if (!self) {
-                        throw new Error("No self link found on second page");
-                    }
-                    
-                    if (self.url !== next.url) {
-                        throw new Error("Links mismatch");
-                    }
-        
-                    let next2 = res.body.link.find(l => l.relation == "next")
-
-                    if (!next2) {
-                        throw new Error("No next link found on second page");
-                    }
-                })
-            });
-
-            it ("Replies with formatted JSON for bundles", () => {
-                return agent.get(`${PATH_FHIR}/Patient`).expect(/\n.+/);
-            });
-
-            it ("Replies with formatted JSON for single resources", () => {
-                return agent.get(`${PATH_FHIR}/X`) // Should return OperationOutcome
-                .expect(/\n.+/);
-            });
-
-            if (FHIR_VERSION === "r2") {
-                it (`Replies with application/json+fhir for ${FHIR_VERSION}`, () => {
-                    return agent.get(`${PATH_FHIR}/Patient`)
-                    .expect("content-Type", /^application\/json\+fhir/i)
-                    .expect(/\n.+/);
-                });
-            } else {
-                it (`Replies with application/fhir+json for ${FHIR_VERSION}`, () => {
-                    return agent.get(`${PATH_FHIR}/Patient`)
-                    .expect("content-Type", /^application\/fhir\+json/i)
-                    .expect(/\n.+/);
-                });
-            }
-
-            it('Injects the SMART information in metadata responses', () => {
-                return agent.get(PATH_METADATA)
-                .expect('content-type', /\bjson\b/i)
-                .expect(200)
-                .expect(res => {
-                    let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
-                    
-                    // authorize -----------------------------------------------
-                    let authorizeCfg = uris.find(o => o.url == "authorize");
-                    if (!authorizeCfg) {
-                        throw new Error("No 'authorize' endpoint found in the conformance statement");
-                    }
-                    if (authorizeCfg.valueUri != URI_AUTHORIZE) {
-                        throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
-                    }
-    
-                    // token ---------------------------------------------------
-                    let tokenCfg = uris.find(o => o.url == "token");
-                    if (!tokenCfg) {
-                        throw new Error("No 'token' endpoint found in the conformance statement");
-                    }
-                    if (tokenCfg.valueUri != URI_TOKEN) {
-                        throw new Error("Wrong 'token' endpoint found in the conformance statement");
-                    }
-    
-                    // register ------------------------------------------------
-                    // TODO: Un-comment when we support DCR
-                    // let registerCfg  = uris.find(o => o.url == "register");
-                    // if (!registerCfg) {
-                    //     throw new Error("No 'register' endpoint found in the conformance statement");
-                    // }
-                    // if (registerCfg.valueUri != URI_REGISTER) {
-                    //     throw new Error("Wrong 'register' endpoint found in the conformance statement");
-                    // }
-                });
-            });
-
-            it ("Can simulate custom token errors", async () => {
-                const token = jwt.sign({ sim_error: "test error" }, config.jwtSecret)
-                await agent.get(`${PATH_FHIR}/Patient`)
-                .set("authorization", "bearer " + token)
-                .expect(401, "test error");
-            });
-
-            it ("Keeps protected data-sets read-only");
-            it ("Make urls conditional and if exists, change /id to ?_id=");
-            it ("Apply patient scope to GET requests");
-
-            describe('Fhir Requests', () => {
-                it ("TODO...");
-            });
-        });
-
         describe('Auth', () => {
             describe('authorize', () => {
                 
@@ -405,6 +214,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                 it(`requires "response_type" param`, () => {
                     const query = { ...fullQuery };
+                    // @ts-ignore
                     delete query.response_type
                     return agent.get(PATH_AUTHORIZE)
                     .query(query)
@@ -415,6 +225,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                 it(`requires "redirect_uri" param`, () => {
                     const query = { ...fullQuery };
+                    // @ts-ignore
                     delete query.redirect_uri
                     return agent.get(PATH_AUTHORIZE)
                     .query(query)
@@ -523,6 +334,42 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         auth_success: true,
                         launch: { launch_pt: 1 }
                     });
+                });
+
+                it ("shows patient login if needed", () => {
+                    const _url = url("/auth/authorize", {
+                        ...fullQuery,
+                        scope: "launch",
+                        aud: URI_FHIR,
+                        launch: {
+                            launch_pt: 1
+                        }
+                    });
+
+                    return agent.get(_url.pathname)
+                    .query(_url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/login\?/)
+                });
+
+                it ("shows the 'authorize launch' screen if needed", () => {
+                    const _url = url("/auth/authorize", {
+                        ...fullQuery,
+                        scope: "launch",
+                        aud: URI_FHIR,
+                        launch: {
+                            launch_prov: 1,
+                            encounter: "e",
+                            aud_validated: true,
+                        }
+                    }, {
+                        launch_prov: true,
+                    });
+
+                    return agent.get(_url.pathname)
+                    .query(_url.searchParams.toString())
+                    .expect(302)
+                    .expect("location", /\/authorize\?/)
                 });
 
                 it ("shows patient picker if needed", () => {
@@ -837,16 +684,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             })
         });
 
-        describe('Introspection', () => {
-            it("includes the introspect endpoint in the CapabilityStatement", async () => {
-                await agent.get(PATH_METADATA).expect(/json/).expect(200).then(response => {
-                    const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
-                    expect(oauthUris);
-                    const introspection = oauthUris.extension.find(e => e.url === "introspect");
-                    expect(introspection);
-                    expect(new URL(introspection.valueUri).pathname).equal(PATH_INTROSPECT);
-                })
-            })
+        describe('Introspection', function() {
 
             it("requires authorization", async () => {
                 await agent.post(PATH_INTROSPECT)
