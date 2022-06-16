@@ -14,3 +14,4 @@ test/e2e/bin/chromedriver
 test/e2e/bin/selenium.jar
 test/e2e/reports/login-screen.xml
 test/e2e/reports/main.xml
+.DS_Store

@@ -27,7 +27,12 @@
     "lcov.branchCoverage": "simple",
     "cSpell.words": [
         "fhir",
-        "openid"
+        "genrsa",
+        "nightwatch",
+        "openid",
+        "outform",
+        "pubout",
+        "replacestream"
     ],
     // "mocha.logVerbose": true
 }
