@@ -117,8 +117,8 @@ function validateToken(req) {
  * @param {import("express").Request} req 
  * @param {import("express").Response} res
  */
-module.exports = (req, res) => {
-
+module.exports = Lib.asyncWrap((req, res) => {
+    
     // Validate FHIR Version ---------------------------------------------------
     let fhirVersion      = req.params.fhir_release.toUpperCase();
     let fhirVersionLower = fhirVersion.toLowerCase();
@@ -209,4 +209,4 @@ module.exports = (req, res) => {
     } catch (ex) {
         res.end(ex.message)
     }
-};
+});

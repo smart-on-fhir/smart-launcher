@@ -59,6 +59,20 @@ function getRequestBaseURL(req) {
     return protocol + "://" + host;
 }
 
+/**
+ * Creates and returns a route-wrapper function that allows for using an async
+ * route handlers without try/catch.
+ * @param {import("express").RequestHandler} fn
+ * @returns {(
+ *   req: import("express").Request,
+ *   res: import("express").Response,
+ *   next: import("express").NextFunction
+ * ) => Promise<void>}
+ */
+function asyncWrap(fn) {
+    return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
 // Sandbox-ify -----------------------------------------------------------------
 
 function buildUrlPath(...segments) {
@@ -243,7 +257,7 @@ module.exports = {
     getRequestBaseURL,
     whitelist,
     assert,
-
+    asyncWrap,
     HTTPError,
     OAuthError,
     OperationOutcomeError

@@ -68,7 +68,7 @@ function blackList(ipList) {
 
 /**
  * Global error 500 handler
- * @param {Error} error
+ * @param {any} error
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
@@ -80,7 +80,7 @@ function globalErrorHandler(error, req, res, next)
     }
 
     console.error(error);
-    res.status(500).end('Internal Server Error');
+    res.status(error.code || 500).json({ error: error.message || 'Internal Server Error' });
 }
 
 module.exports = {
