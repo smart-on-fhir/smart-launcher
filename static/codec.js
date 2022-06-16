@@ -13,7 +13,13 @@ var codec = (function() {
         "skip_login"       : "i",
         "skip_auth"        : "j",
         "launch_pt"        : "k",
-        "launch_cds"       : "l"
+        "launch_cds"       : "l",
+        "val_pkce"         : "m",
+        "val_method"       : "n",
+        "redirect_uris"    : "o",
+        "sym_secret"       : "p",
+        "jwks_uri"         : "q",
+        "jwks"             : "r",
     };
 
     var CODE_TO_VALUE = {
@@ -28,7 +34,13 @@ var codec = (function() {
         "i" : "skip_login",
         "j" : "skip_auth",
         "k" : "launch_pt",
-        "l" : "launch_cds"
+        "l" : "launch_cds",
+        "m" : "val_pkce",
+        "n" : "val_method",
+        "o" : "redirect_uris",
+        "p" : "sym_secret",
+        "q" : "jwks_uri",
+        "r" : "jwks",
     };
 
     var SIM_ERRORS = [

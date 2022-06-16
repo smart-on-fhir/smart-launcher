@@ -29,10 +29,18 @@ module.exports = (req, res) => {
         "revocation_endpoint": undefined,
 
         // OPTIONAL, array of client authentication methods supported by the
-        // token endpoint. The options are “client_secret_post” and “client_secret_basic”.
+        // token endpoint.
         "token_endpoint_auth_methods_supported": [
+            "token_key_jwt",       // for asymmetric auth
             "client_secret_basic", // for confidential apps
             "client_secret_post"   // for public apps
+        ],
+
+        // OPTIONAL, array of algorithms that may be used to sign a
+        // confidential client JWT.
+        "token_endpoint_auth_signing_alg_values_supported": [
+            "RS384",
+            "ES384",
         ],
 
         // RECOMMENDED, array of scopes a client may request. See scopes and launch context.
@@ -79,6 +87,10 @@ module.exports = (req, res) => {
             // support for SMART’s confidential client profile (symmetric
             // client secret authentication).
             "client-confidential-symmetric",
+
+            // support for SMART’s confidential client profile (asymmetric
+            // client secret authentication).
+            "client-confidential-asymmetric",
 
             // Single Sign-on
             // -----------------------------------------------------------------

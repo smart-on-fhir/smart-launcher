@@ -186,3 +186,9 @@ textarea {
   min-width: 10rem;
   font-size: small;
 }
+
+/* Nicer on the eyes for key blobs */
+textarea.mono-small {
+  font-family: monospace;
+  font-size: small;
+}

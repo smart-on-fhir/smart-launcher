@@ -162,7 +162,7 @@ class AuthorizeHandler extends SMARTHandler {
     }
 
     /**
-     * Creates and returns the signet JWT code that contains some authorization
+     * Creates and returns the signed JWT code that contains some authorization
      * details.
      * @returns {String}
      */
@@ -182,6 +182,19 @@ class AuthorizeHandler extends SMARTHandler {
         // auth_error
         if (sim.auth_error) {
             code.auth_error = sim.auth_error;
+        }
+
+        // Add the relevant client auth fields.
+        if (sim.val_method != 'none') {
+            code.context.val_method = sim.val_method;
+        }
+        if (sim.val_method == 'cc-sym') {
+            const auth = `${code.client_id}:${sim.sym_secret}`
+            const b64 = Buffer.from(auth).toString('base64');
+            code.context.auth_basic_header = `Basic ${b64}`;
+        } else if (sim.val_method == 'cc-asym') {
+            code.context.jwks_uri = sim.jwks_uri;
+            code.context.jwks = JSON.stringify(JSON.parse(sim.jwks));
         }
 
         // patient
@@ -293,7 +306,6 @@ class AuthorizeHandler extends SMARTHandler {
     }
 
     handle() {
-        
         const req = this.request;
         const res = this.response;
         const sim = this.sim;
@@ -324,6 +336,21 @@ class AuthorizeHandler extends SMARTHandler {
         // Simulate auth_invalid_scope error if requested
         if (sim.auth_error == "auth_invalid_scope") {
             throw Lib.OAuthError.from(errors.authorization_code.sim_invalid_scope)
+        }
+
+        if (sim.val_method && sim.val_method !== 'none') {
+            if (sim.redirect_uris) {
+                // Validate that the query redirect uri is known.
+                if (!sim.redirect_uris.includes(req.query.redirect_uri)) {
+                    console.log(
+                        `No '${req.query.redirect_uri}' among registered uris: ${sim.redirect_uris}`
+                    );
+                    throw Lib.OAuthError.from(errors.authorization_code.bad_redirect_uri);
+                }
+            } else {
+                console.warn('client validation requires a registered redirect_uri');
+                throw Lib.OAuthError.from(errors.authorization_code.bad_redirect_uri);
+            }
         }
 
         // Validate query parameters
