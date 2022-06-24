@@ -7,6 +7,9 @@ const PORT = process.env.LAUNCHER_PORT || process.env.PORT || (process.env.NODE_
 const PRIVATE_KEY = FS.readFileSync(__dirname + "/../private-key.pem", "utf8");
 const JWK         = convert.pem2jwk(PRIVATE_KEY);
 
+const dotenv = require('dotenv');
+dotenv.config();
+
 [
   "FHIR_SERVER_R2",
   "FHIR_SERVER_R3",
