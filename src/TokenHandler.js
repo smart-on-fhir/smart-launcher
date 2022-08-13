@@ -59,12 +59,12 @@ class TokenHandler extends SMARTHandler {
             }
         } = this.request;
 
-        const { baseUrl, jwtSecret } = config;
+        const { jwtSecret } = config;
 
         /** @type {any[]} */
         const algorithms = ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"];
 
-        const aud = baseUrl + originalUrl;
+        const aud = Lib.getRequestBaseURL(this.request) + originalUrl;
 
         /** @type {any} */
         let authenticationToken = {};
@@ -96,7 +96,7 @@ class TokenHandler extends SMARTHandler {
         assert(clientDetailsToken.auth_error != "token_expired_registration_token", errors.client_credentials.token_expired_registration_token);
 
         // Validate authenticationToken.aud (must equal this url)
-        assert(aud.replace(/^https?/, "") == authenticationToken.aud.replace(/^https?/, ""), errors.client_credentials.invalid_aud, aud);
+        assert(aud.replace(/^https?/, "") == authenticationToken.aud.replace(/^https?/, ""), errors.client_credentials.invalid_aud, authenticationToken.aud, aud);
 
         // authenticationToken.iss must equal whatever the user entered at registration time, i.e. clientDetailsToken.iss)
         assert(authenticationToken.iss == clientDetailsToken.iss, errors.client_credentials.invalid_token_iss, authenticationToken.iss, clientDetailsToken.iss);

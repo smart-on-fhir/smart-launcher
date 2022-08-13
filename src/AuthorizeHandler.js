@@ -280,7 +280,7 @@ class AuthorizeHandler extends SMARTHandler {
 
         // The "aud" param must match the apiUrl (but can have different protocol)
         if (!sim.aud_validated) {
-            const apiUrl = Lib.buildUrlPath(config.baseUrl, req.baseUrl, "fhir");
+            const apiUrl = Lib.buildUrlPath(Lib.getRequestBaseURL(req), req.baseUrl, "fhir");
             let a = Lib.normalizeUrl(req.query.aud).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             let b = Lib.normalizeUrl(apiUrl       ).replace(/^https?/, "").replace(/^:\/\/localhost/, "://127.0.0.1");
             if (a != b) {

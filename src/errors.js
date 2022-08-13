@@ -128,7 +128,7 @@ module.exports = {
         },
         invalid_aud: {
             error: "invalid_client",
-            msg  : "Invalid token 'aud' value. Must be '%s'.",
+            msg  : "Invalid token 'aud' value (%s). Must be '%s'.",
             code : 401,
             type : "oauth"
         },
