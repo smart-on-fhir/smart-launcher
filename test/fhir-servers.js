@@ -1,12 +1,27 @@
-const request    = require('supertest')
-const jwt        = require("jsonwebtoken")
-const crypto     = require("crypto")
-const { expect } = require("chai")
-const jose       = require("node-jose")
-const app        = require("../src/index.js")
-const config     = require("../src/config")
+const jwt          = require("jsonwebtoken")
+const crypto       = require("crypto")
+const { expect }   = require("chai")
+const jose         = require("node-jose")
+const { BASE_URL } = require("./testSetup")
+const config       = require("../src/config")
 
-const agent = request(app);
+
+/**
+ * 
+ * @param {string|URL} url 
+ * @param {RequestInit} [options] 
+ * @returns 
+ */
+const request = (url, options) => {
+    if (typeof url === "string" && !url.startsWith("http")) {
+        url = new URL(url, BASE_URL)
+    }
+    return fetch(url, options).catch(e => {
+        console.warn(`Failed fetching ${url}`)
+        console.log(e.cause)
+        throw e
+    })
+}
 
 const TESTED_FHIR_SERVERS = {
     "r4": config.fhirServerR4,
@@ -16,17 +31,7 @@ const TESTED_FHIR_SERVERS = {
 
 for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
-    const BASE_URL              = config.baseUrl
-    const PATH_REGISTER         = `/v/${FHIR_VERSION}/auth/register`
-    const PATH_AUTHORIZE        = `/v/${FHIR_VERSION}/auth/authorize`
-    const PATH_TOKEN            = `/v/${FHIR_VERSION}/auth/token`
-    const PATH_INTROSPECT       = `/v/${FHIR_VERSION}/auth/introspect`
-    const PATH_FHIR             = `/v/${FHIR_VERSION}/fhir`
-    const PATH_WELL_KNOWN_SMART = `/v/${FHIR_VERSION}/fhir/.well-known/smart-configuration`
-    const PATH_WELL_KNOWN_OIDC  = `/v/${FHIR_VERSION}/fhir/.well-known/openid-configuration`
-    const PATH_PATIENT_PICKER   = `/v/${FHIR_VERSION}/picker`
-    const PATH_LOGIN_PAGE       = `/v/${FHIR_VERSION}/login`
-    const URI_FHIR              = `${BASE_URL}${PATH_FHIR}`
+    const URI_FHIR = url("/fhir")
 
     /**
      * @param {string} path
@@ -47,7 +52,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
         path = (_path + "/" + path).replace(/\/+/g, "/")
 
-        const url = new URL(path, config.baseUrl)
+        const url = new URL(path, BASE_URL)
 
         for (const key in query) {
             if (key == "launch" && query[key] && typeof query[key] != "string") {
@@ -67,13 +72,25 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
      * @param {string} code 
      * @param {string} redirect_uri
      * @param {string} [code_verifier]
-     * @returns {import('supertest').Test}
+     * @returns {Promise<Record<string, any>>}
      */
-    function getAccessToken(code, redirect_uri, code_verifier) {
-        return agent.post(PATH_TOKEN)
-        .redirects(0)
-        .type("form")
-        .send({ grant_type: "authorization_code", code, redirect_uri, code_verifier });
+    async function getAccessToken(code, redirect_uri, code_verifier) {
+        const formData = new URLSearchParams()
+        formData.set("grant_type", "authorization_code")
+        formData.set("code", code)
+        formData.set("redirect_uri", redirect_uri)
+        if (code_verifier) {
+            formData.set("code_verifier", code_verifier)
+        }
+
+        return request(url("/auth/token"), {
+            method: "POST",
+            body: formData,
+            headers: {
+                "content-type": "application/x-www-form-urlencoded"
+            }
+        })
+        .then(res => res.json())
     }
 
     /**
@@ -97,7 +114,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
      * @param {number|boolean} [options.login_success] Flag to skip the launch login dialog
      * @param {number|boolean} [options.aud_validated] Flag to skip the aud validation
      * 
-     * @returns { import('supertest').Test }
+     * @returns { Promise<Response> }
      */
     function getAuthCodeRaw(options)
     {
@@ -119,13 +136,23 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             query.code_challenge = options.code_challenge
         }
 
-        const _url = url("/auth/authorize", query);
-
         if (options.method === "POST") {
-            return request(app).post(_url.pathname).type("form").send(query).redirects(0);
-        }
+            const formData = new URLSearchParams()
+            for (let key in query) {
+                formData.set(key, query[key])
+            }
 
-        return request(app).get(_url.pathname).query(_url.searchParams.toString()).redirects(0)
+            return request(url("/auth/authorize"), {
+                method: "POST",
+                body: formData,
+                redirect: "manual",
+                headers: {
+                    "content-type": "application/x-www-form-urlencoded"
+                }
+            });
+        }
+        
+        return request(url("/auth/authorize", query), { redirect: "manual" })
     }
 
     /**
@@ -149,50 +176,53 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
      * @param {number|boolean} [options.login_success] Flag to skip the launch login dialog
      * @param {number|boolean} [options.aud_validated] Flag to skip the aud validation
      */
-    function getAuthCode(options)
+    async function getAuthCode(options)
     {
-        return getAuthCodeRaw(options)
-        .expect(302)
-        .expect("location", /^https?\:\/\/.+/)
-        .then(res => {
-            const loc = new URL(res.get("location"));
-            const code = loc.searchParams.get("code");
-            if (!code) {
-                throw new Error(`authorize did not redirect to the redirect_uri with code parameter. ${res.text}`)
-            }
-            return {
-                code,
-                state: loc.searchParams.get("state"),
-                redirect_uri: options.redirect_uri || "http://test_redirect_uri",
-                location: loc
-            }
-        });
+        const res = await getAuthCodeRaw(options)
+        expect(res.status).to.equal(302)
+        
+        const loc = new URL(res.headers.get("location") || "");
+        expect(loc).to.exist;
+        expect(loc.href).to.match(/^https?\:\/\/.+/)
+        
+        const code = loc.searchParams.get("code");
+        
+        if (!code) {
+            throw new Error(`authorize did not redirect to the redirect_uri with code parameter. ${res.text}`)
+        }
+
+        return {
+            code,
+            state: loc.searchParams.get("state"),
+            redirect_uri: options.redirect_uri || "http://test_redirect_uri",
+            location: loc
+        }
     }
 
     describe(`FHIR server ${FHIR_VERSION}`, () => {
 
-        it('can render the patient picker', () => {
-            return agent.get(PATH_PATIENT_PICKER)
-            .expect('Content-Type', /html/)
-            .expect(200)
+        it ('can render the patient picker', async () => {
+            const res = await request(url("/picker"))
+            expect(res.headers.get('content-type')).to.match(/html/)
+            expect(res.status).to.equal(200)
         });
 
-        it('can render the user picker', () => {
-            return agent.get(PATH_LOGIN_PAGE)
-            .expect('Content-Type', /html/)
-            .expect(200)
+        it ('can render the user picker', async () => {
+            const res = await request(url("/login"))
+            expect(res.headers.get('content-type')).to.match(/html/)
+            expect(res.status).to.equal(200)
         });
 
-        it('can render the launch approval dialog', () => {
-            return agent.get(url("/authorize").pathname)
-            .expect('Content-Type', /html/)
-            .expect(200)
+        it ('can render the launch approval dialog', async () => {
+            const res = await request(url("/authorize").pathname)
+            expect(res.headers.get('content-type')).to.match(/html/)
+            expect(res.status).to.equal(200)
         });
 
-        it (`renders ${PATH_WELL_KNOWN_SMART}`, async () => {
-            return agent.get(PATH_WELL_KNOWN_SMART)
-            .expect('Content-Type', /json/)
-            .expect(200)
+        it (`renders /fhir/.well-known/smart-configuration`, async () => {
+            const res = await request(url("/fhir/.well-known/smart-configuration"))
+            expect(res.headers.get('content-type')).to.match(/json/)
+            expect(res.status).to.equal(200)
         })
 
         describe('Auth', () => {
@@ -212,86 +242,96 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     "auth_invalid_scope"    : /error_description=Simulated\+invalid\+scope\+error/
                 }
 
-                it(`requires "response_type" param`, () => {
+                it (`requires "response_type" param`, async () => {
                     const query = { ...fullQuery };
                     // @ts-ignore
                     delete query.response_type
-                    return agent.get(PATH_AUTHORIZE)
-                    .query(query)
-                    .expect(302)
-                    .expect("location", /error_description=Missing\+response_type\+parameter/)
-                    .expect("location", /state=x/)
+                    const res = await request(url("/auth/authorize", query), { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/error_description=Missing\+response_type\+parameter/)
+                    expect(res.headers.get("location")).to.match(/state=x/)
                 });
 
-                it(`requires "redirect_uri" param`, () => {
+                it (`requires "redirect_uri" param`, async () => {
                     const query = { ...fullQuery };
                     // @ts-ignore
                     delete query.redirect_uri
-                    return agent.get(PATH_AUTHORIZE)
-                    .query(query)
-                    .expect(400)
-                    .expect({ error: "invalid_request", error_description: "Missing redirect_uri parameter" })
+                    const res = await request(url("/auth/authorize", query), { redirect: "manual" })
+                    expect(res.status).to.equal(400)
+                    const body = await res.json()
+                    expect(body).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: "Missing redirect_uri parameter"
+                    })
                 });
 
                 // validates the redirect_uri parameter
                 // -------------------------------------------------------------
-                it("validates the redirect_uri parameter", () => {
-                    return agent.get(PATH_AUTHORIZE)
-                    .query({ ...fullQuery, redirect_uri: "x" })
-                    .expect({ error: "invalid_request", error_description: "Invalid redirect_uri parameter 'x' (must be full URL)" })
-                    .expect(400);
+                it ("validates the redirect_uri parameter", async () => {
+                    const res = await request(
+                        url("/auth/authorize", { ...fullQuery, redirect_uri: "x" }),
+                        { redirect: "manual" }
+                    );
+                    expect(res.status).to.equal(400)
+                    const body = await res.json()
+                    expect(body).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: "Invalid redirect_uri parameter 'x' (must be full URL)" }
+                    )
                 });
 
-                it (`can simulate invalid_redirect_uri error`, () => {
-
-                    const _url = url("/auth/authorize", {}, { auth_error: "auth_invalid_redirect_uri" });
-    
-                    return agent.get(_url.pathname)
-                    .query(fullQuery)
-                    .expect(400)
-                    .expect({ error:"invalid_request", error_description:"Simulated invalid redirect_uri parameter error" })
+                it (`can simulate invalid_redirect_uri error`, async () => {
+                    const _url = url("/auth/authorize", fullQuery, { auth_error: "auth_invalid_redirect_uri" });
+                    const res = await request(_url.pathname)
+                    expect(res.status).to.equal(400)
+                    expect(await res.json()).to.deep.equal({
+                        error:"invalid_request",
+                        error_description:"Simulated invalid redirect_uri parameter error"
+                    })
                 });
 
                 // other simulated errors
                 // -------------------------------------------------------------
                 Object.keys(authErrors).forEach(errorName => {
-                    it (`can simulate "${errorName}" error via sim`, () => {
-
-                        const _url = url("/auth/authorize", {}, { auth_error: errorName });
-        
-                        return agent.get(_url.pathname)
-                        .query(fullQuery)
-                        .expect(302)
-                        .expect("location", authErrors[errorName])
+                    
+                    it (`can simulate "${errorName}" error via sim`, async () => {
+                        const res = await request(
+                            url("/auth/authorize", fullQuery, { auth_error: errorName }),
+                            { redirect: "manual" }
+                        );
+                        
+                        expect(res.status).to.equal(302)
+                        expect(res.headers.get("location")).to.match(authErrors[errorName])
                     });
 
-                    it (`can simulate "${errorName}" error via launch param`, () => {
-                        const _url = url("/auth/authorize", {
-                            ...fullQuery,
-                            launch: {
-                                auth_error: errorName
-                            }
-                        });
-        
-                        return agent.get(_url.pathname)
-                        .query(_url.searchParams.toString())
-                        .expect(302)
-                        .expect("location", authErrors[errorName]);
+                    it (`can simulate "${errorName}" error via launch param`, async () => {
+
+                        const res = await request(
+                            url("/auth/authorize", {
+                                ...fullQuery,
+                                launch: {
+                                    auth_error: errorName
+                                }
+                            }),
+                            { redirect: "manual" }
+                        );
+                        
+                        expect(res.status).to.equal(302)
+                        expect(res.headers.get("location")).to.match(authErrors[errorName])
                     });
                 })
 
                 // rejects invalid audience value
                 // -------------------------------------------------------------
-                it ("rejects invalid audience value", () => {
-                    return agent.get(PATH_AUTHORIZE)
-                    .query({ ...fullQuery, aud: "whatever" })
-                    .expect(302)
-                    .expect("location", /error_description=Bad\+audience\+value/)
+                it ("rejects invalid audience value", async () => {
+                    const res = await request(url("/auth/authorize", { ...fullQuery, aud: "whatever" }), { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/error_description=Bad\+audience\+value/)
                 });
 
                 // can show encounter picker
                 // -------------------------------------------------------------
-                it ("can show encounter picker", () => {
+                it ("can show encounter picker", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "patient/*.read launch",
@@ -303,18 +343,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect(res => {
-                        const loc = res.get("location");
-                        if (!loc || loc.indexOf(`/v/${FHIR_VERSION}/encounter?`) !== 0) {
-                            throw new Error(`Wrong redirect ${loc}.`)
-                        }
-                    });
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.include(`/v/${FHIR_VERSION}/encounter?`)
                 });
 
-                it("generates a code from profile", async () => {
+                it ("generates a code from profile", async () => {
                     return getAuthCode({
                         patient: "abc",
                         scope: "profile openid launch",
@@ -325,7 +359,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     });
                 });
 
-                it("generates a code from fhirUser", async () => {
+                it ("generates a code from fhirUser", async () => {
                     return getAuthCode({
                         patient: "abc",
                         scope: "fhirUser openid launch",
@@ -336,7 +370,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     });
                 });
 
-                it ("shows patient login if needed", () => {
+                it ("shows patient login if needed", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch",
@@ -345,14 +379,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                             launch_pt: 1
                         }
                     });
-
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/login\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/login\?/)
                 });
 
-                it ("shows the 'authorize launch' screen if needed", () => {
+                it ("shows the 'authorize launch' screen if needed", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch",
@@ -366,13 +398,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         launch_prov: true,
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/authorize\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/authorize\?/)
                 });
 
-                it ("shows patient picker if needed", () => {
+                it ("shows patient picker if needed", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch",
@@ -382,29 +413,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/picker\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/picker\?/)
                 });
 
-                it ("shows patient picker if needed", () => {
-                    const _url = url("/auth/authorize", {
-                        ...fullQuery,
-                        scope: "launch",
-                        aud: URI_FHIR,
-                        launch: {
-                            launch_ehr: 1
-                        }
-                    });
-
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/picker\?/)
-                });
-
-                it ("shows patient picker if multiple patients are pre-selected", () => {
+                it ("shows patient picker if multiple patients are pre-selected", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch/patient",
@@ -414,13 +428,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/picker\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/picker\?/)
                 });
 
-                it ("shows patient picker if needed in CDS launch", () => {
+                it ("shows patient picker if needed in CDS launch", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch/patient",
@@ -430,25 +443,24 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/picker\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/picker\?/)
                 });
 
-                it ("does not show patient picker if scopes do not require it", () => {
+                it ("does not show patient picker if scopes do not require it", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "whatever",
                         aud: URI_FHIR
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(res => expect(!res.header.location || !res.header.location.match(/\/picker\?/)).to.equal(true))
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location") || "").not.to.match(/\/picker\?/)
                 });
 
-                it ("shows provider login screen if needed", () => {
+                it ("shows provider login screen if needed", async () => {
                     const _url = url("/auth/authorize", {
                         ...fullQuery,
                         scope: "launch openid profile",
@@ -460,13 +472,12 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    return agent.get(_url.pathname)
-                    .query(_url.searchParams.toString())
-                    .expect(302)
-                    .expect("location", /\/login\?/)
+                    const res = await request(_url, { redirect: "manual" })
+                    expect(res.status).to.equal(302)
+                    expect(res.headers.get("location")).to.match(/\/login\?/)
                 });
 
-                // it("Works with POST", () => {
+                // it ("Works with POST", () => {
                 //     return getAuthCode({
                 //         scope : "offline_access",
                 //         method: "POST"
@@ -475,7 +486,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                 // PKCE
                 // -------------------------------------------------------------
-                // it("validates the code_challenge_method parameter", async () => {
+                // it.skip ("validates the code_challenge_method parameter", async () => {
                 //     return getAuthCodeRaw({ code_challenge_method: "plain" })
                 //     .expect(302)
                 //     .then((res) => {
@@ -483,7 +494,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 //     });
                 // });
 
-                // it("validates the code_challenge parameter", () => {
+                // it.skip ("validates the code_challenge parameter", () => {
                 //     return getAuthCodeRaw({ code_challenge_method: "S256" })
                 //     .expect(302)
                 //     .then((res) => {
@@ -491,7 +502,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 //     });
                 // });
 
-                // it("fails with PKCE S256 and an invalid code_verifier", async () => {
+                // it.skip ("fails with PKCE S256 and an invalid code_verifier", async () => {
                 //     const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
                 //     const hash = crypto.createHash('sha256');
                 //     hash.update(code_verifier);
@@ -505,7 +516,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 //         .expect(/Invalid grant or Invalid PKCE Verifier/)
                 // });
         
-                // it("succeeds with PKCE S256 and an valid code_verifier", async () => {
+                // it.skip ("succeeds with PKCE S256 and an valid code_verifier", async () => {
                 //     const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
                 //     const hash = crypto.createHash('sha256');
                 //     hash.update(code_verifier);
@@ -521,7 +532,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
             describe('token', function() {
 
-                it("rejects token requests with invalid redirect_uri param", async () => {
+                it ("rejects token requests with invalid redirect_uri param", async () => {
 
                     /** @type {{ code: any }} */
                     let { code } = await getAuthCode({
@@ -544,7 +555,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }).catch(() => true)
                 })
 
-                it("can simulate expired refresh tokens", async () => {
+                it ("can simulate expired refresh tokens", async () => {
 
                     const { code, redirect_uri } = await getAuthCode({
                         scope: "offline_access",
@@ -558,7 +569,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     })
                     
-                    const tokenResponse = await getAccessToken(code, redirect_uri).then(res => res.body)
+                    const tokenResponse = await getAccessToken(code, redirect_uri)
 
                     /**
                      * @type {object}
@@ -567,14 +578,24 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                     expect(refreshToken.auth_error).to.equal("token_expired_refresh_token")
 
-                    return agent.post(PATH_TOKEN)
-                        .type("form")
-                        .send({ grant_type: "refresh_token", refresh_token: tokenResponse.refresh_token })
-                        .expect('Content-Type', /json/)
-                        .expect(403, {error:"invalid_grant",error_description:"Expired refresh token"});
+                    const body = new URLSearchParams()
+                    body.set("grant_type", "refresh_token")
+                    body.set("refresh_token", tokenResponse.refresh_token)
+
+                    const res = await request(url("/auth/token"), {
+                        method: "POST",
+                        body,
+                        headers: {
+                            "content-type": "application/x-www-form-urlencoded"
+                        }
+                    })
+
+                    expect(res.status).to.equal(403)
+                    const json = await res.json()
+                    expect(json).to.deep.equal({error:"invalid_grant",error_description:"Expired refresh token"})
                 });
 
-                it("provides id_token", async () => {
+                it ("provides id_token", async () => {
                     const { code, redirect_uri } = await getAuthCode({
                         patient: "abc",
                         scope: "fhirUser openid launch",
@@ -586,7 +607,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    const tokenResponse = await getAccessToken(code, redirect_uri).then(res => res.body)
+                    const tokenResponse = await getAccessToken(code, redirect_uri)
 
                     expect(tokenResponse).to.have.property("id_token")
 
@@ -594,11 +615,11 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                     expect(idToken).to.have.property("iss")
                     // @ts-ignore Supertest runs on random port thus we need to use regexp
-                    expect(idToken.iss).to.match(/^http\:\/\/127\.0\.0\.1\:\d+\/v\/r\d\/fhir$/)
+                    expect(idToken.iss).to.match(/^http\:\/\/localhost\:\d+\/v\/r\d\/fhir$/)
                 });
             });
 
-            it("the access token can be verified using the published public key", async () => {
+            it ("the access token can be verified using the published public key", async () => {
 
                 // Start by getting an id_token
                 const { code, redirect_uri } = await getAuthCode({
@@ -610,21 +631,20 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     launch: { launch_pt: 1 }
                 });
 
-                const { id_token } = await getAccessToken(code, redirect_uri).then(res => res.body)
+                const { id_token } = await getAccessToken(code, redirect_uri)
 
                 // Then get the jwks_uri from .well-known/openid-configuration
-                const jwksUrl = await agent.get(PATH_WELL_KNOWN_OIDC)
-                    .expect("content-type", /json/)
-                    .expect(200)
-                    .then(res => new URL(res.body.jwks_uri));
+                const wellKnown = await request(url("/fhir/.well-known/openid-configuration"))
+                expect(wellKnown.status).to.equal(200)
+                expect(wellKnown.headers.get("content-type")).to.match(/json/)
+                const jwksUrl = await wellKnown.json().then(j => new URL(j.jwks_uri));
 
                 // Then fetch the keys
-                const keys = await agent.get(jwksUrl.pathname)
-                    .expect("content-type", /json/)
-                    .expect(200)
-                    .then(res => res.body.keys);
-
-                const privateKey = (await jose.JWK.asKey(keys[0], "json")).toPEM();
+                const k = await request(BASE_URL + jwksUrl.pathname)
+                expect(k.status).to.equal(200)
+                expect(k.headers.get("content-type")).to.match(/json/)
+                const body = await k.json()
+                const privateKey = (await jose.JWK.asKey(body.keys[0], "json")).toPEM();
                 jwt.verify(id_token, privateKey, { algorithms: ["RS256"] });
             });
 
@@ -632,72 +652,115 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                 let token = jwt.sign("whatever", config.jwtSecret);
                 
-                it ("can simulate auth_invalid_client_secret", () => {
-                    return agent.post(PATH_TOKEN)
-                    .type('form')
-                    .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
-                    .send({
-                        grant_type: "refresh_token",
-                        auth_error: "auth_invalid_client_secret",
-                        refresh_token: token
+                it ("can simulate auth_invalid_client_secret", async () => {
+                    const body = new URLSearchParams()
+                    body.set("grant_type", "refresh_token")
+                    body.set("auth_error", "auth_invalid_client_secret")
+                    body.set("refresh_token", token)
+
+                    const res = await request(url("/auth/token"), {
+                        method: "POST",
+                        body,
+                        headers: {
+                            "content-type" : "application/x-www-form-urlencoded",
+                            "Authorization": "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz"
+                        }  
                     })
-                    .expect({error:"invalid_client",error_description:"Simulated invalid client secret error"})
-                    .expect(401);
+
+                    expect(res.status).to.equal(401)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_client",
+                        error_description: "Simulated invalid client secret error"
+                    })
                 });
 
-                it ("rejects empty auth header", () => {
-                    return agent.post(PATH_TOKEN)
-                    .type('form')
-                    .set("Authorization", "Basic")
-                    .send({
-                        grant_type: "refresh_token",
-                        refresh_token: token
+                it ("rejects empty auth header", async () => {
+                    const body = new URLSearchParams()
+                    body.set("grant_type", "refresh_token")
+                    body.set("refresh_token", token)
+
+                    const res = await request(url("/auth/token"), {
+                        method: "POST",
+                        body,
+                        headers: {
+                            "content-type" : "application/x-www-form-urlencoded",
+                            "Authorization": "Basic"
+                        }  
                     })
-                    .expect({error:"invalid_request",error_description:"The authorization header 'Basic' cannot be empty"})
-                    .expect(401);
+
+                    expect(res.status).to.equal(401)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: "The authorization header 'Basic' cannot be empty"
+                    })
                 });
 
-                it ("rejects invalid auth header", () => {
-                    return agent.post(PATH_TOKEN)
-                    .type('form')
-                    .set("Authorization", "Basic bXktYXB")
-                    .send({
-                        grant_type: "refresh_token",
-                        refresh_token: token
+                it ("rejects invalid auth header", async () => {
+                    const body = new URLSearchParams()
+                    body.set("grant_type", "refresh_token")
+                    body.set("refresh_token", token)
+
+                    const res = await request(url("/auth/token"), {
+                        method: "POST",
+                        body,
+                        headers: {
+                            "content-type" : "application/x-www-form-urlencoded",
+                            "Authorization": "Basic bXktYXB"
+                        }  
                     })
-                    .expect({ error: "invalid_request", error_description:"Bad authorization header 'Basic bXktYXB': The decoded header must contain '{client_id}:{client_secret}'" })
-                    .expect(401);
+
+                    expect(res.status).to.equal(401)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: "Bad authorization header 'Basic bXktYXB': The decoded header must contain '{client_id}:{client_secret}'"
+                    })
                 });
     
-                it ("can simulate invalid token errors", () => {
-                    return agent.post(PATH_TOKEN)
-                    .type('form')
-                    .set("Authorization", "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz")
-                    .send({
-                        grant_type: "authorization_code",
-                        code: jwt.sign({ auth_error:"token_invalid_token", redirect_uri: "x" }, config.jwtSecret),
-                        redirect_uri: "x"
+                it ("can simulate invalid token errors", async () => {
+
+                    const body = new URLSearchParams()
+                    body.set("grant_type", "authorization_code")
+                    body.set("redirect_uri", "x")
+                    body.set("code", jwt.sign({ auth_error:"token_invalid_token", redirect_uri: "x" }, config.jwtSecret))
+
+                    const res = await request(url("/auth/token"), {
+                        method: "POST",
+                        body,
+                        headers: {
+                            "content-type" : "application/x-www-form-urlencoded",
+                            "Authorization": "Basic bXktYXBwOm15LWFwcC1zZWNyZXQtMTIz"
+                        }  
                     })
-                    .expect({ error: "invalid_client", error_description: "Invalid token!" })
-                    .expect(401);
+
+                    expect(res.status).to.equal(401)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_client",
+                        error_description: "Invalid token!"
+                    })
                 });
             })
         });
 
         describe('Introspection', function() {
 
-            it("requires authorization", async () => {
-                await agent.post(PATH_INTROSPECT)
-                .expect(401, "Authorization is required")
+            it ("requires authorization", async () => {
+                const res = await request(url("/auth/introspect"), { method: "POST" })
+                expect(res.status).to.equal(401)
+                expect(res.statusText).to.equal("Unauthorized")
+                expect(await res.text()).to.equal("Authorization is required")
             })
 
-            it("rejects invalid token", async () => {
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer invalidToken`)
-                .expect(401)
+            it ("rejects invalid token", async () => {
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    headers: {
+                        'Authorization': `Bearer invalidToken`
+                    }
+                })
+                expect(res.status).to.equal(401)
             })
 
-            it("requires token in the payload", async () => {
+            it ("requires token in the payload", async () => {
                 const { code, redirect_uri } = await getAuthCode({
                     scope: "offline_access",
                     launch: {
@@ -709,16 +772,22 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.body);
+                const { access_token } = await getAccessToken(code, redirect_uri);
 
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer ${access_token}`)
-                .set('Accept', 'application/json')
-                .set('Content-Type', 'application/x-www-form-urlencoded')
-                .expect(400, "No token provided")
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                expect(res.status).to.equal(400)
+                expect(await res.text()).to.equal("No token provided")
             })
 
-            it("can introspect an access token", async () => {
+            it ("can introspect an access token", async () => {
                 const { code, redirect_uri } = await getAuthCode({
                     scope: "offline_access launch launch/patient openid fhirUser",
                     client_id: "example-client",
@@ -731,24 +800,33 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.body);
+                const { access_token } = await getAccessToken(code, redirect_uri);
 
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer ${access_token}`)
-                .set('Accept', 'application/json')
-                .set('Content-Type', 'application/x-www-form-urlencoded')
-                .send({ token: access_token })
-                .expect(200)
-                .expect(({ body }) => {
-                    expect(body.active).to.be.true;
-                    expect(body.exp).to.exist;
-                    expect(body.scope).to.exist;
-                    expect(body.patient).to.equal("abc");
-                    expect(body.client_id).to.equal("example-client");
-                })
+                const payload = new URLSearchParams()
+                payload.set("token", access_token)
+
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                expect(res.status).to.equal(200)
+
+                const body = await res.json();
+
+                expect(body.active).to.be.true;
+                expect(body.exp).to.exist;
+                expect(body.scope).to.exist;
+                expect(body.patient).to.equal("abc");
+                expect(body.client_id).to.equal("example-client");
             })
 
-            it("can introspect a refresh token", async () => {
+            it ("can introspect a refresh token", async () => {
                 const { code, redirect_uri } = await getAuthCode({
                     scope: "offline_access",
                     launch: {
@@ -760,20 +838,29 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token, refresh_token } = await getAccessToken(code, redirect_uri).then(res => res.body);
+                const { access_token, refresh_token } = await getAccessToken(code, redirect_uri);
 
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer ${access_token}`)
-                .set('Accept', 'application/json')
-                .set('Content-Type', 'application/x-www-form-urlencoded')
-                .send({ token: refresh_token })
-                .expect(200)
-                .expect(res => {
-                    if(res.body.active !== true) throw new Error("Token is not active.");
-                })
+                const payload = new URLSearchParams()
+                payload.set("token", refresh_token)
+
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                expect(res.status).to.equal(200)
+
+                const body = await res.json();
+
+                if(body.active !== true) throw new Error("Token is not active.");
             })
 
-            it("gets active: false for authorized request with invalid token", async () => {
+            it ("gets active: false for authorized request with invalid token", async () => {
                 const { code, redirect_uri } = await getAuthCode({
                     scope: "offline_access",
                     launch: {
@@ -785,22 +872,31 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.body);
+                const { access_token } = await getAccessToken(code, redirect_uri);
 
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer ${access_token}`)
-                .set('Accept', 'application/json')
-                .set('Content-Type', 'application/x-www-form-urlencoded')
-                .send({ token: "invalid token" })
-                .expect(200)
-                .expect('content-type', /json/)
-                .expect(({ body }) => {
-                    expect(body.active).to.equal(false)
-                    expect(body.error.name).to.equal("JsonWebTokenError")
-                })
+                const payload = new URLSearchParams()
+                payload.set("token", "invalid token")
+
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                expect(res.status).to.equal(200)
+                expect(res.headers.get('content-type')).to.match(/json/)
+
+                const body = await res.json();
+
+                expect(body.active).to.equal(false)
+                expect(body.error.name).to.equal("JsonWebTokenError")
             })
 
-            it("gets active: false for authorized request with expired token", async () => {
+            it ("gets active: false for authorized request with expired token", async () => {
 
                 const expiredTokenPayload = {
                     client_id: "mocked",
@@ -821,19 +917,28 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.body);
+                const { access_token } = await getAccessToken(code, redirect_uri);
 
-                await agent.post(PATH_INTROSPECT)
-                .set('Authorization', `Bearer ${access_token}`)
-                .set('Accept', 'application/json')
-                .set('Content-Type', 'application/x-www-form-urlencoded')
-                .send({ token: expiredToken })
-                .expect(200)
-                .expect('content-type', /json/)
-                .expect(({ body }) => {
-                    expect(body.active).to.equal(false)
-                    expect(body.error.name).to.equal("TokenExpiredError")
-                })
+                const payload = new URLSearchParams()
+                payload.set("token", expiredToken)
+
+                const res = await request(url("/auth/introspect"), {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                expect(res.status).to.equal(200)
+                expect(res.headers.get('content-type')).to.match(/json/)
+
+                const body = await res.json();
+
+                expect(body.active).to.equal(false)
+                expect(body.error.name).to.equal("TokenExpiredError")
             })
         })
 
@@ -841,59 +946,137 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
             describe('Client Registration', () => {
         
-                it ("requires form-urlencoded POST", () => {
-                    return agent.post(PATH_REGISTER).send({}).expect(400, {
+                it ("requires form-urlencoded POST", async () => {
+                    const res = await request(url("/auth/register"), { method: "POST" });
+                    expect(res.status).to.equal(400)
+                    expect(await res.json()).to.deep.equal({
                         error: "invalid_request",
                         error_description: "Invalid request content-type header (must be 'application/x-www-form-urlencoded')"
                     })
                 });
         
-                it ("requires 'iss' parameter", () => {
-                    return agent.post(PATH_REGISTER).type("form").send({})
-                        .expect(400, { error: "invalid_request", error_description: 'Missing parameter "iss"' })
+                it ("requires 'iss' parameter", async () => {
+                    const res = await request(url("/auth/register"), {
+                        method: "POST",
+                        body: "",
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+                    expect(res.status).to.equal(400)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: 'Missing parameter "iss"'
+                    })
                 });
         
-                it ("requires 'pub_key' parameter", () => {
-                    return agent.post(PATH_REGISTER).type("form").send({ iss: "whatever" })
-                        .expect(400, { error: "invalid_request", error_description: 'Missing parameter "pub_key"' })
+                it ("requires 'pub_key' parameter", async () => {
+                    const payload = new URLSearchParams()
+                    payload.set("iss", "whatever")
+                    const res = await request(url("/auth/register"), {
+                        method: "POST",
+                        body: payload,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+                    expect(res.status).to.equal(400)
+                    expect(await res.json()).to.deep.equal({
+                        error: "invalid_request",
+                        error_description: 'Missing parameter "pub_key"'
+                    })
                 });
         
                 it ("validates the 'dur' parameter", () => {
                     return Promise.all(
-                        ["x", Infinity, -Infinity, -2].map(dur => {
-                            return agent.post(PATH_REGISTER).type("form").send({ iss: "whatever", pub_key: "abc", dur })
-                                .expect(400, { error: "invalid_request", error_description: 'Invalid parameter "dur"' });
+                        ["x", Infinity, -Infinity, -2].map(async dur => {
+
+                            const payload = new URLSearchParams()
+                            payload.set("iss", "whatever")
+                            payload.set("pub_key", "abc")
+                            payload.set("dur", dur + "")
+
+                            const res = await request(url("/auth/register"), {
+                                method: "POST",
+                                body: payload,
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded'
+                                }
+                            });
+                            expect(res.status).to.equal(400)
+                            expect(await res.json()).to.deep.equal({
+                                error: "invalid_request",
+                                error_description: 'Invalid parameter "dur"'
+                            })
                         })
                     )
                 });
         
-                it ("basic usage", () => {
-                    return agent.post(PATH_REGISTER)
-                    .type("form")
-                    .send({ iss: "whatever", pub_key: "something" })
-                    .expect(200)
-                    .expect("content-type", /\btext\/plain\b/i)
-                    .expect(res => expect(jwt.decode(res.text)).to.not.be.null);
+                it ("basic usage", async () => {
+                    const payload = new URLSearchParams()
+                    payload.set("iss", "whatever")
+                    payload.set("pub_key", "something")
+
+                    const res = await request(url("/auth/register"), {
+                        method: "POST",
+                        body: payload,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+
+                    expect(res.status).to.equal(200)
+                    expect(res.headers.get("content-type")).to.match(/\btext\/plain\b/i)
+
+                    const txt = await res.text()
+
+                    expect(jwt.decode(txt)).to.not.be.null;
                 });
         
-                it ("accepts custom duration", () => {
-                    return agent.post(PATH_REGISTER)
-                    .type("form")
-                    .send({ iss: "whatever", pub_key: "something", dur: 23 })
-                    .expect(200)
-                    .expect("content-type", /\btext\/plain\b/i)
+                it ("accepts custom duration", async () => {
+                    const payload = new URLSearchParams()
+                    payload.set("iss", "whatever")
+                    payload.set("pub_key", "something")
+                    payload.set("dur", "23")
+
+                    const res = await request(url("/auth/register"), {
+                        method: "POST",
+                        body: payload,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+
+                    expect(res.status).to.equal(200)
+                    expect(res.headers.get("content-type")).to.match(/\btext\/plain\b/i)
+
+                    const txt = await res.text()
+
                     // @ts-ignore
-                    .expect(res => expect(jwt.decode(res.text).accessTokensExpireIn).to.equal(23))
+                    expect(jwt.decode(txt).accessTokensExpireIn).to.equal(23)
                 });
         
-                it ("accepts custom simulated errors", () => {
-                    return agent.post(PATH_REGISTER)
-                    .type("form")
-                    .send({ iss: "whatever", pub_key: "something", auth_error: "test error" })
-                    .expect(200)
-                    .expect("content-type", /\btext\/plain\b/i)
+                it ("accepts custom simulated errors", async () => {
+                    const payload = new URLSearchParams()
+                    payload.set("iss", "whatever")
+                    payload.set("pub_key", "something")
+                    payload.set("auth_error", "test error")
+
+                    const res = await request(url("/auth/register"), {
+                        method: "POST",
+                        body: payload,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+
+                    expect(res.status).to.equal(200)
+                    expect(res.headers.get("content-type")).to.match(/\btext\/plain\b/i)
+
+                    const txt = await res.text()
+
                     // @ts-ignore
-                    .expect(res => expect(jwt.decode(res.text).auth_error).to.equal("test error"))
+                    expect(jwt.decode(txt).auth_error).to.equal("test error")
                 });
             });
         
@@ -904,10 +1087,17 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 const alg = "RS384"
                 const key = await jose.JWK.createKey("RSA", 2048, { alg })
 
-                const token = await agent.post(PATH_REGISTER)
-                .type("form")
-                .send({ iss, pub_key: key.toPEM() })
-                .then(res => res.text);
+                const payload = new URLSearchParams()
+                payload.set("iss", iss)
+                payload.set("pub_key", key.toPEM())
+
+                const token = await request(url("/auth/register"), {
+                    method: "POST",
+                    body: payload,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }).then(res => res.text());
 
                 let jwtToken = {
                     iss,
@@ -917,29 +1107,32 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     jti: crypto.randomBytes(32).toString("hex")
                 };
             
-                await agent.post(tokenUrl.pathname)
-                .type("form")
-                .send({
-                    scope: "system/*.*",
-                    grant_type: "client_credentials",
-                    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                    client_assertion: jwt.sign(jwtToken, key.toPEM(true), { algorithm: alg })
-                })
-                .then(res => {
-                    // console.log(res.text)
-                    if (res.body.token_type !== "bearer") {
-                        throw new Error(`Authorization failed! Expecting token_type: bearer but found ${res.body.token_type}`);
+                const payload2 = new URLSearchParams()
+                payload2.set("scope", "system/*.*")
+                payload2.set("grant_type", "client_credentials")
+                payload2.set("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+                payload2.set("client_assertion", jwt.sign(jwtToken, key.toPEM(true), { algorithm: alg }))
+
+                const tokenResponse = await request(tokenUrl, {
+                    method: "POST",
+                    body: payload2,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     }
-                    if (res.body.expires_in !== 900) {
-                        throw new Error(`Authorization failed! Expecting expires_in: 900 but found ${res.body.expires_in}`);
-                    }
-                    if (!res.body.access_token) {
-                        throw new Error(`Authorization failed! No access_token returned`);
-                    }
-                    if (res.body.access_token.split(".").length != 3) {
-                        throw new Error("Did not return proper access_token");
-                    }
-                })
+                }).then(res => res.json());
+
+                if (tokenResponse.token_type !== "bearer") {
+                    throw new Error(`Authorization failed! Expecting token_type: bearer but found ${tokenResponse.token_type}`);
+                }
+                if (tokenResponse.expires_in !== 900) {
+                    throw new Error(`Authorization failed! Expecting expires_in: 900 but found ${tokenResponse.expires_in}`);
+                }
+                if (!tokenResponse.access_token) {
+                    throw new Error(`Authorization failed! No access_token returned`);
+                }
+                if (tokenResponse.access_token.split(".").length != 3) {
+                    throw new Error("Did not return proper access_token");
+                }
             });
         });
     })

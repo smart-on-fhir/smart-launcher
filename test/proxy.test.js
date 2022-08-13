@@ -1,26 +1,21 @@
-const nock       = require("nock")
-const jwt        = require("jsonwebtoken")
-const request    = require("supertest")
-const { expect } = require("chai")
-const config     = require("../src/config")
-const app        = require("../src/index.js")
-const Lib        = require("../src/lib")
+const nock         = require("nock")
+const jwt          = require("jsonwebtoken")
+const { expect }   = require("chai")
+const config       = require("../src/config")
+const Lib          = require("../src/lib")
+const { BASE_URL } = require("./testSetup")
 
-const agent = request(app);
 
-["r2", "r3", "r4"].forEach(FHIR_VERSION => {
+;["r2", "r3", "r4"].forEach(FHIR_VERSION => {
 
     describe(`FHIR Server ${FHIR_VERSION}`, () => {    
 
-        const BASE_URL          = config.baseUrl
         const UPSTREAM_BASE_URL = "http://" + FHIR_VERSION + ".upstream.test:8000"
         const PATH_AUTHORIZE    = `/v/${FHIR_VERSION}/auth/authorize`
         const PATH_TOKEN        = `/v/${FHIR_VERSION}/auth/token`
         const PATH_INTROSPECT   = `/v/${FHIR_VERSION}/auth/introspect`
-        const PATH_FHIR         = `/v/${FHIR_VERSION}/fhir`
-        const PATH_METADATA     = `/v/${FHIR_VERSION}/fhir/metadata`
-        const URI_AUTHORIZE     = `${BASE_URL}${PATH_AUTHORIZE}`
-        const URI_TOKEN         = `${BASE_URL}${PATH_TOKEN}`
+        const PATH_FHIR         = `${BASE_URL}/v/${FHIR_VERSION}/fhir`
+        const PATH_METADATA     = `${BASE_URL}/v/${FHIR_VERSION}/fhir/metadata`
 
         describe('Proxy', function() {
 
@@ -30,14 +25,17 @@ const agent = request(app);
             });
 
             it ("Rejects unknown fhir versions", async () => {
-                const url = "/v/no-such-fhir-version/fhir/Patient";
-                await agent.get(url).expect(400, /FHIR server .+ not found/)
+                const url = BASE_URL + "/v/no-such-fhir-version/fhir/Patient";
+                const res = await fetch(url)
+                expect(res.status).to.equal(400)
+                expect(await res.text()).to.match(/FHIR server .+ not found/)
             })
 
             it ("Validates the FHIR version", async () => {
-                await agent.get("/v/r123/fhir/Patient")
-                .expect(400, '{"error":"FHIR server r123 not found"}')
-                .expect('Content-Type', /json/)
+                const res = await fetch(BASE_URL + "/v/r123/fhir/Patient")
+                expect(res.status).to.equal(400)
+                expect(res.headers.get('Content-Type')).to.match(/\bjson\b/)
+                expect(await res.json()).to.deep.equal({"error":"FHIR server r123 not found"})
             });
 
             it ("Handles upstream being down in case of metadata request", async () => {
@@ -45,10 +43,9 @@ const agent = request(app);
                     .get("/metadata")
                     .replyWithError({ code: 503, message: "Service unavailable" });
 
-                await agent.get(PATH_METADATA)
-                // .set('Accept', 'text/html')
-                // .expect('content-type', /application\/(fhir\+json|json\+fhir|json)/)
-                .expect(503, /Service unavailable/)
+                const res = await fetch(PATH_METADATA)
+                expect(res.status).to.equal(503)
+                expect(await res.text()).to.match(/Service unavailable/)
             })
 
             it ("Replies with proper content type", async () => {
@@ -59,10 +56,15 @@ const agent = request(app);
                     .get("/metadata")
                     .reply(200, { x: 1 }, { "content-type": "application/json" });
 
-                await agent.get(PATH_METADATA)
-                .set('Accept', 'text/html')
-                .expect('content-type', /application\/(fhir\+json|json\+fhir|json)/)
-                .expect(200, {"x":1})
+                const res = await fetch(PATH_METADATA, {
+                    headers: {
+                        accept: 'text/html' 
+                    }
+                })
+
+                expect(res.status).to.equal(200)
+                expect(res.headers.get('Content-Type')).to.match(/application\/(fhir\+json|json\+fhir|json)/)
+                expect(await res.json()).to.deep.equal({ "x": 1 })
             });
 
             it ("Removes custom headers", async () => {
@@ -74,17 +76,20 @@ const agent = request(app);
                     .get("/Patient")
                     .reply(200, {}, { 'x-custom': "whatever" });
 
-                await agent.get(`${PATH_FHIR}/Patient`).expect(
-                    res => expect(res.header['x-custom']).to.equal(undefined)
-                )
+                const res = await fetch(`${PATH_FHIR}/Patient`)
+                expect(res.headers.get('x-custom')).to.not.exist
             });
 
             it ("Validates the auth token if one is sent", async () => {
-                await agent.get(`${PATH_FHIR}/Patient`)
-                .set("authorization", "Bearer whatever")
-                .expect('Content-Type', /text/)
-                .expect(/Invalid token\: /)
-                .expect(401)
+                const res = await fetch(`${PATH_FHIR}/Patient`, {
+                    headers: {
+                        authorization: "Bearer whatever"
+                    }
+                });
+                
+                expect(res.status).to.equal(401)
+                expect(res.headers.get('Content-Type')).to.match(/text/)
+                expect(await res.text()).to.match(/Invalid token\: /)
             });
             
             it ("Adjust urls in the fhir response", async () => {
@@ -97,13 +102,8 @@ const agent = request(app);
                         "content-type": "application/json"
                     });
 
-                await agent.get(`${PATH_FHIR}/Patient`)
-                .expect(res => {
-                    if (res.text.indexOf(UPSTREAM_BASE_URL) > -1) {
-                        console.log(res.text)
-                        throw new Error("Not all URLs replaced");
-                    }
-                })
+                const text = await fetch(`${PATH_FHIR}/Patient`).then(r => r.text())
+                expect(text.indexOf(UPSTREAM_BASE_URL)).to.equal(-1, "Not all URLs replaced");
             });
 
             it ("Adjust urls in the fhir response of the CapabilityStatement", async () => {
@@ -116,13 +116,8 @@ const agent = request(app);
                         "content-type": "application/json"
                     });
 
-                await agent.get(`${PATH_FHIR}/metadata`)
-                .expect(res => {
-                    if (res.text.indexOf(UPSTREAM_BASE_URL) > -1) {
-                        console.log(res.text)
-                        throw new Error("Not all URLs replaced");
-                    }
-                })
+                const text = await fetch(`${PATH_FHIR}/metadata`).then(r => r.text())
+                expect(text.indexOf(UPSTREAM_BASE_URL)).to.equal(-1, "Not all URLs replaced");
             });
 
             it ("Handles pagination", async () => {
@@ -131,58 +126,59 @@ const agent = request(app);
                     .get("/Patient")
                     .replyWithFile(200, "./test/mocks/PatientBundlePage1.json", { "content-type": "application/json" });
 
-                await agent.get(`${PATH_FHIR}/Patient`).expect(async (res) => {
-                    if (!Array.isArray(res.body.link)) {
-                        throw new Error("No links found");
-                    }
-
-                    let next = res.body.link.find(l => l.relation == "next")
-                    if (!next) {
-                        throw new Error("No next link found");
-                    }
+                
+                const body = await fetch(`${PATH_FHIR}/Patient`).then(r => r.json())
                     
-                    const nextURL = new URL(next.url)
+                expect(body.link).to.be.an("Array", "No links found");
 
-                    nock(UPSTREAM_BASE_URL)
-                    .get(nextURL.pathname)
+                let next = body.link.find(l => l.relation == "next")
+                expect(next, "No next link found").to.exist;
+                
+                const nextURL = new URL(next.url)
+                nextURL.host = FHIR_VERSION + ".upstream.test:8000"
+
+                nock(UPSTREAM_BASE_URL)
+                    .get(nextURL.pathname + nextURL.search)
                     .replyWithFile(200, "./test/mocks/PatientBundlePage2.json", { "content-type": "application/json" });
 
-                    const res2 = await agent.get(nextURL.pathname + nextURL.search)
-                    
-                    if (!Array.isArray(res2.body.link)) {
-                        throw new Error("No links found on second page");
-                    }
+                const body2 = await fetch(PATH_FHIR + nextURL.pathname + nextURL.search).then(r => r.json())
 
-                    let self = res2.body.link.find(l => l.relation == "self")
+                expect(body2.link).to.be.an("Array", "No links found on second page");
+                if (!Array.isArray(body2.link)) {
+                    throw new Error("No links found on second page");
+                }
 
-                    if (!self) {
-                        throw new Error("No self link found on second page");
-                    }
-                    
-                    if (self.url !== next.url) {
-                        throw new Error("Links mismatch");
-                    }
+                let self = body2.link.find(l => l.relation == "self")
 
-                    let next2 = res.body.link.find(l => l.relation == "next")
+                if (!self) {
+                    throw new Error("No self link found on second page");
+                }
+                
+                if (self.url !== next.url) {
+                    throw new Error("Links mismatch");
+                }
 
-                    if (!next2) {
-                        throw new Error("No next link found on second page");
-                    }
-                })
+                let next2 = body2.link.find(l => l.relation == "next")
+
+                if (!next2) {
+                    throw new Error("No next link found on second page");
+                }
             });
 
             it ("Replies with formatted JSON for bundles", async () => {
                 nock(UPSTREAM_BASE_URL)
                     .get("/Patient")
                     .reply(200, JSON.stringify({ a: [1] }, null, 4), { "content-type": "application/json" });
-                await agent.get(`${PATH_FHIR}/Patient`).expect(/\n.+/);
+                const txt = await fetch(`${PATH_FHIR}/Patient`).then(r => r.text());
+                expect(txt).to.match(/\n.+/);
             });
 
             it ("Replies with formatted JSON for single resources", async () => {
                 nock(UPSTREAM_BASE_URL)
                     .get("/Patient/1")
                     .reply(200, JSON.stringify({ a: 1 }, null, 4), { "content-type": "application/json" });
-                await agent.get(`${PATH_FHIR}/Patient/1`).expect(/\n.+/);
+                const txt = await fetch(`${PATH_FHIR}/Patient/1`).then(r => r.text());
+                expect(txt).to.match(/\n.+/);
             });
 
             it ("Passes through the content-type, etag and location response headers", async () => {
@@ -193,10 +189,10 @@ const agent = request(app);
                         "etag"        : "test-custom-etag",
                         "location"    : "test-custom-location"
                     });
-                await agent.get(`${PATH_FHIR}/Patient`)
-                    .expect("content-type", "application/test-custom-type")
-                    .expect("etag"        , "test-custom-etag")
-                    .expect("location"    , "test-custom-location");
+                const res = await fetch(`${PATH_FHIR}/Patient`);
+                expect(res.headers.get("content-type")).to.equal("application/test-custom-type")
+                expect(res.headers.get("etag")).to.equal("test-custom-etag")
+                expect(res.headers.get("location")).to.equal("test-custom-location")
             })
 
             it ('Injects the SMART information in metadata responses', async () => {
@@ -204,30 +200,30 @@ const agent = request(app);
                     .get("/metadata")
                     .replyWithFile(200, "./test/mocks/CapabilityStatement.json", { "content-type": "application/json" });
             
-                await agent.get(PATH_METADATA)
-                .expect('content-type', /\bjson\b/i)
-                .expect(200)
-                .expect(res => {
-                    let uris = Lib.getPath(res.body, "rest.0.security.extension.0.extension");
-                    
-                    // authorize -----------------------------------------------
-                    let authorizeCfg = uris.find(o => o.url == "authorize");
-                    if (!authorizeCfg) {
-                        throw new Error("No 'authorize' endpoint found in the conformance statement");
-                    }
-                    if (authorizeCfg.valueUri != URI_AUTHORIZE) {
-                        throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
-                    }
+                const res = await fetch(PATH_METADATA)
+                expect(res.status).to.equal(200)
+                expect(res.headers.get("content-type")).to.match(/\bjson\b/i)
+                const body = await res.json()
 
-                    // token ---------------------------------------------------
-                    let tokenCfg = uris.find(o => o.url == "token");
-                    if (!tokenCfg) {
-                        throw new Error("No 'token' endpoint found in the conformance statement");
-                    }
-                    if (tokenCfg.valueUri != URI_TOKEN) {
-                        throw new Error("Wrong 'token' endpoint found in the conformance statement");
-                    }
-                });
+                let uris = Lib.getPath(body, "rest.0.security.extension.0.extension");
+                
+                // authorize ---------------------------------------------------
+                let authorizeCfg = uris.find(o => o.url == "authorize");
+                if (!authorizeCfg) {
+                    throw new Error("No 'authorize' endpoint found in the conformance statement");
+                }
+                if (authorizeCfg.valueUri != `${config.baseUrl}${PATH_AUTHORIZE}`) {
+                    throw new Error("Wrong 'authorize' endpoint found in the conformance statement");
+                }
+
+                // token -------------------------------------------------------
+                let tokenCfg = uris.find(o => o.url == "token");
+                if (!tokenCfg) {
+                    throw new Error("No 'token' endpoint found in the conformance statement");
+                }
+                if (tokenCfg.valueUri != `${config.baseUrl}${PATH_TOKEN}`) {
+                    throw new Error("Wrong 'token' endpoint found in the conformance statement");
+                }
             });
 
             it ("includes the introspect endpoint in the CapabilityStatement", async () => {
@@ -235,20 +231,26 @@ const agent = request(app);
                     .get("/metadata")
                     .replyWithFile(200, "./test/mocks/CapabilityStatement.json", { "content-type": "application/json" });
                 
-                await agent.get(PATH_METADATA).expect(/json/).expect(200).then(response => {
-                    const oauthUris = response.body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
-                    expect(oauthUris);
-                    const introspection = oauthUris.extension.find(e => e.url === "introspect");
-                    expect(introspection);
-                    expect(new URL(introspection.valueUri).pathname).equal(PATH_INTROSPECT);
-                })
+                const res = await fetch(PATH_METADATA)
+                expect(res.status).to.equal(200)
+                expect(res.headers.get("content-type")).to.match(/\bjson\b/)
+                const body = await res.json()
+                const oauthUris = body.rest[0].security.extension.find(e => /StructureDefinition\/oauth-uris$/.test(e.url));
+                expect(oauthUris).to.exist;
+                const introspection = oauthUris.extension.find(e => e.url === "introspect");
+                expect(introspection).to.exist;
+                expect(new URL(introspection.valueUri).pathname).equal(PATH_INTROSPECT);
             })
 
             it ("Can simulate custom token errors", async () => {
                 const token = jwt.sign({ sim_error: "test error" }, config.jwtSecret)
-                await agent.get(`${PATH_FHIR}/Patient`)
-                .set("authorization", "bearer " + token)
-                .expect(401, "test error");
+                const res = await fetch(`${PATH_FHIR}/Patient`, {
+                    headers: {
+                        authorization: "bearer " + token
+                    }
+                });
+                expect(res.status).to.equal(401)
+                expect(await res.text()).to.equal("test error");
             });
         });
     });
