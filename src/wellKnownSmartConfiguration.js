@@ -28,6 +28,11 @@ module.exports = (req, res) => {
         // revoke a token.
         "revocation_endpoint": undefined,
 
+        // For PKCE, a list of supported challenge methods the client can choose
+        "code_challenge_methods_supported": [
+            "S256"
+        ],
+
         // OPTIONAL, array of client authentication methods supported by the
         // token endpoint. The options are “client_secret_post” and “client_secret_basic”.
         "token_endpoint_auth_methods_supported": [
@@ -133,6 +138,9 @@ module.exports = (req, res) => {
 
             // support for user-level scopes (e.g. user/Appointment.read).
             "permission-user",
+
+            // support for SMARTv2 scopes (e.g., `patient/Observation.rs`)
+            "permission-v2",
 
             // support for POST-based authorization
             "authorize-post"

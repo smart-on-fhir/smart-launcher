@@ -228,6 +228,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             expect(json.capabilities).to.be.an("Array")
             
             // SMART v2
+            expect(json.capabilities).to.include("permission-v2")
             expect(json.capabilities).to.include("authorize-post")
 
             // PKCE

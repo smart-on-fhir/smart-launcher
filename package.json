@@ -13,9 +13,10 @@
     "test:cover": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc --reporter=lcov --reporter=text mocha --exit",
     "test:watch": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/mocha --watch",
     "coverage": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nyc report",
+    "coverage:watch": "DOTENV_CONFIG_PATH=env/test.env node -r dotenv/config ./node_modules/.bin/nodemon ./node_modules/.bin/nyc --reporter=lcov mocha --exit",
     "test:e2e": "NODE_ENV=test node ./selenium-download.js && ./node_modules/nightwatch/bin/nightwatch",
     "cert": "openssl genrsa -out private-key.pem 2048 && openssl rsa -in private-key.pem -outform PEM -pubout -out public-key.pem",
-    "dev": "concurrently npm:watch npm:test:watch"
+    "dev": "concurrently npm:watch npm:coverage:watch"
   },
   "author": "Dan Gottlieb, Vladimir Ignatov",
   "license": "ISC",

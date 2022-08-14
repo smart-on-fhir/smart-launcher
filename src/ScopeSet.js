@@ -84,8 +84,8 @@ class ScopeSet
      * @returns {String} The invalid scope or empty string on success
      * @static
      */
-    static getInvalidSystemScopes(scopes) {
-        scopes = String(scopes || "").trim();
+    static getInvalidSystemScopes(scopes = "") {
+        scopes = String(scopes).trim();
         return scopes.split(/\s+/).find(s => !(
             /^system\/(\*|[A-Z][a-zA-Z]+)(\.(read|write|\*))?$/.test(s)
         )) || "";
