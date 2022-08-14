@@ -181,6 +181,8 @@ class AuthorizeHandler extends SMARTHandler {
                 }),
                 client_id            : this.inputs.client_id,
                 scope                : this.inputs.scope,
+                code_challenge_method: this.inputs.code_challenge_method,
+                code_challenge       : this.inputs.code_challenge,
                 sde                  : sim.sde
             };
 
@@ -291,12 +293,6 @@ class AuthorizeHandler extends SMARTHandler {
             throw Lib.OAuthError.from(errors.authorization_code.bad_redirect_uri, ex.message)
         }
 
-        // Relative redirect_uri like "whatever" will eventually result in wrong
-        // URLs like "/auth/whatever". We must only support full URLs. 
-        if (!RedirectURL.protocol) {
-            throw Lib.OAuthError.from(errors.authorization_code.no_redirect_uri_protocol, req.query.redirect_uri)
-        }
-
         // The "aud" param must match the apiUrl (but can have different protocol)
         if (!sim.aud_validated) {
             const apiUrl = Lib.buildUrlPath(Lib.getRequestBaseURL(req), req.baseUrl, "fhir");
@@ -306,6 +302,14 @@ class AuthorizeHandler extends SMARTHandler {
                 throw new Lib.OAuthError(302, "Bad audience value", "invalid_request")
             }
             sim.aud_validated = "1";
+        }
+
+        if (this.inputs.code_challenge_method && this.inputs.code_challenge_method !== 'S256') {
+            throw new Lib.OAuthError(302, "Invalid code_challenge_method. Must be S256.", "invalid_request")
+        }
+
+        if (this.inputs.code_challenge_method && !this.inputs.code_challenge) {
+            throw new Lib.OAuthError(302, "Missing code_challenge parameter", "invalid_request")
         }
 
         return true;

@@ -229,6 +229,10 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             
             // SMART v2
             expect(json.capabilities).to.include("authorize-post")
+
+            // PKCE
+            expect(json.code_challenge_methods_supported).to.be.an("Array")
+            expect(json.code_challenge_methods_supported).to.include("S256")
         })
 
         describe('Auth', () => {
@@ -493,47 +497,48 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
 
                 // PKCE
                 // -------------------------------------------------------------
-                // it.skip ("validates the code_challenge_method parameter", async () => {
-                //     return getAuthCodeRaw({ code_challenge_method: "plain" })
-                //     .expect(302)
-                //     .then((res) => {
-                //         expect(res.get("location")).to.match(/Invalid\+code_challenge_method\+parameter/)
-                //     });
-                // });
+                it ("validates the code_challenge_method parameter", async () => {
+                    const res = await getAuthCodeRaw({ code_challenge_method: "plain" })
+                    expect(res.status).to.equal(302)
+                    const url = new URL(res.headers.get("location") + "")
+                    expect(url.searchParams.get("error")).to.equal("invalid_request")
+                    expect(url.searchParams.get("error_description")).to.equal("Invalid code_challenge_method. Must be S256.")
+                });
 
-                // it.skip ("validates the code_challenge parameter", () => {
-                //     return getAuthCodeRaw({ code_challenge_method: "S256" })
-                //     .expect(302)
-                //     .then((res) => {
-                //         expect(res.get("location")).to.match(/Missing\+code_challenge\+parameter/)
-                //     });
-                // });
+                it ("validates the code_challenge parameter", async () => {
+                    const res = await getAuthCodeRaw({ code_challenge_method: "S256" })
+                    expect(res.status).to.equal(302)
+                    const url = new URL(res.headers.get("location") + "")
+                    expect(url.searchParams.get("error")).to.equal("invalid_request")
+                    expect(url.searchParams.get("error_description")).to.equal("Missing code_challenge parameter")
+                });
 
-                // it.skip ("fails with PKCE S256 and an invalid code_verifier", async () => {
-                //     const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
-                //     const hash = crypto.createHash('sha256');
-                //     hash.update(code_verifier);
-                //     const code_challenge = jose.util.base64url.encode(hash.digest());
-                //     const { code, redirect_uri } = await getAuthCode({
-                //         code_challenge_method: "S256",
-                //         code_challenge,
-                //     });
-                //     await getAccessToken(code, redirect_uri, 'bad-verifier')
-                //         .expect(401)
-                //         .expect(/Invalid grant or Invalid PKCE Verifier/)
-                // });
+                it ("fails with PKCE S256 and an invalid code_verifier", async () => {
+                    const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
+                    const hash = crypto.createHash('sha256');
+                    hash.update(code_verifier);
+                    const code_challenge = jose.util.base64url.encode(hash.digest());
+                    const { code, redirect_uri } = await getAuthCode({
+                        code_challenge_method: "S256",
+                        code_challenge,
+                    });
+                    const res = await getAccessToken(code, redirect_uri, 'bad-verifier')
+                    expect(res.status).to.equal(401)
+                    expect(await res.text()).to.match(/Invalid grant or Invalid PKCE Verifier/)
+                });
         
-                // it.skip ("succeeds with PKCE S256 and an valid code_verifier", async () => {
-                //     const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
-                //     const hash = crypto.createHash('sha256');
-                //     hash.update(code_verifier);
-                //     const code_challenge = jose.util.base64url.encode(hash.digest());
-                //     const { code, redirect_uri } = await getAuthCode({
-                //         code_challenge_method: "S256",
-                //         code_challenge,
-                //     });
-                //     return getAccessToken(code, redirect_uri, code_verifier).expect(200)
-                // });
+                it ("succeeds with PKCE S256 and an valid code_verifier", async () => {
+                    const code_verifier = jose.util.base64url.encode(crypto.randomBytes(32));
+                    const hash = crypto.createHash('sha256');
+                    hash.update(code_verifier);
+                    const code_challenge = jose.util.base64url.encode(hash.digest());
+                    const { code, redirect_uri } = await getAuthCode({
+                        code_challenge_method: "S256",
+                        code_challenge,
+                    });
+                    const res = await getAccessToken(code, redirect_uri, code_verifier)
+                    expect(res.status).to.equal(200)
+                });
 
             })
 
