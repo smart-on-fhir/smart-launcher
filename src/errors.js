@@ -62,13 +62,6 @@ module.exports = {
             msg  : "Unauthorized",
             code : 302,
             type : "oauth"
-        },
-
-        no_redirect_uri_protocol: {
-            error: "invalid_request",
-            msg  : "Invalid redirect_uri parameter '%s' (must be full URL)",
-            code : 400,
-            type : "oauth"
         }
     },
 

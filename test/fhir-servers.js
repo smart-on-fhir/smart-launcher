@@ -72,7 +72,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
      * @param {string} code 
      * @param {string} redirect_uri
      * @param {string} [code_verifier]
-     * @returns {Promise<Record<string, any>>}
+     * @returns {Promise<Response>}
      */
     async function getAccessToken(code, redirect_uri, code_verifier) {
         const formData = new URLSearchParams()
@@ -90,7 +90,6 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                 "content-type": "application/x-www-form-urlencoded"
             }
         })
-        .then(res => res.json())
     }
 
     /**
@@ -223,6 +222,13 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
             const res = await request(url("/fhir/.well-known/smart-configuration"))
             expect(res.headers.get('content-type')).to.match(/json/)
             expect(res.status).to.equal(200)
+
+            const json = await res.json()
+            expect(json).to.be.an("Object")
+            expect(json.capabilities).to.be.an("Array")
+            
+            // SMART v2
+            expect(json.capabilities).to.include("authorize-post")
         })
 
         describe('Auth', () => {
@@ -276,8 +282,8 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     const body = await res.json()
                     expect(body).to.deep.equal({
                         error: "invalid_request",
-                        error_description: "Invalid redirect_uri parameter 'x' (must be full URL)" }
-                    )
+                        error_description: "Bad redirect_uri: Invalid URL"
+                    })
                 });
 
                 it (`can simulate invalid_redirect_uri error`, async () => {
@@ -477,12 +483,13 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     expect(res.headers.get("location")).to.match(/\/login\?/)
                 });
 
-                // it ("Works with POST", () => {
-                //     return getAuthCode({
-                //         scope : "offline_access",
-                //         method: "POST"
-                //     }).then(({ code }) => expect(code).to.have.length.greaterThan(10));
-                // });
+                it ("Works with POST", async () => {
+                    const { code } = await getAuthCode({
+                        scope : "offline_access",
+                        method: "POST"
+                    })
+                    expect(code).to.have.length.greaterThan(10);
+                });
 
                 // PKCE
                 // -------------------------------------------------------------
@@ -569,7 +576,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     })
                     
-                    const tokenResponse = await getAccessToken(code, redirect_uri)
+                    const tokenResponse = await getAccessToken(code, redirect_uri).then(res => res.json())
 
                     /**
                      * @type {object}
@@ -607,7 +614,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                         }
                     });
 
-                    const tokenResponse = await getAccessToken(code, redirect_uri)
+                    const tokenResponse = await getAccessToken(code, redirect_uri).then(res => res.json())
 
                     expect(tokenResponse).to.have.property("id_token")
 
@@ -631,7 +638,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     launch: { launch_pt: 1 }
                 });
 
-                const { id_token } = await getAccessToken(code, redirect_uri)
+                const { id_token } = await getAccessToken(code, redirect_uri).then(res => res.json())
 
                 // Then get the jwks_uri from .well-known/openid-configuration
                 const wellKnown = await request(url("/fhir/.well-known/openid-configuration"))
@@ -772,7 +779,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri);
+                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.json());
 
                 const res = await request(url("/auth/introspect"), {
                     method: "POST",
@@ -800,7 +807,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri);
+                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.json());
 
                 const payload = new URLSearchParams()
                 payload.set("token", access_token)
@@ -838,7 +845,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token, refresh_token } = await getAccessToken(code, redirect_uri);
+                const { access_token, refresh_token } = await getAccessToken(code, redirect_uri).then(res => res.json());
 
                 const payload = new URLSearchParams()
                 payload.set("token", refresh_token)
@@ -872,7 +879,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri);
+                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.json());
 
                 const payload = new URLSearchParams()
                 payload.set("token", "invalid token")
@@ -917,7 +924,7 @@ for(const FHIR_VERSION in TESTED_FHIR_SERVERS) {
                     }
                 });
                 
-                const { access_token } = await getAccessToken(code, redirect_uri);
+                const { access_token } = await getAccessToken(code, redirect_uri).then(res => res.json());
 
                 const payload = new URLSearchParams()
                 payload.set("token", expiredToken)

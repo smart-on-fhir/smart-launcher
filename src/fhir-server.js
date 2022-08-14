@@ -25,7 +25,7 @@ const text       = express.text({ type: "*/*", limit: 1e6 })
 
 fhirServer.get("/auth/authorize", AuthorizeHandler.handleRequest)
 
-// fhirServer.post("/auth/authorize", urlencoded, AuthorizeHandler.handleRequest)
+fhirServer.post("/auth/authorize", urlencoded, AuthorizeHandler.handleRequest)
 
 fhirServer.post("/auth/token", urlencoded, TokenHandler.handleRequest)
 

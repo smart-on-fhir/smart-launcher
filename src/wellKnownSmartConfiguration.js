@@ -132,7 +132,10 @@ module.exports = (req, res) => {
             "permission-patient",
 
             // support for user-level scopes (e.g. user/Appointment.read).
-            "permission-user"
+            "permission-user",
+
+            // support for POST-based authorization
+            "authorize-post"
         ]
     };
 
