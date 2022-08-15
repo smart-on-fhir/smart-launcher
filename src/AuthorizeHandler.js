@@ -237,26 +237,23 @@ class AuthorizeHandler extends SMARTHandler {
     redirect(to, query = {}) {
 
         const url = new URL(this.request.originalUrl, Lib.getRequestBaseURL(this.request))
-        
-        // for (let p in this.inputs) {
-        //     url.searchParams.set(p, this.inputs[p])
-        // }
-        for (let p in query) {
-            url.searchParams.set(p, query[p])
+
+        for (let p in this.inputs) {
+            if (this.inputs[p] !== undefined) {
+                url.searchParams.set(p, this.inputs[p])
+            }
         }
+
+        for (let p in query) {
+            if (query[p] !== undefined) {
+                url.searchParams.set(p, query[p])
+            }
+        }
+
         url.searchParams.set("aud_validated", this.sim.aud_validated)
         url.searchParams.set("aud", "")
         url.pathname = url.pathname.replace("/auth/authorize", to)
         return this.response.redirect(url.href);
-
-        // let redirectUrl = Url.parse(this.request.originalUrl, true);
-        // redirectUrl.query = Object.assign(redirectUrl.query, this.inputs, query, {
-        //     aud_validated: this.sim.aud_validated,
-        //     aud          : ""
-        // });
-        // redirectUrl.search = null;
-        // redirectUrl.pathname = redirectUrl.pathname.replace("/auth/authorize", to);
-        // return this.response.redirect(Url.format(redirectUrl));
     }
 
     validateParams() {
