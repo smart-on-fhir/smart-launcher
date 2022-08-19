@@ -529,6 +529,18 @@
             if (permissions.other) {
                 other.push(permissions.other);
             }
+            if (permissions.create) {
+                write.push(permissions.create);
+            }
+            if (permissions.update) {
+                write.push(permissions.update);
+            }
+            if (permissions.deletePermission) {
+                other.push(permissions.deletePermission);
+            }
+            if (permissions.search) {
+                other.push(permissions.search);
+            }
         });
 
         return {
