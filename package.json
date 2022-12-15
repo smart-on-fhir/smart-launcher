@@ -32,7 +32,7 @@
     "concurrently": "^5.2.0",
     "cors": "^2.7.1",
     "dotenv": "^6.2.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "got": "^9.6.0",
     "jsonwebtoken": "^8.5.1",
     "node-jose": "^2.0.0",
