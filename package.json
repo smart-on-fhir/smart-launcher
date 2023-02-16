@@ -35,7 +35,7 @@
     "express": "^4.17.1",
     "got": "^9.6.0",
     "jsonwebtoken": "^8.5.1",
-    "node-jose": "^2.0.0",
+    "node-jose": "^2.2.0",
     "pem": "^1.14.4",
     "pem-jwk": "^1.5.1",
     "replacestream": "^4.0.3"
