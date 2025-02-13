@@ -15,6 +15,9 @@ const assert = Lib.assert;
  * @returns {Object|null} Returns the modified JSON object or null in case of error
  */
 function augmentConformance(json, baseUrl) {
+    if (!json.rest[0].security) {
+        json.rest[0].security = {}
+    }
     json.rest[0].security.extension = [{
         "url": "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris",
         "extension": [
@@ -69,6 +72,10 @@ async function handleMetadataRequest(req, res, fhirServer)
     });
 
     let { statusCode, body } = response;
+
+    if (typeof body === "string") {
+        body = JSON.parse(body || "null")
+    }
 
     // pass through the statusCode
     res.status(statusCode);
@@ -137,6 +144,8 @@ module.exports = (req, res) => {
         });
     }
 
+    fhirServer = fhirServer.replace(/\/$/, "")
+
     // We cannot handle the conformance here!
     if (req.url.match(/^\/metadata/)) {
         return handleMetadataRequest(req, res, fhirServer);
@@ -148,7 +157,7 @@ module.exports = (req, res) => {
     // Build the FHIR request options ------------------------------------------
     let fhirRequestOptions = {
         method: req.method,
-        url   : new URL(req.url, fhirServer).href,
+        url   : new URL(req.url.replace(/^\//, ""), fhirServer + "/").href,
         throwHttpErrors: false,
         rejectUnauthorized: false
     };
