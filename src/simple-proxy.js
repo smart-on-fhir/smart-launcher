@@ -73,9 +73,9 @@ async function handleMetadataRequest(req, res, fhirServer)
 
     let { statusCode, body } = response;
 
-    if (typeof body === "string") {
-        body = JSON.parse(body || "null")
-    }
+    // if (typeof body === "string") {
+    //     body = JSON.parse(body || "null")
+    // }
 
     // pass through the statusCode
     res.status(statusCode);
